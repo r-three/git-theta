@@ -1,4 +1,5 @@
-*.ipynb
+*.modeldiff
+*.onnx
 .DS_Store
 .huskyrc.json
 out

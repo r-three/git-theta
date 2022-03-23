@@ -5,37 +5,85 @@ from onnx import numpy_helper as nh
 import copy
 import pickle
 import hashlib
+import os
+from rich import print as rprint
+from typing import *
+from typeguard import check_type
 
-# Diff files are pairs of files: the human readable diff, with names of the initializers,
-# and then a pickled dictionary of intializers
-def create_diff_file(filename, initializer, update_type, value):
-    hr_line = f"+{initializer}, {update_type}\n"
-    update_dict = {initializer: value}
-    hash = hashlib.md5(pickle.dumps(update_dict) + hr_line.encode()).hexdigest()
+Tensor = TypeVar("Tensor", np.ndarray, torch.Tensor)
 
-    with open(f"{filename}.modeldiff.index", "w") as index_file:
-        index_file.write(hash + "\n---\n")
-        index_file.write(hr_line)
-    with open(f"{filename}.modeldiff.content", "wb") as content_file:
+
+class ModelUpdate:
+
+    supported_update_types = {
+        "dense": Tensor,
+        "low_rank": Tuple[Tensor, Tensor],
+    }
+
+    def __init__(self, initializer_name: str, update_type: str, value):
+        self.initializer_name = initializer_name
+
+        if update_type not in self.supported_update_types:
+            raise NotImplementedError(
+                f"{update_type} is not yet supported as an update type"
+            )
+
+        # Better version of isinstance(), can handle lists of types
+        check_type("Update Value", value, self.supported_update_types[update_type])
+
+        # Standardize to store as numpy variable
+        if update_type == "dense" and hasattr(value, "numpy"):
+            value = value.numpy()
+        if update_type == "low_rank":
+            value = [v.numpy() for v in value if hasattr(v, "numpy")]
+
+        self.update_type = update_type
+        self.value = value
+
+
+def create_diff_file(updates: Union[List[ModelUpdate], ModelUpdate]) -> str:
+
+    if not isinstance(updates, List):
+        updates = [updates]
+
+    # Each entry in changes should be a 3-tuple (initializer, update_type, vlaue)
+    update_dict = {
+        update.initializer_name: (update.update_type, update.value)
+        for update in updates
+    }
+    hash = hashlib.md5(pickle.dumps(update_dict)).hexdigest()
+
+    filename = f"{hash}.modeldiff"
+    with open(filename, "wb") as content_file:
         pickle.dump(update_dict, content_file)
 
+    return filename
 
-def apply_diff_file(model, filename):
+
+def apply_diff_file(model, diffname):
     new_model = copy.deepcopy(model)
 
-    with open(f"{filename}.modeldiff.index", "r") as index_file:
-        lines = list(filter(len, index_file.read().split("\n")))
+    with open(diffname, "rb") as infile:
+        update_dict = pickle.load(infile)
 
-    def to_apply(x):
-        return x[0] == "+"
-
-    updates = filter(to_apply, lines[2:])
-    for update in updates:
-        initializer_name, update_type = update[1:].split(", ")
+    for initializer_name, (update_type, value) in update_dict.items():
         initializer = new_model.get_weight_by_name(initializer_name)
 
-        with open(f"{filename}.modeldiff.content", "rb") as content_file:
-            update_dict = pickle.load(content_file)
-        initializer.raw_data = update_dict[initializer_name].numpy().tobytes()
+        if update_type == "dense":
+            initializer.raw_data = value.tobytes()
+        elif update_type == "low_rank":
+            low_rank_product = value[0] @ value[1]
+            updated_value = nh.to_array(initializer) + low_rank_product
+            initializer.raw_data = updated_value.tobytes()
+        else:
+            raise NotImplementedError(
+                "Only the dense and low-rank update types are currently supported"
+            )
 
     return new_model
+
+
+def print_human_readable_diff(diff_hash):
+    with open(f"{diff_hash}.modeldiff.content", "rb") as infile:
+        update_dict = pickle.load(infile)
+    rprint(update_dict)
