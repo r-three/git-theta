@@ -1,17 +1,21 @@
 import onnx
+from onnx import numpy_helper as nh
 
 """Definition of ONNX Model functions"""
 
-class OnnxFunctions():
+
+class AugumentedOnnxModel:
     def __init__(self, onnx_model_path):
         self.model = onnx.load(onnx_model_path)
-        self.model = onnx.shape_inference.infer_shapes(self.model) # Adds intermediate value info
+        self.model = onnx.shape_inference.infer_shapes(
+            self.model
+        )  # Adds intermediate value info
 
     def get_model(self):
         return self.model
-        
+
     def print(self):
-        """Prints th ONNX model graph""" 
+        """Prints th ONNX model graph"""
         print(self.model)
 
     def get_input_output_weight_names(self):
@@ -25,9 +29,12 @@ class OnnxFunctions():
             output_names.append(output.name)
         for weight in self.model.graph.initializer:
             weight_names.append(weight.name)
-        names = {"inputs": input_names, "outputs": output_names, "weights": weight_names}
+        names = {
+            "inputs": input_names,
+            "outputs": output_names,
+            "weights": weight_names,
+        }
         return names
-
 
     def change_names(self, name_map):
         """
@@ -48,11 +55,27 @@ class OnnxFunctions():
             for index, output in enumerate(node.output):
                 node.output[index] = name_map.get(output, output)
 
-
     def get_weight_by_name(self, name):
         """Returns the intializer in the graph corresponding to the name, return None if non-existent"""
-        return next((weight for weight in self.model.graph.initializer if weight.name == name), None)
+        return next(
+            (weight for weight in self.model.graph.initializer if weight.name == name),
+            None,
+        )
 
+    def update_initializer(self, initializer_name, update_type, delta):
+        initializer = self.get_weight_by_name(initializer_name)
+        current_value = nh.to_array(initializer)
+
+        if update_type == "dense":
+            new_value = current_value + delta
+        elif update_type == "low_rank":
+            low_rank_product = delta[0] @ delta[1]
+            new_value = current_value + low_rank_product
+        else:
+            raise NotImplementedError(
+                "Only the dense and low-rank update types are currently supported"
+            )
+        initializer.raw_data = new_value.tobytes()
 
     def set_node_names(self):
         """Set node name if node name is empty. Required to perform operations such as combining two models"""
@@ -60,11 +83,9 @@ class OnnxFunctions():
             if not node.name:
                 node.name = node.op_type + "_" + str(index)
 
-
     def check_model(self):
         """Validate ONNX graph"""
         onnx.checker.check_model(self.model)
-
 
     def save_model(self, filepath):
         """Save ONNX model to file"""

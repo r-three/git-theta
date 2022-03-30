@@ -9,6 +9,7 @@ import os
 from rich import print as rprint
 from typing import *
 from typeguard import check_type
+from onnx_functions import AugumentedOnnxModel
 
 Tensor = TypeVar("Tensor", np.ndarray, torch.Tensor)
 
@@ -20,7 +21,7 @@ class ModelUpdate:
         "low_rank": Tuple[Tensor, Tensor],
     }
 
-    def __init__(self, initializer_name: str, update_type: str, value):
+    def __init__(self, initializer_name: str, update_type: str, delta):
         self.initializer_name = initializer_name
 
         if update_type not in self.supported_update_types:
@@ -29,16 +30,16 @@ class ModelUpdate:
             )
 
         # Better version of isinstance(), can handle lists of types
-        check_type("Update Value", value, self.supported_update_types[update_type])
+        check_type("Update Delta", delta, self.supported_update_types[update_type])
 
         # Standardize to store as numpy variable
-        if update_type == "dense" and hasattr(value, "numpy"):
-            value = value.numpy()
+        if update_type == "dense" and hasattr(delta, "numpy"):
+            delta = delta.numpy()
         if update_type == "low_rank":
-            value = [v.numpy() for v in value if hasattr(v, "numpy")]
+            delta = [d.numpy() for d in delta if hasattr(d, "numpy")]
 
         self.update_type = update_type
-        self.value = value
+        self.delta = delta
 
 
 def create_diff_file(updates: Union[List[ModelUpdate], ModelUpdate]) -> str:
@@ -46,9 +47,9 @@ def create_diff_file(updates: Union[List[ModelUpdate], ModelUpdate]) -> str:
     if not isinstance(updates, List):
         updates = [updates]
 
-    # Each entry in changes should be a 3-tuple (initializer, update_type, vlaue)
+    # Each entry in changes should be a 3-tuple (initializer, update_type, delta)
     update_dict = {
-        update.initializer_name: (update.update_type, update.value)
+        update.initializer_name: (update.update_type, update.delta)
         for update in updates
     }
     hash = hashlib.md5(pickle.dumps(update_dict)).hexdigest()
@@ -60,25 +61,22 @@ def create_diff_file(updates: Union[List[ModelUpdate], ModelUpdate]) -> str:
     return filename
 
 
-def apply_diff_file(model, diffname):
-    new_model = copy.deepcopy(model)
+def apply_diff_file(augumented_onnx_model, diffname):
+    new_model = copy.deepcopy(augumented_onnx_model)
 
     with open(diffname, "rb") as infile:
         update_dict = pickle.load(infile)
 
-    for initializer_name, (update_type, value) in update_dict.items():
-        initializer = new_model.get_weight_by_name(initializer_name)
-
-        if update_type == "dense":
-            initializer.raw_data = value.tobytes()
-        elif update_type == "low_rank":
-            low_rank_product = value[0] @ value[1]
-            updated_value = nh.to_array(initializer) + low_rank_product
-            initializer.raw_data = updated_value.tobytes()
+    seen_initializers = set()
+    for initializer_name, (update_type, delta) in update_dict.items():
+        if initializer_name not in seen_initializers:
+            seen_initializers.add(initializer_name)
         else:
-            raise NotImplementedError(
-                "Only the dense and low-rank update types are currently supported"
+            raise ValueError(
+                f"An initializer can appear at most once in a modeldiff file: {initializer_name} appears multiple times."
             )
+
+        new_model.update_initializer(initializer_name, update_type, delta)
 
     return new_model
 
