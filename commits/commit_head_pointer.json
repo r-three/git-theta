@@ -1,7 +1,7 @@
 {
     "current_head": "",
-    "global_head_model": "C:/Users/bvish/Documents/UNC/COMP 991 - Colin/collaborative-learning/commits/mnist_test_pretrained_head.onnx",
-    "global_tail_model": "C:/Users/bvish/Documents/UNC/COMP 991 - Colin/collaborative-learning/commits/mnist_test_pretrained.onnx",
+    "global_head_model": "C:/Users/bvish/Documents/UNC/COMP 991 - Colin/collaborative-learning/models/mnist_test_pretrained_head.onnx",
+    "global_tail_model": "C:/Users/bvish/Documents/UNC/COMP 991 - Colin/collaborative-learning/models/mnist_test_pretrained.onnx",
     "global_head": "./commits/a5dd43162d25fb49d9d43b4187b48e29.modeldiff",
     "global_tail": "./commits/a5dd43162d25fb49d9d43b4187b48e29.modeldiff"
 }

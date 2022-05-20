@@ -2,20 +2,22 @@ import onnx
 import torch
 import numpy as np
 from onnx import numpy_helper as nh
+
 import copy
 import pickle
 import hashlib
 import os
+import json
 from rich import print as rprint
 from typing import *
 from typeguard import check_type
-import constants
 
+import constants
 from CommitHeadInfo import CommitHeadInfo
 from onnx_functions import AugumentedOnnxModel
 
-Tensor = TypeVar("Tensor", np.ndarray, torch.Tensor)
 
+Tensor = TypeVar("Tensor", np.ndarray, torch.Tensor)
 
 class ModelUpdate:
 
@@ -49,6 +51,38 @@ class DiffTools:
     def __init__(self):
         # Fetch Commit Head Info
         self.commit_head_info = CommitHeadInfo()
+
+    @staticmethod
+    def setup(model_name=None, reset_folders=False):
+        if (reset_folders):
+            print(f"Resetting diff tracking in {os.getcwd()} to a clean slate.")
+            # Get path to model head (onnx file)
+            commit_head_info = CommitHeadInfo()
+            print(f"Deleting model head -: {commit_head_info.global_head_model_path}")
+            os.remove(commit_head_info.global_head_model_path)
+
+            if (os.path.exists(constants.COMMITS_FOLDER)):
+                for file in sorted(os.listdir(constants.COMMITS_FOLDER)):
+                    print(f"Deleting {file}...")
+                    os.remove(os.path.join(constants.COMMITS_FOLDER, file))
+        else:
+            print(f"Setting up diff tracking in {os.getcwd()}")
+
+        os.makedirs(constants.COMMITS_FOLDER, exist_ok=True)
+        # Append _head for model head name
+        model_head_name = model_name.split(".")[0] + "_head" + model_name.split(".")[1]
+        commit_head_pointer = {
+            "current_head": "",
+            "global_head_model": os.path.join(constants.MODELS_FOLDER, model_head_name),
+            "global_tail_model": os.path.join(constants.MODELS_FOLDER, model_name),
+            "global_head": "",
+            "global_tail": ""
+        }
+        with open(os.path.join(constants.COMMITS_FOLDER, "commit_head_pointer.json"), 'w') as f:
+            f.write(json.dumps(commit_head_pointer, indent=4, sort_keys=True))
+
+        print("Finished setup successfully!")
+
 
     def create_diff_file(self, updates: Union[List[ModelUpdate], ModelUpdate]) -> str:
         if not isinstance(updates, List):
