@@ -1,0 +1,7 @@
+{
+    "current_head": "",
+    "global_head": "./.commits\\37df4546b728aaab6a90c7987c2d0681.modeldiff",
+    "global_head_model": "./models\\mnist_test_pretrained_head.onnx",
+    "global_tail": "./.commits\\181395534a90c3c357a45671ee209850.modeldiff",
+    "global_tail_model": "./models\\mnist_test_pretrained.onnx"
+}
