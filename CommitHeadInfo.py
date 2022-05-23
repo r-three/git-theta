@@ -22,3 +22,6 @@ class CommitHeadInfo:
         self.head_pointer[field] = value
         with open(self.head_pointer_file, "w") as f:
                 f.write(json.dumps(self.head_pointer, indent=4, sort_keys=True))
+
+        # Refresh pointers after writing updates
+        self.__init__()
