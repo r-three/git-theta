@@ -1,6 +1,8 @@
 import onnx
 from onnx import numpy_helper as nh
+from onnx2pytorch import ConvertModel
 
+import torch
 """Definition of ONNX Model functions"""
 
 
@@ -11,10 +13,10 @@ class AugumentedOnnxModel:
             self.model
         )  # Adds intermediate value info
 
-    def get_model(self):
+    def get_onnx_model(self):
         return self.model
 
-    def print(self):
+    def print_onnx_model(self):
         """Prints th ONNX model graph"""
         print(self.model)
 
@@ -62,15 +64,15 @@ class AugumentedOnnxModel:
             None,
         )
 
-    def update_initializer(self, initializer_name, update_type, delta):
+    def update_initializer(self, initializer_name, update_type, delta, diff_order):
         initializer = self.get_weight_by_name(initializer_name)
         current_value = nh.to_array(initializer)
 
         if update_type == "dense":
-            new_value = current_value + delta
+            new_value = current_value + delta if diff_order == "next_diff" else current_value - delta
         elif update_type == "low_rank":
             low_rank_product = delta[0] @ delta[1]
-            new_value = current_value + low_rank_product
+            new_value = current_value + low_rank_product if diff_order == "next_diff" else current_value - delta
         else:
             raise NotImplementedError(
                 "Only the dense and low-rank update types are currently supported"
@@ -90,3 +92,18 @@ class AugumentedOnnxModel:
     def save_model(self, filepath):
         """Save ONNX model to file"""
         onnx.save(self.model, filepath)
+
+    def equal_to(self, other_model):
+        curr_pytorch_model = ConvertModel(self.get_onnx_model(), experimental=True)
+        other_pytorch_model = ConvertModel(other_model.get_onnx_model(), experimental=True)
+        is_equal = True
+
+        param_pairs = list(zip(curr_pytorch_model.named_parameters(), other_pytorch_model.named_parameters()))
+        for param in param_pairs:
+            if torch.allclose(param[0][1], param[1][1]):
+                print(f"{param[0][0]} i.e. {param[1][0]} -: EQUAL")
+            else:
+                is_equal = False
+                print(f"{param[0][0]} i.e. {param[1][0]} -: NOT EQUAL")
+
+        return is_equal
