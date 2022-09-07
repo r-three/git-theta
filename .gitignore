@@ -45,3 +45,5 @@ nodeLanguageServer/**
 nodeLanguageServer.*/**
 dist/**
 data/*
+.idea/*
+.ipynb_checkpoints
