@@ -8,7 +8,7 @@ setup(
     author_email="craffel@gmail.com",
     url="https://github.com/r-three/checkpoint-vcs",
     packages=[],
-    scripts=["bin/git-ml", "bin/git-ml-filter"],
+    scripts=["bin/git-cml", "bin/git-cml-filter"],
     long_description="Version control system for model checkpoints.",
     classifiers=[
         "License :: OSI Approved :: MIT License",
