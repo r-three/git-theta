@@ -1,0 +1,186 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import sys
+import subprocess
+import re
+import json
+import git
+import logging
+import hashlib
+from collections import defaultdict
+
+logging.basicConfig(
+    level=logging.DEBUG, format="git-ml: [%(asctime)s] %(levelname)s - %(message)s"
+)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser("git-ml filter program")
+    subparsers = parser.add_subparsers(title="Commands", dest="command")
+    subparsers.required = True
+
+    clean_parser = subparsers.add_parser("clean", help="clean filter")
+    clean_parser.add_argument("file", help="file being passed to clean filter")
+    clean_parser.set_defaults(func=clean)
+
+    smudge_parser = subparsers.add_parser("smudge", help="smudge filter")
+    smudge_parser.add_argument("file", help="file being passed to smudge filter")
+    smudge_parser.set_defaults(func=smudge)
+
+    args = parser.parse_args()
+    return args
+
+
+def get_git_repo():
+    """
+    Create a git.Repo object for this repository
+
+    Returns
+    -------
+    git.Repo
+        Repo object for the current git repository
+    """
+    return git.Repo(os.getcwd(), search_parent_directories=True)
+
+
+def create_git_ml(repo):
+    """
+    If not already created, create $git_root/.git_ml and return path
+
+    Parameters
+    ----------
+    git_root : str
+        path to git repository's root directory
+
+    Returns
+    -------
+    str
+        path to $git_root/.git_ml directory
+    """
+    git_ml = os.path.join(repo.working_dir, ".git_ml")
+    if not os.path.exists(git_ml):
+        logging.debug(f"Creating git ml directory {git_ml}")
+        os.makedirs(git_ml)
+    return git_ml
+
+
+def create_git_ml_model_dir(repo, model_path):
+    """
+    If not already created, create directory under $git_root/.git_ml/ to store a model and return path
+
+    Parameters
+    ----------
+    repo : git.Repo
+        Repo object for the current git repository
+
+    model_path : str
+        path to model file being saved
+
+    Returns
+    -------
+    str
+        path to $git_root/.git_ml/$model_name directory
+    """
+    git_ml = create_git_ml(repo)
+    model_file = os.path.basename(model_path)
+    git_ml_model = os.path.join(git_ml, os.path.splitext(model_file)[0])
+
+    if not os.path.exists(git_ml_model):
+        logging.debug(f"Creating model directory {git_ml_model}")
+        os.makedirs(git_ml_model)
+    return git_ml_model
+
+
+def load_file(f):
+    """
+    Load tracked file
+    TODO: currently implemented for json but should really be Pytorch/TF checkpoints
+
+    Parameters
+    ----------
+    f : str
+        path to file tracked by git-ml filter
+
+    Returns
+    -------
+    dict
+        contents of file
+
+    """
+    logging.debug(f"Loading tracked file {f}")
+    with open(f, "r") as f:
+        return json.load(f)
+
+
+def iterate_subdirs(root, prefix=[]):
+    """
+    Generator that recursively iterates through files in a directory tree and produces (keys, value) tuples where
+    keys is the sequence of subdirectories from root to the file and value is the contents of the file.
+
+    Example
+    -------
+    root = a
+           └── b
+               ├── c
+               ├── d
+               └── e
+    iterate_subdirs(root) --> ((['a','b','c'], contents of c), (['a','b','e'], contents of e), (['a','b','d'], contents of d))
+
+    Parameters
+    ----------
+    root : str
+        Root of directory tree to iterate over
+    prefix: List[str]
+        List of keys to prefix each subdirectory sequence with
+    """
+    for d in os.listdir(root):
+        dir_member = os.path.join(root, d)
+        if os.path.isdir(dir_member):
+            yield from iterate_subdirs(dir_member, prefix=prefix + [d])
+        else:
+            contents = load_file(dir_member)
+            yield (prefix + [d], contents)
+
+
+def clean(args):
+    """
+    Implements clean filter for model files
+    """
+    logging.debug(f"Running clean filter on {args.file}")
+
+    repo = get_git_repo()
+    model_dir = create_git_ml_model_dir(repo, args.file)
+
+    model = sys.stdin.buffer.read()
+    model_hash = hashlib.sha1(model).hexdigest()
+
+    pointer_file_contents = {"model_dir": model_dir, "hash": model_hash}
+    sys.stdout.buffer.write(json.dumps(pointer_file_contents).encode())
+
+
+def smudge(args):
+    """
+    Implements smudge filter for model files
+    """
+    logging.debug(f"Running smudge filter on {args.file}")
+
+    repo = get_git_repo()
+    pointer_file = json.load(sys.stdin.buffer)
+
+    model_dict = defaultdict(dict)
+    for (keys, contents) in iterate_subdirs(pointer_file["model_dir"]):
+        logging.debug(f"Populating model parameter {keys}")
+        d = model_dict
+        for k in keys[:-1]:
+            d = d[k]
+        d[keys[-1]] = contents
+
+    logging.debug(model_dict)
+    sys.stdout.buffer.write(json.dumps(model_dict).encode())
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    args.func(args)
