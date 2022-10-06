@@ -10,12 +10,12 @@ import git
 import logging
 
 logging.basicConfig(
-    level=logging.DEBUG, format="git-ml: [%(asctime)s] %(levelname)s - %(message)s"
+    level=logging.DEBUG, format="git-cml: [%(asctime)s] %(levelname)s - %(message)s"
 )
 
 
 def parse_args():
-    parser = argparse.ArgumentParser("git-ml filter program")
+    parser = argparse.ArgumentParser("git-cml filter program")
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
@@ -95,7 +95,7 @@ def load_file(f):
     Parameters
     ----------
     f : str
-        path to file tracked by git-ml filter
+        path to file tracked by git-cml filter
 
     Returns
     -------
