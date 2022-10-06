@@ -1,0 +1,177 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import sys
+import subprocess
+import re
+import json
+import git
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='git-ml: [%(asctime)s] %(levelname)s - %(message)s')
+
+def parse_args():
+    parser = argparse.ArgumentParser('git-ml filter program')
+    subparsers = parser.add_subparsers(title='Commands', dest='command')
+    subparsers.required = True
+
+    clean_parser = subparsers.add_parser('add', help='clean filter')
+    clean_parser.add_argument('file', help='file being staged')
+    clean_parser.set_defaults(func=add)
+
+    args = parser.parse_args()
+    return args
+
+def get_git_repo():
+    """
+    Create a git.Repo object for this repository
+
+    Returns 
+    -------
+    git.Repo
+        Repo object for the current git repository
+    """
+    return git.Repo(os.getcwd(), search_parent_directories=True)
+ 
+def create_git_ml(repo):
+    """
+    If not already created, create $git_root/.git_ml and return path
+
+    Parameters
+    ----------
+    git_root : str
+        path to git repository's root directory
+
+    Returns
+    -------
+    str
+        path to $git_root/.git_ml directory
+    """
+    git_ml = os.path.join(repo.working_dir, '.git_ml')
+    if not os.path.exists(git_ml):
+        logging.debug(f'Creating git ml directory {git_ml}')
+        os.makedirs(git_ml)
+    return git_ml
+
+def create_git_ml_model_dir(repo, model_path):
+    """
+    If not already created, create directory under $git_root/.git_ml/ to store a model and return path
+
+    Parameters
+    ----------
+    repo : git.Repo
+        Repo object for the current git repository
+    
+    model_path : str
+        path to model file being saved
+
+    Returns
+    -------
+    str
+        path to $git_root/.git_ml/$model_name directory
+    """
+    git_ml = create_git_ml(repo)
+    model_file = os.path.basename(model_path)
+    git_ml_model = os.path.join(git_ml, os.path.splitext(model_file)[0])
+
+    if not os.path.exists(git_ml_model):
+        logging.debug(f'Creating model directory {git_ml_model}')
+        os.makedirs(git_ml_model)
+    return git_ml_model
+
+def load_file(f):
+    """
+    Load tracked file
+    TODO: currently implemented for json but should really be Pytorch/TF checkpoints
+
+    Parameters
+    ----------
+    f : str
+        path to file tracked by git-ml filter
+
+    Returns
+    -------
+    dict
+        contents of file 
+ 
+    """
+    logging.debug(f'Loading tracked file {f}')
+    with open(f, 'r') as f:
+        return json.load(f)
+
+def write_file(f, param):
+    """
+    Dump param into a file
+    TODO: currently dumps as json but should really be format designed for storing tensors on disk
+
+    Parameters
+    ----------
+    f : str
+        path to output file
+    param : list or scalar
+        param value to dump to file
+ 
+    """
+    logging.debug(f'Dumping param to {f}')
+    with open(f, 'w') as f:
+        json.dump(param, f)
+
+def add_file(f, repo):
+    """
+    Add file to git staging area
+
+    Parameters
+    ----------
+    f : str
+        path to file
+    repo : git.Repo
+        Repo object for current git repository
+    """
+    logging.debug(f'Adding {f} to staging area')
+    repo.git.add(f)
+
+def iterate_dict_and_subdirs(d, root):
+    """
+    Generator that recursively iterates through a dictionary and produces (leaf, subdir) tuples where leaf is a dictionary leaf 
+    and subdir is the subdirectory below root corresponding to the sequence of keys used to access leaf. Each subdir is created if it does not exist.
+    
+    Example
+    -------
+    d = {'a': {'b': {'c': 10, 'd': 20, 'e': 30}}}
+    root = 'rootdir'
+    iterate_dict_and_subdirs(d, root) --> ((10, 'rootdir/a/b/c'), (20, 'rootdir/a/b/d'), (30, 'rootdir/ab/e'))
+
+    Parameters
+    ----------
+    d : dict
+        dictionary to iterate over
+    root : str
+        path to root directory where directory tree representing `d` is created
+    """
+    for k,v in d.items():
+        if isinstance(v, dict):
+            recursive_root = os.path.join(root, k)
+            yield from iterate_dict_and_subdirs(v, recursive_root)
+        else:
+            if not os.path.exists(root):
+                os.makedirs(root)
+            yield (v, os.path.join(root, k))
+
+def add(args):
+    """
+    Splits model parameters file into parameter groups on filesystem and stages files
+    """
+    repo = get_git_repo()
+    model_path = create_git_ml_model_dir(repo, args.file)
+    
+    param_dict = load_file(args.file)
+    for (param, param_file) in iterate_dict_and_subdirs(param_dict, model_path):
+        write_file(param_file, param)
+        add_file(param_file, repo)
+
+    add_file(args.file, repo)
+
+if __name__ == '__main__':
+    args = parse_args()
+    args.func(args)
