@@ -42,7 +42,7 @@ def iterate_dict_and_subdirs(d, root):
     -------
     d = {'a': {'b': {'c': 10, 'd': 20, 'e': 30}}}
     root = 'rootdir'
-    iterate_dict_and_subdirs(d, root) --> ((10, 'rootdir/a/b/c'), (20, 'rootdir/a/b/d'), (30, 'rootdir/ab/e'))
+    iterate_dict_and_subdirs(d, root) --> ((10, 'rootdir/a/b/c'), (20, 'rootdir/a/b/d'), (30, 'rootdir/a/b/e'))
 
     Parameters
     ----------

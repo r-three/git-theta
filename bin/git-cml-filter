@@ -14,7 +14,7 @@ from collections import defaultdict
 import git_utils
 
 logging.basicConfig(
-    level=logging.DEBUG, format="git-cml: [%(asctime)s] %(levelname)s - %(message)s"
+    level=logging.DEBUG, format="git-cml-filter: [%(asctime)s] %(levelname)s - %(message)s"
 )
 
 
