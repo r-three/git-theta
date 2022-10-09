@@ -9,6 +9,8 @@ import json
 import git
 import logging
 
+import git_utils
+
 logging.basicConfig(
     level=logging.DEBUG, format="git-cml: [%(asctime)s] %(levelname)s - %(message)s"
 )
@@ -19,126 +21,16 @@ def parse_args():
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
-    clean_parser = subparsers.add_parser("add", help="clean filter")
-    clean_parser.add_argument("file", help="file being staged")
-    clean_parser.set_defaults(func=add)
+    add_parser = subparsers.add_parser("add", help="add command used to stage a model file")
+    add_parser.add_argument("file", help="file being staged")
+    add_parser.set_defaults(func=add)
+
+    init_parser = subparsers.add_parser("init", help="init command used to setup a git-cml repo")
+    init_parser.set_defaults(func=init)
+
 
     args = parser.parse_args()
     return args
-
-
-def get_git_repo():
-    """
-    Create a git.Repo object for this repository
-
-    Returns
-    -------
-    git.Repo
-        Repo object for the current git repository
-    """
-    return git.Repo(os.getcwd(), search_parent_directories=True)
-
-
-def create_git_ml(repo):
-    """
-    If not already created, create $git_root/.git_ml and return path
-
-    Parameters
-    ----------
-    git_root : str
-        path to git repository's root directory
-
-    Returns
-    -------
-    str
-        path to $git_root/.git_ml directory
-    """
-    git_ml = os.path.join(repo.working_dir, ".git_ml")
-    if not os.path.exists(git_ml):
-        logging.debug(f"Creating git ml directory {git_ml}")
-        os.makedirs(git_ml)
-    return git_ml
-
-
-def create_git_ml_model_dir(repo, model_path):
-    """
-    If not already created, create directory under $git_root/.git_ml/ to store a model and return path
-
-    Parameters
-    ----------
-    repo : git.Repo
-        Repo object for the current git repository
-
-    model_path : str
-        path to model file being saved
-
-    Returns
-    -------
-    str
-        path to $git_root/.git_ml/$model_name directory
-    """
-    git_ml = create_git_ml(repo)
-    model_file = os.path.basename(model_path)
-    git_ml_model = os.path.join(git_ml, os.path.splitext(model_file)[0])
-
-    if not os.path.exists(git_ml_model):
-        logging.debug(f"Creating model directory {git_ml_model}")
-        os.makedirs(git_ml_model)
-    return git_ml_model
-
-
-def load_file(f):
-    """
-    Load tracked file
-    TODO: currently implemented for json but should really be Pytorch/TF checkpoints
-
-    Parameters
-    ----------
-    f : str
-        path to file tracked by git-cml filter
-
-    Returns
-    -------
-    dict
-        contents of file
-
-    """
-    logging.debug(f"Loading tracked file {f}")
-    with open(f, "r") as f:
-        return json.load(f)
-
-
-def write_file(f, param):
-    """
-    Dump param into a file
-    TODO: currently dumps as json but should really be format designed for storing tensors on disk
-
-    Parameters
-    ----------
-    f : str
-        path to output file
-    param : list or scalar
-        param value to dump to file
-
-    """
-    logging.debug(f"Dumping param to {f}")
-    with open(f, "w") as f:
-        json.dump(param, f)
-
-
-def add_file(f, repo):
-    """
-    Add file to git staging area
-
-    Parameters
-    ----------
-    f : str
-        path to file
-    repo : git.Repo
-        Repo object for current git repository
-    """
-    logging.debug(f"Adding {f} to staging area")
-    repo.git.add(f)
 
 
 def iterate_dict_and_subdirs(d, root):
@@ -173,15 +65,30 @@ def add(args):
     """
     Splits model parameters file into parameter groups on filesystem and stages files
     """
-    repo = get_git_repo()
-    model_path = create_git_ml_model_dir(repo, args.file)
+    repo = git_utils.get_git_repo()
+    model_path = git_utils.create_git_ml_model_dir(repo, args.file)
 
-    param_dict = load_file(args.file)
+    param_dict = git_utils.load_tracked_file(args.file)
     for (param, param_file) in iterate_dict_and_subdirs(param_dict, model_path):
-        write_file(param_file, param)
-        add_file(param_file, repo)
+        git_utils.write_tracked_file(param_file, param)
+        git_utils.add_file(param_file, repo)
 
-    add_file(args.file, repo)
+    git_utils.add_file(args.file, repo)
+
+
+def init(args):
+    """
+    Set up git-cml repo by initializing .git/info/attributes and .git/config
+    """
+    repo = git_utils.get_git_repo()
+    config_writer = repo.config_writer()
+    config_writer.set_value('filter "cml"', 'clean', 'git-cml-filter clean %f') 
+    config_writer.set_value('filter "cml"', 'smudge', 'git-cml-filter smudge %f')
+    config_writer.set_value('filter "cml"', 'required', 'true')
+    config_writer.release()
+    
+    with open(os.path.join(repo.working_dir, '.git/info/attributes'), 'w+') as f:
+        f.write('*.json filter=cml')
 
 
 if __name__ == "__main__":
