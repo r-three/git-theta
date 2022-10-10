@@ -3,6 +3,7 @@ import os
 import json
 import logging
 
+
 def get_git_repo():
     """
     Create a git.Repo object for this repository
@@ -13,6 +14,7 @@ def get_git_repo():
         Repo object for the current git repository
     """
     return git.Repo(os.getcwd(), search_parent_directories=True)
+
 
 def create_git_ml(repo):
     """
@@ -33,6 +35,7 @@ def create_git_ml(repo):
         logging.debug(f"Creating git ml directory {git_ml}")
         os.makedirs(git_ml)
     return git_ml
+
 
 def create_git_ml_model_dir(repo, model_path):
     """
@@ -60,6 +63,7 @@ def create_git_ml_model_dir(repo, model_path):
         os.makedirs(git_ml_model)
     return git_ml_model
 
+
 def load_tracked_file(f):
     """
     Load tracked file
@@ -80,6 +84,7 @@ def load_tracked_file(f):
     with open(f, "r") as f:
         return json.load(f)
 
+
 def write_tracked_file(f, param):
     """
     Dump param into a file
@@ -96,6 +101,7 @@ def write_tracked_file(f, param):
     logging.debug(f"Dumping param to {f}")
     with open(f, "w") as f:
         json.dump(param, f)
+
 
 def add_file(f, repo):
     """
