@@ -11,8 +11,10 @@ import logging
 import hashlib
 from collections import defaultdict
 
+from git_cml import git_utils
+
 logging.basicConfig(
-    level=logging.DEBUG, format="git-cml: [%(asctime)s] %(levelname)s - %(message)s"
+    level=logging.DEBUG, format="git-cml-filter: [%(asctime)s] %(levelname)s - %(message)s"
 )
 
 
@@ -31,87 +33,6 @@ def parse_args():
 
     args = parser.parse_args()
     return args
-
-
-def get_git_repo():
-    """
-    Create a git.Repo object for this repository
-
-    Returns
-    -------
-    git.Repo
-        Repo object for the current git repository
-    """
-    return git.Repo(os.getcwd(), search_parent_directories=True)
-
-
-def create_git_cml(repo):
-    """
-    If not already created, create $git_root/.git_cml and return path
-
-    Parameters
-    ----------
-    git_root : str
-        path to git repository's root directory
-
-    Returns
-    -------
-    str
-        path to $git_root/.git_cml directory
-    """
-    git_cml = os.path.join(repo.working_dir, ".git_cml")
-    if not os.path.exists(git_cml):
-        logging.debug(f"Creating git cml directory {git_cml}")
-        os.makedirs(git_cml)
-    return git_cml
-
-
-def create_git_cml_model_dir(repo, model_path):
-    """
-    If not already created, create directory under $git_root/.git_cml/ to store a model and return path
-
-    Parameters
-    ----------
-    repo : git.Repo
-        Repo object for the current git repository
-
-    model_path : str
-        path to model file being saved
-
-    Returns
-    -------
-    str
-        path to $git_root/.git_cml/$model_name directory
-    """
-    git_cml = create_git_cml(repo)
-    model_file = os.path.basename(model_path)
-    git_cml_model = os.path.join(git_cml, os.path.splitext(model_file)[0])
-
-    if not os.path.exists(git_cml_model):
-        logging.debug(f"Creating model directory {git_cml_model}")
-        os.makedirs(git_cml_model)
-    return git_cml_model
-
-
-def load_file(f):
-    """
-    Load tracked file
-    TODO: currently implemented for json but should really be Pytorch/TF checkpoints
-
-    Parameters
-    ----------
-    f : str
-        path to file tracked by git-cml filter
-
-    Returns
-    -------
-    dict
-        contents of file
-
-    """
-    logging.debug(f"Loading tracked file {f}")
-    with open(f, "r") as f:
-        return json.load(f)
 
 
 def iterate_subdirs(root, prefix=[]):
@@ -140,7 +61,7 @@ def iterate_subdirs(root, prefix=[]):
         if os.path.isdir(dir_member):
             yield from iterate_subdirs(dir_member, prefix=prefix + [d])
         else:
-            contents = load_file(dir_member)
+            contents = git_utils.load_tracked_file(dir_member)
             yield (prefix + [d], contents)
 
 
@@ -150,8 +71,8 @@ def clean(args):
     """
     logging.debug(f"Running clean filter on {args.file}")
 
-    repo = get_git_repo()
-    model_dir = create_git_cml_model_dir(repo, args.file)
+    repo = git_utils.get_git_repo()
+    model_dir = git_utils.create_git_cml_model_dir(repo, args.file)
 
     model = sys.stdin.buffer.read()
     model_hash = hashlib.sha1(model).hexdigest()
@@ -166,7 +87,7 @@ def smudge(args):
     """
     logging.debug(f"Running smudge filter on {args.file}")
 
-    repo = get_git_repo()
+    repo = git_utils.get_git_repo()
     pointer_file = json.load(sys.stdin.buffer)
 
     model_dict = defaultdict(dict)

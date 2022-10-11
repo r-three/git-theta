@@ -7,7 +7,7 @@ setup(
     author="Colin Raffel",
     author_email="craffel@gmail.com",
     url="https://github.com/r-three/checkpoint-vcs",
-    packages=[],
+    packages=["git_cml"],
     scripts=["bin/git-cml", "bin/git-cml-filter"],
     long_description="Version control system for model checkpoints.",
     classifiers=[

@@ -7,22 +7,24 @@ Below is a demo of the implemented proof of concept:
 git init
 ```
 
-2. Add the following "cml" filter to `.gitattributes`:
+2. Initialize the git filter driver for model files:
+```
+git-cml init
+```
+For this simple example, models are stored as json files. The command defines a filter that captures model files by adding
 ```
 *.json filter=cml
 ```
-For this simple example, models are stored as json files and these files get captured by the "cml" filter
-
-3. Define clean/smudge behavior for the "cml" filter in `~/.gitconfig`
+to `.git/info/attributes` and defines a smudge and clean filter by adding
 ```
 [filter "cml"]
         clean = git-cml-filter clean %f
         smudge = git-cml-filter smudge %f
         required = true
 ```
-This means that when `foo.json` is being added to staging area, `git-cml-filter clean foo.json` is run and when it is checked out, `git-cml-filter smudge foo.json` is run.
+to `.git/config`. This means that when `foo.json` is being added to staging area, `git-cml-filter clean foo.json` is run and when it is checked out, `git-cml-filter smudge foo.json` is run.
 
-4. Create a file `my_model.json` in the repo containing
+3. Create a file `my_model.json` in the repo containing
 ```
 {
     "layer1": {
@@ -40,7 +42,7 @@ This means that when `foo.json` is being added to staging area, `git-cml-filter 
 }
 ```
 
-5. Run `git-cml add my_model.json`. 
+4. Run `git-cml add my_model.json`. 
 
 `git-cml` is a python program that (1) loads `my_model.json`, (2) saves each individual parameter group to the filesystem under `.git_cml/my_model`, (3) runs git add on each parameter group file saved under `.git_cml`, (4) runs git add on `my_model.json`.
 
@@ -62,9 +64,9 @@ Changes to be committed:
 	new file:   my_model.json
 ```
 
-6. `git commit` to commit the model
-7. Modify one parameter group in `my_model.json` 
-8. Run `git-cml add my_model.json` to stage the changes to the model.
+5. `git commit` to commit the model
+6. Modify one parameter group in `my_model.json` 
+7. Run `git-cml add my_model.json` to stage the changes to the model.
 
 At this point in time only the modified parameter group's file under `.git_cml` has been modified. The output of `git status` at this point is:
 
@@ -75,8 +77,8 @@ Changes to be committed:
 	modified:   my_model.json
 ```
 
-9. `git commit` to commit the change
-10. Look at the output of `git log` to get the commit hashes:
+8. `git commit` to commit the change
+9. Look at the output of `git log` to get the commit hashes:
 
 ```
 commit 11b37c3aacd5d6f4ec23986d95e739ed44433d6c (HEAD -> master)
@@ -92,13 +94,13 @@ Date:   Wed Oct 5 00:29:21 2022 -0400
     initial commit
 ```
 
-11. Checkout the first commit and make a new branch to test whether we can re-create the initial model
+10. Checkout the first commit and make a new branch to test whether we can re-create the initial model
 
 `git checkout d13dca536d2690cb758c3866acb2abd1e0f32790 -b my_branch`
 
 When this occurs, the smudge filter intercepts the model file and is called with `git-cml-filter smudge my_model.json`. `git-cml-filter smudge` is a python program that reads the metadata file and reconstructs the model checkpoint from the data in `.git_cml/my_model`. 
 
-12. Check the contents of `my_model.json`
+11. Check the contents of `my_model.json`
 
 ```
 cat my_model.json
@@ -107,7 +109,7 @@ cat my_model.json
 
 Notice that the model parameters are what we started with (although in a different order since the model checkpoints are json) and `layer1/w` has its starting parameters.
 
-13. Switch back to HEAD and check `my_model.json`
+12. Switch back to HEAD and check `my_model.json`
 
 ```
 git switch -
