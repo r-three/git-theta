@@ -16,9 +16,9 @@ def get_git_repo():
     return git.Repo(os.getcwd(), search_parent_directories=True)
 
 
-def create_git_ml(repo):
+def create_git_cml(repo):
     """
-    If not already created, create $git_root/.git_ml and return path
+    If not already created, create $git_root/.git_cml and return path
 
     Parameters
     ----------
@@ -28,18 +28,18 @@ def create_git_ml(repo):
     Returns
     -------
     str
-        path to $git_root/.git_ml directory
+        path to $git_root/.git_cml directory
     """
-    git_ml = os.path.join(repo.working_dir, ".git_ml")
-    if not os.path.exists(git_ml):
-        logging.debug(f"Creating git ml directory {git_ml}")
-        os.makedirs(git_ml)
-    return git_ml
+    git_cml = os.path.join(repo.working_dir, ".git_cml")
+    if not os.path.exists(git_cml):
+        logging.debug(f"Creating git cml directory {git_cml}")
+        os.makedirs(git_cml)
+    return git_cml
 
 
-def create_git_ml_model_dir(repo, model_path):
+def create_git_cml_model_dir(repo, model_path):
     """
-    If not already created, create directory under $git_root/.git_ml/ to store a model and return path
+    If not already created, create directory under $git_root/.git_cml/ to store a model and return path
 
     Parameters
     ----------
@@ -52,16 +52,16 @@ def create_git_ml_model_dir(repo, model_path):
     Returns
     -------
     str
-        path to $git_root/.git_ml/$model_name directory
+        path to $git_root/.git_cml/$model_name directory
     """
-    git_ml = create_git_ml(repo)
+    git_cml = create_git_cml(repo)
     model_file = os.path.basename(model_path)
-    git_ml_model = os.path.join(git_ml, os.path.splitext(model_file)[0])
+    git_cml_model = os.path.join(git_cml, os.path.splitext(model_file)[0])
 
-    if not os.path.exists(git_ml_model):
-        logging.debug(f"Creating model directory {git_ml_model}")
-        os.makedirs(git_ml_model)
-    return git_ml_model
+    if not os.path.exists(git_cml_model):
+        logging.debug(f"Creating model directory {git_cml_model}")
+        os.makedirs(git_cml_model)
+    return git_cml_model
 
 
 def load_tracked_file(f):

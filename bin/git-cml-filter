@@ -11,7 +11,7 @@ import logging
 import hashlib
 from collections import defaultdict
 
-import git_utils
+from git_cml import git_utils
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-cml-filter: [%(asctime)s] %(levelname)s - %(message)s"
@@ -71,7 +71,7 @@ def clean(args):
     logging.debug(f"Running clean filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    model_dir = git_utils.create_git_ml_model_dir(repo, args.file)
+    model_dir = git_utils.create_git_cml_model_dir(repo, args.file)
 
     model = sys.stdin.buffer.read()
     model_hash = hashlib.sha1(model).hexdigest()
