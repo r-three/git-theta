@@ -9,7 +9,7 @@ import json
 import git
 import logging
 
-from git_cml import git_utils
+from git_cml import git_utils, checkpoints
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-cml: [%(asctime)s] %(levelname)s - %(message)s"
@@ -33,16 +33,17 @@ def parse_args():
     return args
 
 
-def iterate_dict_and_subdirs(d, root):
+def iterate_dict_and_dir_leaves(d, root):
     """
-    Generator that recursively iterates through a dictionary and produces (leaf, subdir) tuples where leaf is a dictionary leaf
-    and subdir is the subdirectory below root corresponding to the sequence of keys used to access leaf. Each subdir is created if it does not exist.
+    Generator that iterates through dictionary leaves and produces (param, param_file) tuples where param is a dictionary leaf
+    and param_file is the file below root corresponding to the sequence of keys used to access the dictionary leaf. Each subdirectory
+    between root and param_file is created if it does not exist.
 
     Example
     -------
     d = {'a': {'b': {'c': 10, 'd': 20, 'e': 30}}}
     root = 'rootdir'
-    iterate_dict_and_subdirs(d, root) --> ((10, 'rootdir/a/b/c'), (20, 'rootdir/a/b/d'), (30, 'rootdir/a/b/e'))
+    iterate_dict_and_dir_leaves(d, root) --> ((10, 'rootdir/a/b/c'), (20, 'rootdir/a/b/d'), (30, 'rootdir/a/b/e'))
 
     Parameters
     ----------
@@ -51,14 +52,11 @@ def iterate_dict_and_subdirs(d, root):
     root : str
         path to root directory where directory tree representing `d` is created
     """
-    for k, v in d.items():
-        if isinstance(v, dict):
-            recursive_root = os.path.join(root, k)
-            yield from iterate_dict_and_subdirs(v, recursive_root)
-        else:
-            if not os.path.exists(root):
-                os.makedirs(root)
-            yield (v, os.path.join(root, k))
+    for leaf, keys in checkpoints.iterate_dict_leaves(d):
+        param_file = os.path.join(root, '/'.join(keys))
+        if not os.path.exists(os.path.dirname(param_file)):
+            os.makedirs(os.path.dirname(param_file))
+        yield leaf, param_file
 
 
 def add(args):
@@ -68,8 +66,8 @@ def add(args):
     repo = git_utils.get_git_repo()
     model_path = git_utils.create_git_cml_model_dir(repo, args.file)
 
-    param_dict = git_utils.load_tracked_file(args.file)
-    for (param, param_file) in iterate_dict_and_subdirs(param_dict, model_path):
+    param_dict = checkpoints.JSONCheckpoint.from_file(args.file)
+    for (param, param_file) in iterate_dict_and_dir_leaves(param_dict, model_path):
         git_utils.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
 
