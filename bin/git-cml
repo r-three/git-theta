@@ -21,13 +21,16 @@ def parse_args():
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
-    add_parser = subparsers.add_parser("add", help="add command used to stage a model file")
+    add_parser = subparsers.add_parser(
+        "add", help="add command used to stage a model file"
+    )
     add_parser.add_argument("file", help="file being staged")
     add_parser.set_defaults(func=add)
 
-    init_parser = subparsers.add_parser("init", help="init command used to setup a git-cml repo")
+    init_parser = subparsers.add_parser(
+        "init", help="init command used to setup a git-cml repo"
+    )
     init_parser.set_defaults(func=init)
-
 
     args = parser.parse_args()
     return args
@@ -53,7 +56,7 @@ def iterate_dict_and_dir_leaves(d, root):
         path to root directory where directory tree representing `d` is created
     """
     for leaf, keys in checkpoints.iterate_dict_leaves(d):
-        param_file = os.path.join(root, '/'.join(keys))
+        param_file = os.path.join(root, "/".join(keys))
         if not os.path.exists(os.path.dirname(param_file)):
             os.makedirs(os.path.dirname(param_file))
         yield leaf, param_file
@@ -80,13 +83,13 @@ def init(args):
     """
     repo = git_utils.get_git_repo()
     config_writer = repo.config_writer()
-    config_writer.set_value('filter "cml"', 'clean', 'git-cml-filter clean %f') 
-    config_writer.set_value('filter "cml"', 'smudge', 'git-cml-filter smudge %f')
-    config_writer.set_value('filter "cml"', 'required', 'true')
+    config_writer.set_value('filter "cml"', "clean", "git-cml-filter clean %f")
+    config_writer.set_value('filter "cml"', "smudge", "git-cml-filter smudge %f")
+    config_writer.set_value('filter "cml"', "required", "true")
     config_writer.release()
-    
-    with open(os.path.join(repo.working_dir, '.git/info/attributes'), 'w+') as f:
-        f.write('*.json filter=cml')
+
+    with open(os.path.join(repo.working_dir, ".git/info/attributes"), "w+") as f:
+        f.write("*.json filter=cml")
 
 
 if __name__ == "__main__":

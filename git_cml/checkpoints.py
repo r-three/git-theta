@@ -8,7 +8,7 @@ import io
 
 class Checkpoint(dict):
     """Abstract base class for wrapping checkpoint formats."""
-    
+
     @classmethod
     def from_file(cls, checkpoint_path):
         """Create a new Checkpoint object.
@@ -19,7 +19,7 @@ class Checkpoint(dict):
             Path to a checkpoint file
         """
         return cls(cls._load(checkpoint_path))
-    
+
     @classmethod
     def _load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
@@ -45,11 +45,11 @@ class Checkpoint(dict):
             Path to write out the checkpoint file to
         """
         raise NotImplementedError
-    
+
 
 class PyTorchCheckpoint(Checkpoint):
     """Class for wrapping PyTorch checkpoints."""
-    
+
     @classmethod
     def _load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
@@ -87,7 +87,7 @@ class PyTorchCheckpoint(Checkpoint):
 
 class JSONCheckpoint(Checkpoint):
     """Class for prototyping with JSON checkpoints"""
-    
+
     @classmethod
     def _load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
@@ -105,7 +105,7 @@ class JSONCheckpoint(Checkpoint):
         if isinstance(checkpoint_path, io.IOBase):
             return json.load(checkpoint_path)
         else:
-            with open(checkpoint_path, 'r') as f:
+            with open(checkpoint_path, "r") as f:
                 return json.load(f)
 
     def save(self, checkpoint_path):
@@ -119,7 +119,7 @@ class JSONCheckpoint(Checkpoint):
         if isinstance(checkpoint_path, io.IOBase):
             json.dump(self, checkpoint_path)
         else:
-            with open(checkpoint_path, 'w') as f:
+            with open(checkpoint_path, "w") as f:
                 json.dump(self, f)
 
 
@@ -144,6 +144,7 @@ def iterate_dict_leaves(d):
     generator
         generates dict leaf, key path tuples
     """
+
     def _iterate_dict_leaves(d, prefix):
         for k in sorted(d.keys()):
             v = d[k]
@@ -181,6 +182,7 @@ def iterate_dir_leaves(root):
     generator
         generates directory tree leaf, subdirectory list tuples
     """
+
     def _iterate_dir_leaves(root, prefix):
         for d in os.listdir(root):
             dir_member = os.path.join(root, d)

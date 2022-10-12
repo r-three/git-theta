@@ -121,7 +121,7 @@ def load_staged_file(f):
     if isinstance(f, io.IOBase):
         return json.load(f)
     else:
-        with open(f, 'r') as f:
+        with open(f, "r") as f:
             return json.load(f)
 
 
@@ -139,7 +139,7 @@ def write_staged_file(f, contents):
     if isinstance(f, io.IOBase):
         json.dump(contents, f, indent=4)
     else:
-        with open(f, 'w') as f:
+        with open(f, "w") as f:
             json.dump(contents, f, indent=4)
 
 
