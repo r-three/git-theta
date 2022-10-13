@@ -2,6 +2,7 @@ import git
 import os
 import json
 import logging
+import io
 
 
 def get_git_repo():
@@ -101,6 +102,45 @@ def write_tracked_file(f, param):
     logging.debug(f"Dumping param to {f}")
     with open(f, "w") as f:
         json.dump(param, f)
+
+
+def load_staged_file(f):
+    """
+    Load staged file
+
+    Parameters
+    ----------
+    f : str or file-like object
+        staged file to load
+
+    Returns
+    -------
+    dict
+        staged file contents
+    """
+    if isinstance(f, io.IOBase):
+        return json.load(f)
+    else:
+        with open(f, "r") as f:
+            return json.load(f)
+
+
+def write_staged_file(f, contents):
+    """
+    Write staged file
+
+    Parameters
+    ----------
+    f : str or file-like object
+        file to write staged contents to
+    contents : dict
+        dictionary to write to staged file
+    """
+    if isinstance(f, io.IOBase):
+        json.dump(contents, f, indent=4)
+    else:
+        with open(f, "w") as f:
+            json.dump(contents, f, indent=4)
 
 
 def add_file(f, repo):
