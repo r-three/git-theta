@@ -69,7 +69,7 @@ def add(args):
     repo = git_utils.get_git_repo()
     model_path = git_utils.create_git_cml_model_dir(repo, args.file)
 
-    param_dict = checkpoints.JSONCheckpoint.from_file(args.file)
+    param_dict = checkpoints.PyTorchCheckpoint.from_file(args.file)
     for (param, param_file) in iterate_dict_and_dir_leaves(param_dict, model_path):
         git_utils.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
@@ -89,7 +89,7 @@ def init(args):
     config_writer.release()
 
     with open(os.path.join(repo.working_dir, ".git/info/attributes"), "w+") as f:
-        f.write("*.json filter=cml")
+        f.write("*.pt filter=cml")
 
 
 if __name__ == "__main__":

@@ -64,6 +64,9 @@ class PyTorchCheckpoint(Checkpoint):
         model_dict : dict
             Dictionary mapping parameter names to parameter values
         """
+        if isinstance(checkpoint_path, io.IOBase):
+            checkpoint_path = io.BytesIO(checkpoint_path.read())
+
         model_dict = torch.load(checkpoint_path)
         if not isinstance(model_dict, dict):
             raise ValueError("Supplied PyTorch checkpoint must be a dict.")
@@ -81,7 +84,7 @@ class PyTorchCheckpoint(Checkpoint):
         checkpoint_path : str or file-like object
             Path to write out the checkpoint file to
         """
-        checkpoint_dict = {k: torch.as_tensor(v) for k, v in self.__dict__.items()}
+        checkpoint_dict = {k: torch.as_tensor(v) for k, v in self.items()}
         torch.save(checkpoint_dict, checkpoint_path)
 
 
