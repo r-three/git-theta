@@ -3,6 +3,7 @@ import os
 import json
 import logging
 import io
+import torch
 
 
 def get_git_repo():
@@ -67,8 +68,8 @@ def create_git_cml_model_dir(repo, model_path):
 
 def load_tracked_file(f):
     """
+    TODO: currently expects pytorch format but should migrate to TensorStore
     Load tracked file
-    TODO: currently implemented for json but should really be Pytorch/TF checkpoints
 
     Parameters
     ----------
@@ -82,14 +83,13 @@ def load_tracked_file(f):
 
     """
     logging.debug(f"Loading tracked file {f}")
-    with open(f, "r") as f:
-        return json.load(f)
+    return torch.load(f)
 
 
 def write_tracked_file(f, param):
     """
-    Dump param into a file
-    TODO: currently dumps as json but should really be format designed for storing tensors on disk
+    Dump param into tracked file
+    TODO: currently dumps as pytorch format but should migrate to TensorStore
 
     Parameters
     ----------
@@ -100,8 +100,46 @@ def write_tracked_file(f, param):
 
     """
     logging.debug(f"Dumping param to {f}")
-    with open(f, "w") as f:
-        json.dump(param, f)
+    torch.save(param, f)
+
+
+def load_staged_file(f):
+    """
+    Load staged file
+
+    Parameters
+    ----------
+    f : str or file-like object
+        staged file to load
+
+    Returns
+    -------
+    dict
+        staged file contents
+    """
+    if isinstance(f, io.IOBase):
+        return json.load(f)
+    else:
+        with open(f, "r") as f:
+            return json.load(f)
+
+
+def write_staged_file(f, contents):
+    """
+    Write staged file
+
+    Parameters
+    ----------
+    f : str or file-like object
+        file to write staged contents to
+    contents : dict
+        dictionary to write to staged file
+    """
+    if isinstance(f, io.IOBase):
+        json.dump(contents, f, indent=4)
+    else:
+        with open(f, "w") as f:
+            json.dump(contents, f, indent=4)
 
 
 def load_staged_file(f):
