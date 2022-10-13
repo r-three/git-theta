@@ -21,5 +21,6 @@ setup(
     license="MIT",
     install_requires=[
         "GitPython",
+        "torch",
     ],
 )
