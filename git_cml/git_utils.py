@@ -142,6 +142,45 @@ def write_staged_file(f, contents):
             json.dump(contents, f, indent=4)
 
 
+def load_staged_file(f):
+    """
+    Load staged file
+
+    Parameters
+    ----------
+    f : str or file-like object
+        staged file to load
+
+    Returns
+    -------
+    dict
+        staged file contents
+    """
+    if isinstance(f, io.IOBase):
+        return json.load(f)
+    else:
+        with open(f, "r") as f:
+            return json.load(f)
+
+
+def write_staged_file(f, contents):
+    """
+    Write staged file
+
+    Parameters
+    ----------
+    f : str or file-like object
+        file to write staged contents to
+    contents : dict
+        dictionary to write to staged file
+    """
+    if isinstance(f, io.IOBase):
+        json.dump(contents, f, indent=4)
+    else:
+        with open(f, "w") as f:
+            json.dump(contents, f, indent=4)
+
+
 def add_file(f, repo):
     """
     Add file to git staging area
