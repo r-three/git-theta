@@ -4,7 +4,7 @@ git extension for collaborative, continual, and communal model development
 
 # Design notes
 
-`git-cml` adds functionality for keeping track of parameter values.
+`git-cml` adds functionality for keeping track of a model's parameter values.
 Creation of the model's computational graph, actual usage of the parameters,
 configuration, hyperparameter values, etc. is left up to code
 (which can be versioned in tandem with the checkpoint via git as usual).
@@ -15,7 +15,8 @@ The files within the `.git_cml/{checkpoint_file_name}` directory are tracked by 
 `git-lfs` is used to store these files.
 Parameter group files are stored via TensorStore.
 When you add a checkpoint, a metadata file describing the contents of the
-checkpoint is staged by `git` (and will be what is pushed to a remote),
+checkpoint (shape, dtype and hash for each parameter group)
+is staged by `git` (and will be what is pushed to a remote),
 but the local copy of your checkpoint remains unchanged.
 During a checkout operation, the checkpoint is reconstituted locally based
 on the contents of `.git_cml/{checkpoint_file_name}`.
