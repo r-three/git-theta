@@ -3,9 +3,7 @@
 import argparse
 import os
 import sys
-import subprocess
 import re
-import json
 import git
 import logging
 
@@ -27,10 +25,19 @@ def parse_args():
     add_parser.add_argument("file", help="file being staged")
     add_parser.set_defaults(func=add)
 
-    init_parser = subparsers.add_parser(
-        "init", help="init command used to setup a git-cml repo"
+    install_parser = subparsers.add_parser(
+        "install", help="install command used to setup global .gitconfig"
     )
-    init_parser.set_defaults(func=init)
+    install_parser.set_defaults(func=install)
+
+    track_parser = subparsers.add_parser(
+        "track",
+        help="track command used to identify model checkpoint for git-cml to track",
+    )
+    track_parser.add_argument(
+        "file", help="model checkpoint file or file pattern to track"
+    )
+    track_parser.set_defaults(func=track)
 
     args = parser.parse_args()
     return args
@@ -77,20 +84,49 @@ def add(args):
     git_utils.add_file(args.file, repo)
 
 
-def init(args):
+def install(args):
     """
-    Set up git-cml repo by initializing .git/info/attributes and .git/config
+    Install git-lfs and initialize the git-cml filter driver
     """
-    repo = git_utils.get_git_repo()
-    config_writer = repo.config_writer()
+    git_utils.git_lfs_install()
+    config_writer = git.GitConfigParser(
+        git.config.get_config_path("global"), config_level="global", read_only=False
+    )
     config_writer.set_value('filter "cml"', "clean", "git-cml-filter clean %f")
     config_writer.set_value('filter "cml"', "smudge", "git-cml-filter smudge %f")
     config_writer.set_value('filter "cml"', "required", "true")
     config_writer.release()
 
-    with open(os.path.join(repo.working_dir, ".git/info/attributes"), "w+") as f:
-        f.write("*.pt filter=cml")
 
+def track(args):
+    """
+    Track a particular model checkpoint file with git-cml
+    """
+    repo = git_utils.get_git_repo()
+
+    # Initialize git lfs to track model files in .git_cml
+    model_dir = git_utils.create_git_cml_model_dir(repo, args.file)
+    git_utils.git_lfs_track(repo, model_dir)
+
+    gitattributes_file = git_utils.get_gitattributes_file(repo)
+    gitattributes = git_utils.read_gitattributes(gitattributes_file)
+
+    pattern_found = False
+    for line in gitattributes:
+        match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
+        if match is None:
+            continue
+        if match.group("pattern") != args.file:
+            continue
+        if not 'filter="cml"' in match.group("attributes"):
+            line += ' filter="cml"'
+        pattern_found = True
+
+    if not pattern_found:
+        gitattributes.append(f'{args.file} filter="cml"')
+
+    git_utils.write_gitattributes(gitattributes_file, gitattributes)
+    git_utils.add_file(gitattributes_file, repo)
 
 
 if __name__ == "__main__":

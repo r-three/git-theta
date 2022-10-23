@@ -4,6 +4,7 @@ import json
 import logging
 import io
 import torch
+import subprocess
 
 
 def get_git_repo():
@@ -64,6 +65,60 @@ def create_git_cml_model_dir(repo, model_path):
         logging.debug(f"Creating model directory {git_cml_model}")
         os.makedirs(git_cml_model)
     return git_cml_model
+
+
+def get_gitattributes_file(repo):
+    """
+    Get path to this repo's .gitattributes file
+
+    Parameters
+    ----------
+    repo : git.Repo
+        Repo object for the current git repository
+
+    Returns
+    -------
+    str
+        path to $git_root/.gitattributes
+    """
+    return os.path.join(repo.working_dir, ".gitattributes")
+
+
+def read_gitattributes(gitattributes_file):
+    """
+    Read contents of this repo's .gitattributes file
+
+    Parameters
+    ----------
+    gitattributes_file : str
+        Path to this repo's .gitattributes file
+
+    Returns
+    -------
+    List[str]
+        lines in .gitattributes file
+    """
+    if os.path.exists(gitattributes_file):
+        with open(gitattributes_file, "r") as f:
+            return f.readlines()
+    else:
+        return []
+
+
+def write_gitattributes(gitattributes_file, attributes):
+    """
+    Write list of attributes to this repo's .gitattributes file
+
+    Parameters
+    ----------
+    gitattributes_file : str
+        Path to this repo's .gitattributes file
+
+    attributes : List[str]
+        Attributes to write to .gitattributes
+    """
+    with open(gitattributes_file, "w") as f:
+        f.writelines(attributes)
 
 
 def load_tracked_file(f):
@@ -142,45 +197,6 @@ def write_staged_file(f, contents):
             json.dump(contents, f, indent=4)
 
 
-def load_staged_file(f):
-    """
-    Load staged file
-
-    Parameters
-    ----------
-    f : str or file-like object
-        staged file to load
-
-    Returns
-    -------
-    dict
-        staged file contents
-    """
-    if isinstance(f, io.IOBase):
-        return json.load(f)
-    else:
-        with open(f, "r") as f:
-            return json.load(f)
-
-
-def write_staged_file(f, contents):
-    """
-    Write staged file
-
-    Parameters
-    ----------
-    f : str or file-like object
-        file to write staged contents to
-    contents : dict
-        dictionary to write to staged file
-    """
-    if isinstance(f, io.IOBase):
-        json.dump(contents, f, indent=4)
-    else:
-        with open(f, "w") as f:
-            json.dump(contents, f, indent=4)
-
-
 def add_file(f, repo):
     """
     Add file to git staging area
@@ -194,3 +210,37 @@ def add_file(f, repo):
     """
     logging.debug(f"Adding {f} to staging area")
     repo.git.add(f)
+
+
+def git_lfs_install():
+    """
+    Run the `git lfs install` command
+
+    Returns
+    -------
+    int
+        Return code of `git lfs install`
+    """
+    out = subprocess.run(["git", "lfs", "install"])
+    return out.returncode
+
+
+def git_lfs_track(repo, directory):
+    """
+    Run the `git lfs track` command to track the files under `directory`
+
+    Parameters
+    ----------
+    repo : git.Repo
+        Repo object for current git repository
+    directory : str
+        Track all files under this directory
+
+    Returns
+    -------
+    int
+        Return code of `git lfs track`
+    """
+    track_glob = os.path.relpath(os.path.join(directory, "**"), repo.working_dir)
+    out = subprocess.run(["git", "lfs", "track", f'"{track_glob}"'])
+    return out.returncode
