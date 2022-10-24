@@ -3,9 +3,10 @@ import io
 import json
 import logging
 
+
 def load_tracked_file(f):
     """
-    Load tracked file 
+    Load tracked file
 
     Parameters
     ----------
@@ -19,16 +20,18 @@ def load_tracked_file(f):
 
     """
     logging.debug(f"Loading tracked file {f}")
-    ts_file = ts.open({
-        'driver': 'zarr',
-        'open': True,
-        'kvstore': {
-            'driver': 'file',
-            'path': f,
-        },
-    }).result()
+    ts_file = ts.open(
+        {
+            "driver": "zarr",
+            "open": True,
+            "kvstore": {
+                "driver": "file",
+                "path": f,
+            },
+        }
+    ).result()
     return ts_file.read().result()
-    
+
 
 def write_tracked_file(f, param):
     """
@@ -43,19 +46,21 @@ def write_tracked_file(f, param):
 
     """
     logging.debug(f"Dumping param to {f}")
-    ts_file = ts.open({
-        'driver': 'zarr',
-        'kvstore': {
-            'driver': 'file',
-            'path': f,
-        },
-        'metadata': {
-            'shape': param.shape,
-            'dtype': param.dtype.str,
-        },
-        'create': True,
-        'delete_existing': True
-    }).result()
+    ts_file = ts.open(
+        {
+            "driver": "zarr",
+            "kvstore": {
+                "driver": "file",
+                "path": f,
+            },
+            "metadata": {
+                "shape": param.shape,
+                "dtype": param.dtype.str,
+            },
+            "create": True,
+            "delete_existing": True,
+        }
+    ).result()
     return ts_file.write(param).result()
 
 

@@ -165,6 +165,8 @@ def git_lfs_track(repo, directory):
     int
         Return code of `git lfs track`
     """
-    track_glob = os.path.relpath(os.path.join(directory, "**", "params", "[0-9]*"), repo.working_dir)
+    track_glob = os.path.relpath(
+        os.path.join(directory, "**", "params", "[0-9]*"), repo.working_dir
+    )
     out = subprocess.run(["git", "lfs", "track", f'"{track_glob}"'])
     return out.returncode

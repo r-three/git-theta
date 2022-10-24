@@ -189,7 +189,7 @@ def iterate_dir_leaves(root):
     def _iterate_dir_leaves(root, prefix):
         for d in os.listdir(root):
             dir_member = os.path.join(root, d)
-            if not 'params' in os.listdir(dir_member):
+            if not "params" in os.listdir(dir_member):
                 yield from _iterate_dir_leaves(dir_member, prefix=prefix + [d])
             else:
                 yield (dir_member, prefix + [d])
