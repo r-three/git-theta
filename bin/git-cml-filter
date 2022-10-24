@@ -46,7 +46,7 @@ def clean(args):
     model_dir = git_utils.create_git_cml_model_dir(repo, args.file)
 
     model_checkpoint = checkpoints.PyTorchCheckpoint.from_file(sys.stdin.buffer)
-    staged_file_contents = OrderedDict({"model_dir": model_dir})
+    staged_file_contents = OrderedDict({"model_dir": os.path.relpath(model_dir, repo.working_dir)})
     for param, keys in checkpoints.iterate_dict_leaves(model_checkpoint):
         param_name = "/".join(keys)
         staged_file_contents[f"{param_name} shape"] = params.get_shape_str(param)

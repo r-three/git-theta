@@ -92,6 +92,7 @@ def install(args):
     config_writer = git.GitConfigParser(
         git.config.get_config_path("global"), config_level="global", read_only=False
     )
+    config_writer.remove_option('filter "lfs"', 'process')
     config_writer.set_value('filter "cml"', "clean", "git-cml-filter clean %f")
     config_writer.set_value('filter "cml"', "smudge", "git-cml-filter smudge %f")
     config_writer.set_value('filter "cml"', "required", "true")
@@ -118,12 +119,12 @@ def track(args):
             continue
         if match.group("pattern") != args.file:
             continue
-        if not 'filter="cml"' in match.group("attributes"):
-            line += ' filter="cml"'
+        if not 'filter=cml' in match.group("attributes"):
+            line += ' filter=cml'
         pattern_found = True
 
     if not pattern_found:
-        gitattributes.append(f'{args.file} filter="cml"')
+        gitattributes.append(f'{args.file} filter=cml')
 
     git_utils.write_gitattributes(gitattributes_file, gitattributes)
     git_utils.add_file(gitattributes_file, repo)
