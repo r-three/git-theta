@@ -59,7 +59,7 @@ def create_git_cml_model_dir(repo, model_path):
     """
     git_cml = create_git_cml(repo)
     model_file = os.path.basename(model_path)
-    git_cml_model = os.path.join(git_cml, os.path.splitext(model_file)[0])
+    git_cml_model = os.path.join(git_cml, model_file)
 
     if not os.path.exists(git_cml_model):
         logging.debug(f"Creating model directory {git_cml_model}")
@@ -121,82 +121,6 @@ def write_gitattributes(gitattributes_file, attributes):
         f.writelines(attributes)
 
 
-def load_tracked_file(f):
-    """
-    TODO: currently expects pytorch format but should migrate to TensorStore
-    Load tracked file
-
-    Parameters
-    ----------
-    f : str
-        path to file tracked by git-cml filter
-
-    Returns
-    -------
-    dict
-        contents of file
-
-    """
-    logging.debug(f"Loading tracked file {f}")
-    return torch.load(f)
-
-
-def write_tracked_file(f, param):
-    """
-    Dump param into tracked file
-    TODO: currently dumps as pytorch format but should migrate to TensorStore
-
-    Parameters
-    ----------
-    f : str
-        path to output file
-    param : list or scalar
-        param value to dump to file
-
-    """
-    logging.debug(f"Dumping param to {f}")
-    torch.save(param, f)
-
-
-def load_staged_file(f):
-    """
-    Load staged file
-
-    Parameters
-    ----------
-    f : str or file-like object
-        staged file to load
-
-    Returns
-    -------
-    dict
-        staged file contents
-    """
-    if isinstance(f, io.IOBase):
-        return json.load(f)
-    else:
-        with open(f, "r") as f:
-            return json.load(f)
-
-
-def write_staged_file(f, contents):
-    """
-    Write staged file
-
-    Parameters
-    ----------
-    f : str or file-like object
-        file to write staged contents to
-    contents : dict
-        dictionary to write to staged file
-    """
-    if isinstance(f, io.IOBase):
-        json.dump(contents, f, indent=4)
-    else:
-        with open(f, "w") as f:
-            json.dump(contents, f, indent=4)
-
-
 def add_file(f, repo):
     """
     Add file to git staging area
@@ -241,6 +165,6 @@ def git_lfs_track(repo, directory):
     int
         Return code of `git lfs track`
     """
-    track_glob = os.path.relpath(os.path.join(directory, "**"), repo.working_dir)
+    track_glob = os.path.relpath(os.path.join(directory, "**", "params", "[0-9]*"), repo.working_dir)
     out = subprocess.run(["git", "lfs", "track", f'"{track_glob}"'])
     return out.returncode
