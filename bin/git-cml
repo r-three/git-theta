@@ -142,21 +142,12 @@ def track(args):
             continue
         if match.group("pattern") != args.file:
             continue
-<<<<<<< HEAD
-        if not 'filter=cml' in match.group("attributes"):
-            line += ' filter=cml'
-        pattern_found = True
-
-    if not pattern_found:
-        gitattributes.append(f'{args.file} filter=cml')
-=======
         if not "filter=cml" in match.group("attributes"):
             line += " filter=cml"
         pattern_found = True
 
     if not pattern_found:
         gitattributes.append(f"{args.file} filter=cml")
->>>>>>> tensorstore
 
     git_utils.write_gitattributes(gitattributes_file, gitattributes)
     git_utils.add_file(gitattributes_file, repo)
