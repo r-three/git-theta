@@ -212,6 +212,21 @@ def add_file(f, repo):
     repo.git.add(f)
 
 
+def remove_file(f, repo):
+    """
+    Remove file and add change to staging area
+
+    Parameters
+    ----------
+    f : str
+        path to file
+    repo : git.Repo
+        Repo object for current git repository
+    """
+    logging.debug(f"Removing {f}")
+    repo.git.rm(f)
+
+
 def git_lfs_install():
     """
     Run the `git lfs install` command

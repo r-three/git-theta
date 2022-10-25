@@ -69,6 +69,25 @@ def iterate_dict_and_dir_leaves(d, root):
         yield leaf, param_file
 
 
+def iterate_removed_params(d, root):
+    """
+    Generator that iterates a model directory and yields the parameter groups that are present in the model directory but not in the model dictionary
+
+    Example
+    -------
+
+    Parameters
+    ----------
+    """
+    for leaf, keys in checkpoints.iterate_dir_leaves(root):
+        curr_d = d
+        for k in keys:
+            if curr_d.get(k) is None:
+                yield leaf
+                continue
+            curr_d = curr_d[k]
+
+
 def add(args):
     """
     Splits model parameters file into parameter groups on filesystem and stages files
@@ -80,8 +99,11 @@ def add(args):
     for (param, param_file) in iterate_dict_and_dir_leaves(param_dict, model_path):
         git_utils.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
+    
+    for param_file in iterate_removed_params(param_dict, model_path):
+        git_utils.remove_file(param_file, repo)
 
-    git_utils.add_file(args.file, repo)
+    git_utils.add_file(os.path.relpath(args.file, repo.working_dir), repo)
 
 
 def install(args):
