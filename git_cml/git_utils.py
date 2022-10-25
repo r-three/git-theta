@@ -138,17 +138,20 @@ def add_file(f, repo):
 
 def remove_file(f, repo):
     """
-    Remove file and add change to staging area
+    Remove file or directory and add change to staging area
 
     Parameters
     ----------
     f : str
-        path to file
+        path to file or directory
     repo : git.Repo
         Repo object for current git repository
     """
     logging.debug(f"Removing {f}")
-    repo.git.rm(f)
+    if os.path.isdir(f):
+        repo.git.rm('-r', f)
+    else:
+        repo.git.rm(f)
 
 
 def git_lfs_install():
