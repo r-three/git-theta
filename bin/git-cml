@@ -7,7 +7,7 @@ import re
 import git
 import logging
 
-from git_cml import git_utils, checkpoints
+from git_cml import git_utils, checkpoints, file_io
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-cml: [%(asctime)s] %(levelname)s - %(message)s"
@@ -63,10 +63,10 @@ def iterate_dict_and_dir_leaves(d, root):
         path to root directory where directory tree representing `d` is created
     """
     for leaf, keys in checkpoints.iterate_dict_leaves(d):
-        param_file = os.path.join(root, "/".join(keys))
-        if not os.path.exists(os.path.dirname(param_file)):
-            os.makedirs(os.path.dirname(param_file))
-        yield leaf, param_file
+        param_dir = os.path.join(root, "/".join(keys))
+        if not os.path.exists(param_dir):
+            os.makedirs(param_dir)
+        yield leaf, param_dir
 
 
 def iterate_removed_params(d, root):
@@ -96,8 +96,9 @@ def add(args):
     model_path = git_utils.create_git_cml_model_dir(repo, args.file)
 
     param_dict = checkpoints.PyTorchCheckpoint.from_file(args.file)
-    for (param, param_file) in iterate_dict_and_dir_leaves(param_dict, model_path):
-        git_utils.write_tracked_file(param_file, param)
+    for (param, param_dir) in iterate_dict_and_dir_leaves(param_dict, model_path):
+        param_file = os.path.join(param_dir, "params")
+        file_io.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
     
     for param_file in iterate_removed_params(param_dict, model_path):
@@ -114,7 +115,7 @@ def install(args):
     config_writer = git.GitConfigParser(
         git.config.get_config_path("global"), config_level="global", read_only=False
     )
-    config_writer.remove_option('filter "lfs"', 'process')
+    config_writer.remove_option('filter "lfs"', "process")
     config_writer.set_value('filter "cml"', "clean", "git-cml-filter clean %f")
     config_writer.set_value('filter "cml"', "smudge", "git-cml-filter smudge %f")
     config_writer.set_value('filter "cml"', "required", "true")
@@ -141,12 +142,21 @@ def track(args):
             continue
         if match.group("pattern") != args.file:
             continue
+<<<<<<< HEAD
         if not 'filter=cml' in match.group("attributes"):
             line += ' filter=cml'
         pattern_found = True
 
     if not pattern_found:
         gitattributes.append(f'{args.file} filter=cml')
+=======
+        if not "filter=cml" in match.group("attributes"):
+            line += " filter=cml"
+        pattern_found = True
+
+    if not pattern_found:
+        gitattributes.append(f"{args.file} filter=cml")
+>>>>>>> tensorstore
 
     git_utils.write_gitattributes(gitattributes_file, gitattributes)
     git_utils.add_file(gitattributes_file, repo)
