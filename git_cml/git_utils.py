@@ -165,6 +165,8 @@ def git_lfs_track(repo, directory):
     int
         Return code of `git lfs track`
     """
+    # N.b. this will track all files starting with a number under .git_cml/<model name>/<parameter group>/params/.
+    # If we need more fine-grained control, we should modify the code to run `git lfs track` for each file we want to track
     track_glob = os.path.relpath(
         os.path.join(directory, "**", "params", "[0-9]*"), repo.working_dir
     )
