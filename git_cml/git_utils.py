@@ -149,7 +149,7 @@ def remove_file(f, repo):
     """
     logging.debug(f"Removing {f}")
     if os.path.isdir(f):
-        repo.git.rm('-r', f)
+        repo.git.rm("-r", f)
     else:
         repo.git.rm(f)
 
