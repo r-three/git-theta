@@ -46,3 +46,4 @@ dist/**
 data/*
 .idea/*
 .ipynb_checkpoints
+*.egg-info

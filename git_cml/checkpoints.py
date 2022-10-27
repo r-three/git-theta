@@ -74,7 +74,7 @@ class PyTorchCheckpoint(Checkpoint):
             raise ValueError("All PyTorch checkpoint keys must be strings.")
         if not all(isinstance(v, torch.Tensor) for v in model_dict.values()):
             raise ValueError("All PyTorch checkpoint values must be tensors.")
-        return {k: v.numpy() for k, v in model_dict.items()}
+        return {k: v.cpu().numpy() for k, v in model_dict.items()}
 
     def save(self, checkpoint_path):
         """Load a checkpoint into a dict format.
