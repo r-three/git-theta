@@ -93,18 +93,19 @@ def add(args):
     Splits model parameters file into parameter groups on filesystem and stages files
     """
     repo = git_utils.get_git_repo()
-    model_path = git_utils.create_git_cml_model_dir(repo, args.file)
+    model_path = git_utils.get_relative_path_from_root(repo, args.file)
+    cml_model_dir = git_utils.get_git_cml_model_dir(repo, model_path, create=True)
 
     param_dict = checkpoints.PyTorchCheckpoint.from_file(args.file)
-    for (param, param_dir) in iterate_dict_and_dir_leaves(param_dict, model_path):
+    for (param, param_dir) in iterate_dict_and_dir_leaves(param_dict, cml_model_dir):
         param_file = os.path.join(param_dir, "params")
         file_io.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
     
-    for param_file in iterate_removed_params(param_dict, model_path):
+    for param_file in iterate_removed_params(param_dict, cml_model_dir):
         git_utils.remove_file(param_file, repo)
 
-    git_utils.add_file(os.path.relpath(args.file, repo.working_dir), repo)
+    git_utils.add_file(model_path, repo)
 
 
 def install(args):
@@ -127,14 +128,15 @@ def track(args):
     Track a particular model checkpoint file with git-cml
     """
     repo = git_utils.get_git_repo()
+    model_path = git_utils.get_relative_path_from_root(repo, args.file)
 
     # Initialize git lfs to track model files in .git_cml
-    model_dir = git_utils.create_git_cml_model_dir(repo, args.file)
-    git_utils.git_lfs_track(repo, model_dir)
+    cml_model_dir = git_utils.get_git_cml_model_dir(repo, model_path)
+    git_utils.git_lfs_track(repo, cml_model_dir)
 
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
-
+    
     pattern_found = False
     for line in gitattributes:
         match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
@@ -147,7 +149,7 @@ def track(args):
         pattern_found = True
 
     if not pattern_found:
-        gitattributes.append(f"{args.file} filter=cml")
+        gitattributes.append(f"{model_path} filter=cml")
 
     git_utils.write_gitattributes(gitattributes_file, gitattributes)
     git_utils.add_file(gitattributes_file, repo)
