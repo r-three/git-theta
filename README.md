@@ -1,41 +1,74 @@
-# git-cml
+# git-theta
 
-git extension for collaborative, continual, and communal model development
+git extension for collaborative, continual, and communal model development. 
 
-# Design notes
+# How to use this repository?
+## LFS installation 
+Download the LFS package from the [website](https://github.com/git-lfs/git-lfs/releases/tag/v3.2.0). For Linux users, download the amd64 version from the list of assests in the website. 
 
-`git-cml` adds functionality for keeping track of a model's parameter values.
-Creation of the model's computational graph, actual usage of the parameters,
-configuration, hyperparameter values, etc. is left up to code
-(which can be versioned in tandem with the checkpoint via git as usual).
-When a checkpoint is staged (added to the repository) via `git-cml`, 
-each parameter "group" (e.g. a weight matrix or a bias vector) is
-given its own directory in `.git_cml/{checkpoint_file_name}/{parameter_name}`.
-The files within the `.git_cml/{checkpoint_file_name}` directory are tracked by git.
-`git-lfs` is used to store these files.
-Parameter group files are stored via TensorStore.
-When you add a checkpoint, a metadata file describing the contents of the
-checkpoint (shape, dtype and hash for each parameter group)
-is staged by `git` (and will be what is pushed to a remote),
-but the local copy of your checkpoint remains unchanged.
-During a checkout operation, the checkpoint is reconstituted locally based
-on the contents of `.git_cml/{checkpoint_file_name}`.
+## Getting started
+clone the repository  
+```bash
+git clone https://github.com/r-three/git-theta.git
+```
+Install the packages by running:
+```bash
+cd git-theta
+pip install -e .
+```
+## Installing git theta
+<!--Is repository same as codebase?-->
+You can initialize the git theta in the home directory of the codebase to track code and models as follows:
+```bash
+git theta install
+```
 
-For a given parameter group, `git-cml` will store either the group's parameter's
-values or an update to the values in the event that it can be stored more
-efficiently.
-For example, if a sparse update is made to a parameter group, `git-cml` will
-store the sparse update in a sparse format to save storage costs.
-For a given parameter group, all updates made since the last time the group's
-values were stored are stored in an `updates` subdirectory within
-`.git_cml/{checkpoint_file_name}/{parameter_name}`.
-Whenever a dense update is made to a parameter group, the new full set of
-parameter values is stored and all prior updates are removed from the
-`updates` subdirectory.
-All parameters and updates are currently stored via `git-lfs`.
+The following lines will be added to the `.gitconfig` file in the root directory of the user after the successful installation. 
+```
+[filter "lfs"]
+        smudge = git-lfs smudge -- %f
+        required = true
+        clean = git-lfs clean -- %f
+[filter "theta"]
+        clean = git-theta-filter clean %f
+        smudge = git-theta-filter smudge %f
+        required = true
+```
 
-`git diff` will identify which parameter groups have changed and how.
+# Example Usage
+<!--Create a folder with a text file and a model checkpoint. Initialize it as a git repository.-->
+First, initialize git in the home directory of the codebase
+```bash
+git init
+```
+In order to track the model checkpoint using git theta, run this command
+```bash 
+git theta track {path_to_model_checkpoint}
+```
 
-`git merge` will assume that all merges to the checkpoint (i.e. to parameter
-group files) result in merge conflicts and offer various possible automated
-merging strategies that can be tried and vetted.
+The above command adds the following lines to the `.gitattributes` files in the home directory.
+```
+".git_theta/{model_checkpoint_name}/**" filter=lfs diff=lfs merge=lfs -text
+{path_to_model_checkpoint} filter=theta
+```
+It also creates a `.git_theta/{model_checkpoint_name}` folder  in the home directory of the codebase. 
+
+Add the model to git by running the command 
+```bash
+git theta add {path_to_model_checkpoint}
+```
+
+This will store the parameters of the model in the tensorstore format inside the `.git_theta/{model_checkpoint_name}` folder. For example, consider a parameter name `decoder.block.0.layer.0.SelfAttention.k.weight` in the model checkpoint with name `pytorch_model.bin`, the corresponding parameters are stored as the following hierarchy `.git_theta/pytorch_model.bin/decoder.block.0.layer.0.SelfAttention.k.weight`. 
+
+At this step, run `git status`, you should see all the `.git_theta/{model_checkpoint_name}/{parameter_name}` files in "Changes to be committed" along with the model checkpoint file and the `.gitattributes` file.
+
+After adding the model checkpoint, add any other code/text files that are modified using `git add`. You can then commit the changes and push to remote. 
+
+The remote will have the `.git_theta/{model_checkpoint_name}` folder in it where instead of the actual params, git remote shows the params are stored as LFS objects. A metadata file describing the contents of the params like shape, dtype, and hash are stored inside `.git_theta/{model_checkpoint_name}/{parameter_name}`on git remote. The actual model checkpoint will be stored as a file containing the hash, shape and type of each of the keys in the checkpoint. 
+
+## TBA
+`git diff` on the model checkpoint will identify which parameter groups are modified or added or removed. 
+
+`git merge` will assume that all merges to the checkpoint (i.e. to parameter group files) result in merge conflicts and offer various possible automated merging strategies that can be tried and vetted.
+
+`git checkout` to a commit will construct a checkpoint based on the contents of `.git_theta/<model_checkpoint_name>` at that commit. 
