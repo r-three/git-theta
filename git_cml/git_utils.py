@@ -21,12 +21,15 @@ def get_git_repo():
 
 def get_git_cml(repo, create=False):
     """
-    If not already created, create $git_root/.git_cml and return path
+    If create argument is true, create $git_root/.git_cml and return path
+    Otherwise return $git_root/.git_cml path
 
     Parameters
     ----------
     git_root : str
         path to git repository's root directory
+    create : bool
+        argument to create the directory
 
     Returns
     -------
@@ -38,10 +41,12 @@ def get_git_cml(repo, create=False):
         logging.debug(f"Creating git cml directory {git_cml}")
         os.makedirs(git_cml)
     return git_cml
-    
-def get_git_cml_model_dir(repo, model_path , create=False):
+
+
+def get_git_cml_model_dir(repo, model_path, create=False):
     """
-    If not already created, create directory under $git_root/.git_cml/ to store a model and return path
+    If create is true, create directory under $git_root/.git_cml/ to store a model and return path
+    Otherwise just return path that stores a model
 
     Parameters
     ----------
@@ -51,31 +56,44 @@ def get_git_cml_model_dir(repo, model_path , create=False):
     model_path : str
         path to model file being saved
 
+    create : bool
+        argument to create the directory
     Returns
     -------
     str
-        path to $git_root/.git_cml/$model_name directory
+        path to $git_root/.git_cml/$model_path directory
     """
     git_cml = get_git_cml(repo)
-    # model_file = os.path.basename(model_path)
-    # model_relative_path = get_relative_path_to_root(repo, model_path)
-    # git_cml_model = os.path.join(git_cml, model_file)
     git_cml_model_dir = os.path.join(git_cml, model_path)
 
     if not os.path.exists(git_cml_model_dir) and create:
         logging.debug(f"Creating model directory {git_cml_model_dir}")
         os.makedirs(git_cml_model_dir)
-    else:
-        # need to raise an error?
-        pass
+
     return git_cml_model_dir
+
 
 def get_relative_path_from_root(repo, path):
     """
     Get relative path from repo root
+
+    Parameters
+    ----------
+    repo : git.Repo
+        Repo object for the current git repository
+
+    path : str
+        any path
+
+    Returns
+    -------
+    str
+        path relative from the root
     """
+
     relative_path = os.path.relpath(os.path.abspath(path), repo.working_dir)
     return relative_path
+
 
 def get_gitattributes_file(repo):
     """
@@ -159,7 +177,7 @@ def remove_file(f, repo):
     """
     logging.debug(f"Removing {f}")
     if os.path.isdir(f):
-        repo.git.rm('-r', f)
+        repo.git.rm("-r", f)
     else:
         repo.git.rm(f)
 
@@ -196,5 +214,7 @@ def git_lfs_track(repo, directory):
     track_glob = os.path.relpath(
         os.path.join(directory, "**", "params", "[0-9]*"), repo.working_dir
     )
-    out = subprocess.run(["git", "lfs", "track", f'"{track_glob}"'], cwd=repo.working_dir)
+    out = subprocess.run(
+        ["git", "lfs", "track", f'"{track_glob}"'], cwd=repo.working_dir
+    )
     return out.returncode
