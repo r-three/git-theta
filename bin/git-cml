@@ -102,9 +102,6 @@ def add(args):
         file_io.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
     
-    for param_file in iterate_removed_params(param_dict, model_path):
-        git_utils.remove_file(param_file, repo)
-
     for param_file in iterate_removed_params(param_dict, cml_model_dir):
         git_utils.remove_file(param_file, repo)
 
