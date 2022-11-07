@@ -19,14 +19,17 @@ def get_git_repo():
     return git.Repo(os.getcwd(), search_parent_directories=True)
 
 
-def create_git_cml(repo):
+def get_git_cml(repo, create=False):
     """
-    If not already created, create $git_root/.git_cml and return path
+    If create argument is true, create $git_root/.git_cml and return path
+    Otherwise return $git_root/.git_cml path
 
     Parameters
     ----------
     git_root : str
         path to git repository's root directory
+    create : bool
+        argument to create the directory
 
     Returns
     -------
@@ -34,15 +37,16 @@ def create_git_cml(repo):
         path to $git_root/.git_cml directory
     """
     git_cml = os.path.join(repo.working_dir, ".git_cml")
-    if not os.path.exists(git_cml):
+    if not os.path.exists(git_cml) and create:
         logging.debug(f"Creating git cml directory {git_cml}")
         os.makedirs(git_cml)
     return git_cml
 
 
-def create_git_cml_model_dir(repo, model_path):
+def get_git_cml_model_dir(repo, model_path, create=False):
     """
-    If not already created, create directory under $git_root/.git_cml/ to store a model and return path
+    If create is true, create directory under $git_root/.git_cml/ to store a model and return path
+    Otherwise just return path that stores a model
 
     Parameters
     ----------
@@ -52,19 +56,43 @@ def create_git_cml_model_dir(repo, model_path):
     model_path : str
         path to model file being saved
 
+    create : bool
+        argument to create the directory
     Returns
     -------
     str
-        path to $git_root/.git_cml/$model_name directory
+        path to $git_root/.git_cml/$model_path directory
     """
-    git_cml = create_git_cml(repo)
-    model_file = os.path.basename(model_path)
-    git_cml_model = os.path.join(git_cml, model_file)
+    git_cml = get_git_cml(repo)
+    git_cml_model_dir = os.path.join(git_cml, model_path)
 
-    if not os.path.exists(git_cml_model):
-        logging.debug(f"Creating model directory {git_cml_model}")
-        os.makedirs(git_cml_model)
-    return git_cml_model
+    if not os.path.exists(git_cml_model_dir) and create:
+        logging.debug(f"Creating model directory {git_cml_model_dir}")
+        os.makedirs(git_cml_model_dir)
+
+    return git_cml_model_dir
+
+
+def get_relative_path_from_root(repo, path):
+    """
+    Get relative path from repo root
+
+    Parameters
+    ----------
+    repo : git.Repo
+        Repo object for the current git repository
+
+    path : str
+        any path
+
+    Returns
+    -------
+    str
+        path relative from the root
+    """
+
+    relative_path = os.path.relpath(os.path.abspath(path), repo.working_dir)
+    return relative_path
 
 
 def get_gitattributes_file(repo):
@@ -183,10 +211,10 @@ def git_lfs_track(repo, directory):
     int
         Return code of `git lfs track`
     """
-    # N.b. this will track all files starting with a number under .git_cml/<model name>/<parameter group>/params/.
-    # If we need more fine-grained control, we should modify the code to run `git lfs track` for each file we want to track
     track_glob = os.path.relpath(
         os.path.join(directory, "**", "params", "[0-9]*"), repo.working_dir
     )
-    out = subprocess.run(["git", "lfs", "track", f'"{track_glob}"'])
+    out = subprocess.run(
+        ["git", "lfs", "track", f'"{track_glob}"'], cwd=repo.working_dir
+    )
     return out.returncode

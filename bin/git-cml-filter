@@ -43,12 +43,11 @@ def clean(args):
     logging.debug(f"Running clean filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    model_dir = git_utils.create_git_cml_model_dir(repo, args.file)
+    model_path = git_utils.get_relative_path_from_root(repo, args.file)
+    cml_model_dir = git_utils.get_git_cml_model_dir(repo, model_path)
 
     model_checkpoint = checkpoints.PyTorchCheckpoint.from_file(sys.stdin.buffer)
-    staged_file_contents = OrderedDict(
-        {"model_dir": os.path.relpath(model_dir, repo.working_dir)}
-    )
+    staged_file_contents = OrderedDict({"model_dir": model_path})
     for param, keys in checkpoints.iterate_dict_leaves(model_checkpoint):
         param_name = "/".join(keys)
         staged_file_contents[f"{param_name} shape"] = params.get_shape_str(param)
