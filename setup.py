@@ -1,8 +1,46 @@
+"""Install the git-theta package."""
+
+import ast
 from setuptools import setup
+
+
+def get_version(file_name: str, version_variable: str = "__version__") -> str:
+    """Find the version by walking the AST to avoid duplication.
+
+    Parameters
+    ----------
+    file_name : str
+        The file we are parsing to get the version string from.
+    version_variable : str
+        The variable name that holds the version string.
+
+    Raises
+    ------
+    ValueError
+        If there was no assignment to version_variable in file_name.
+
+    Returns
+    -------
+    version_string : str
+        The version string parsed from file_name_name.
+    """
+    with open(file_name) as f:
+        tree = ast.parse(f.read())
+        # Look at all assignment nodes that happen in the ast. If the variable
+        # name matches the given parameter, grab the value (which will be
+        # the version string we are looking for).
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                if node.targets[0].id == version_variable:
+                    return node.value.s
+    raise ValueError(
+        f"Could not find an assignment to {version_variable} " f"within '{file_name}'"
+    )
+
 
 setup(
     name="git_cml",
-    version="0.0.0",
+    version=get_version("git_cml/__init__.py"),
     description="Version control system for model checkpoints.",
     author="Colin Raffel",
     author_email="craffel@gmail.com",
@@ -10,6 +48,7 @@ setup(
     packages=["git_cml"],
     scripts=["bin/git-cml", "bin/git-cml-filter"],
     long_description="Version control system for model checkpoints.",
+    python_requires=">=3.6",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
