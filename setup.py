@@ -63,4 +63,7 @@ setup(
         "torch",
         "tensorstore",
     ],
+    extras_require={
+        "test": ["pytest"],
+    },
 )
