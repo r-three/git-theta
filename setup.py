@@ -1,7 +1,8 @@
-"""Install the package."""
+"""Install the git-theta package."""
 
 import ast
 from setuptools import setup
+
 
 def get_version(file_name: str, version_variable: str = "__version__") -> str:
     """Find the version by walking the AST to avoid duplication.
@@ -32,8 +33,9 @@ def get_version(file_name: str, version_variable: str = "__version__") -> str:
             if isinstance(node, ast.Assign):
                 if node.targets[0].id == version_variable:
                     return node.value.s
-    raise ValueError(f"Could not find an assignment to {version_variable} "
-                     f"within '{file_name}'")
+    raise ValueError(
+        f"Could not find an assignment to {version_variable} " f"within '{file_name}'"
+    )
 
 
 setup(
