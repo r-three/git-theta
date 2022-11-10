@@ -20,7 +20,7 @@ logging.basicConfig(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser("git-cml filter program")
+    parser = argparse.ArgumentParser(description="git-cml filter program")
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
