@@ -3,6 +3,8 @@ import io
 import json
 import logging
 
+from file_or_name import file_or_name
+
 
 def load_tracked_file(f):
     """
@@ -64,6 +66,7 @@ def write_tracked_file(f, param):
     return ts_file.write(param).result()
 
 
+@file_or_name
 def load_staged_file(f):
     """
     Load staged file
@@ -78,13 +81,10 @@ def load_staged_file(f):
     dict
         staged file contents
     """
-    if isinstance(f, io.IOBase):
-        return json.load(f)
-    else:
-        with open(f, "r") as f:
-            return json.load(f)
+    return json.load(f)
 
 
+@file_or_name(f="w")
 def write_staged_file(f, contents):
     """
     Write staged file
@@ -96,8 +96,4 @@ def write_staged_file(f, contents):
     contents : dict
         dictionary to write to staged file
     """
-    if isinstance(f, io.IOBase):
-        json.dump(contents, f, indent=4)
-    else:
-        with open(f, "w") as f:
-            json.dump(contents, f, indent=4)
+    json.dump(contents, f, indent=4)
