@@ -40,7 +40,7 @@ def clean(args):
     """
     Implements clean filter for model files
     """
-    logging.debug(f"Running clean filter on {args.file}")
+    logging.debug("Running clean filter on %s", args.file)
 
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
@@ -61,7 +61,7 @@ def smudge(args):
     """
     Implements smudge filter for model files
     """
-    logging.debug(f"Running smudge filter on {args.file}")
+    logging.debug("Running smudge filter on %s", args.file)
 
     repo = git_utils.get_git_repo()
     staged_file = file_io.load_staged_file(sys.stdin)
@@ -71,7 +71,7 @@ def smudge(args):
         os.path.abspath(staged_file["model_dir"])
     ):
         param_file = os.path.join(leaf_dir, "params")
-        logging.debug(f"Populating model parameter {'/'.join(keys)}")
+        logging.debug("Populating model parameter %s", '/'.join(keys))
         d = model_dict
         for k in keys[:-1]:
             d = d[k]

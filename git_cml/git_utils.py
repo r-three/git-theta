@@ -38,7 +38,7 @@ def get_git_cml(repo, create=False):
     """
     git_cml = os.path.join(repo.working_dir, ".git_cml")
     if not os.path.exists(git_cml) and create:
-        logging.debug(f"Creating git cml directory {git_cml}")
+        logging.debug("Creating git cml directory %s", git_cml)
         os.makedirs(git_cml)
     return git_cml
 
@@ -67,7 +67,7 @@ def get_git_cml_model_dir(repo, model_path, create=False):
     git_cml_model_dir = os.path.join(git_cml, model_path)
 
     if not os.path.exists(git_cml_model_dir) and create:
-        logging.debug(f"Creating model directory {git_cml_model_dir}")
+        logging.debug("Creating model directory %s", git_cml_model_dir)
         os.makedirs(git_cml_model_dir)
 
     return git_cml_model_dir
@@ -160,7 +160,7 @@ def add_file(f, repo):
     repo : git.Repo
         Repo object for current git repository
     """
-    logging.debug(f"Adding {f} to staging area")
+    logging.debug("Adding %s to staging area", f)
     repo.git.add(f)
 
 
@@ -175,7 +175,7 @@ def remove_file(f, repo):
     repo : git.Repo
         Repo object for current git repository
     """
-    logging.debug(f"Removing {f}")
+    logging.debug("Removing %s", f)
     if os.path.isdir(f):
         repo.git.rm("-r", f)
     else:

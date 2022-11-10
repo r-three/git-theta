@@ -19,7 +19,7 @@ def load_tracked_file(f):
         numpy array stored in tracked file
 
     """
-    logging.debug(f"Loading tracked file {f}")
+    logging.debug("Loading tracked file %s", f)
     ts_file = ts.open(
         {
             "driver": "zarr",
@@ -45,7 +45,7 @@ def write_tracked_file(f, param):
         param value to dump to file
 
     """
-    logging.debug(f"Dumping param to {f}")
+    logging.debug(f"Dumping param to %s", f)
     ts_file = ts.open(
         {
             "driver": "zarr",
