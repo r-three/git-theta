@@ -68,7 +68,7 @@ def smudge(args):
 
     model_dict = defaultdict(dict)
     for leaf_dir, keys in checkpoints.iterate_dir_leaves(
-        os.path.abspath(staged_file["model_dir"])
+        os.path.abspath(git_utils.get_git_cml_model_dir(repo, staged_file["model_dir"]))
     ):
         param_file = os.path.join(leaf_dir, "params")
         logging.debug(f"Populating model parameter {'/'.join(keys)}")
