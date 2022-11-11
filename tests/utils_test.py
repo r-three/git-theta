@@ -192,3 +192,26 @@ def test_iterate_dir_leaves_dirs_within_params(tmp_path):
     results = list(utils.iterate_dir_leaves(tmp_path))
     print(results)
     assert sorted(results) == sorted(gold)
+
+
+def test_remove_params():
+    nested = make_nested_dict()
+
+    def _remove(curr, kept, removed):
+        for k, v in curr.items():
+            if random.random() > 0.33:
+                if isinstance(v, dict):
+                    keep, remove = _remove(v, {}, {})
+                    kept[k] = keep
+                    removed[k] = remove
+                else:
+                    kept[k] = v
+            else:
+                removed[k] = v
+        return kept, removed
+
+    kept, gold_removed = _remove(nested, {}, {})
+    # Use Counters to check for bag equality.
+    gold_removed = collections.Counter(utils.flatten(gold_removed).values())
+    removed = collections.Counter(utils.removed_params(kept, nested))
+    assert removed == gold_removed

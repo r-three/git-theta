@@ -101,3 +101,10 @@ def walk_dir(root, is_leaf=lambda x: "params" in os.listdir(x)):
         return dir_dict
 
     return _walk_dir((root,))
+
+
+def removed_params(new_model, old_model):
+    """Yield removed params, i.e. they are old_model but not new_model."""
+    new_model = flatten(new_model)
+    old_model = flatten(old_model)
+    yield from (old_model[k] for k in old_model.keys() - new_model.keys())
