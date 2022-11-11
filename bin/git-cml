@@ -3,7 +3,6 @@
 import argparse
 import os
 import sys
-import re
 import git
 import logging
 
@@ -137,21 +136,9 @@ def track(args):
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
-    pattern_found = False
-    for line in gitattributes:
-        match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
-        if match is None:
-            continue
-        if match.group("pattern") != args.file:
-            continue
-        if not "filter=cml" in match.group("attributes"):
-            line += " filter=cml"
-        pattern_found = True
+    new_gitattributes = git_utils.add_filter_cml_to_gitattributes(gitattributes, model_path)
 
-    if not pattern_found:
-        gitattributes.append(f"{model_path} filter=cml")
-
-    git_utils.write_gitattributes(gitattributes_file, gitattributes)
+    git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
     git_utils.add_file(gitattributes_file, repo)
 
 

@@ -1,9 +1,14 @@
+"""Utilities for manipulating git."""
+
+import fnmatch
 import git
 import os
 import json
 import logging
 import io
+import re
 import torch
+from typing import List
 import subprocess
 
 
@@ -218,3 +223,38 @@ def git_lfs_track(repo, directory):
         ["git", "lfs", "track", f'"{track_glob}"'], cwd=repo.working_dir
     )
     return out.returncode
+
+
+def add_filter_cml_to_gitattributes(gitattributes: List[str], path: str) -> str:
+    """Add a filter=cml that covers file_name.
+
+    Parameters
+    ----------
+        gitattributes: A list of the lines from the gitattribute files.
+        path: The path to the model we are adding a filter to.
+
+    Returns
+    -------
+    List[str]
+        The lines to write to the new gitattribute file with a (possibly) new
+        filter=cml added that covers the given file.
+    """
+    pattern_found = False
+    new_gitattributes = []
+    for line in gitattributes:
+        # TODO(bdlester): Revisit this regex to see if it when the pattern
+        # is escaped due to having spaces in it.
+        match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
+        if match:
+            # If there is already a pattern that covers the file, add the filter
+            # to that.
+            if fnmatch.fnmatchcase(path, match.group("pattern")):
+                pattern_found = True
+                if not "filter=cml" in match.group("attributes"):
+                    line = f"{line.rstrip()} filter=cml\n"
+        new_gitattributes.append(line)
+    # If we don't find a matching pattern, add a new line that covers just this
+    # specific file.
+    if not pattern_found:
+        new_gitattributes.append(f"{path} filter=cml\n")
+    return new_gitattributes
