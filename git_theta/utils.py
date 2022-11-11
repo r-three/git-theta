@@ -2,6 +2,8 @@
 
 
 import operator as op
+import os
+from typing import Dict, Any, Tuple, Union
 
 
 def iterate_dict_leaves(d):
@@ -25,15 +27,7 @@ def iterate_dict_leaves(d):
     generator
         generates dict leaf, key path tuples
     """
-
-    def _iterate_dict_leaves(d, prefix):
-        for k, v in sorted(d.items(), key=op.itemgetter(0)):
-            if isinstance(v, dict):
-                yield from _iterate_dict_leaves(v, prefix + [k])
-            else:
-                yield (v, prefix + [k])
-
-    return _iterate_dict_leaves(d, [])
+    yield from map(lambda kv: (kv[1], list(kv[0])), sorted(flatten(d).items()))
 
 
 def iterate_dir_leaves(root):
@@ -62,13 +56,48 @@ def iterate_dir_leaves(root):
     generator
         generates directory tree leaf, subdirectory list tuples
     """
+    yield from map(
+        lambda kv: (kv[1], list(kv[0])), sorted(flatten(walk_dir(root)).items())
+    )
 
-    def _iterate_dir_leaves(root, prefix):
-        for d in os.listdir(root):
-            dir_member = os.path.join(root, d)
-            if not "params" in os.listdir(dir_member):
-                yield from _iterate_dir_leaves(dir_member, prefix=prefix + [d])
+
+def flatten(d: Dict[str, Any]) -> Dict[Tuple[str, ...], Any]:
+    """Flatten a nested dictionary."""
+
+    def _flatten(d, prefix: Tuple[str] = ()):
+        flat = {}
+        for k, v in d.items():
+            if isinstance(v, dict):
+                flat.update(_flatten(v, prefix=prefix + (k,)))
             else:
-                yield (dir_member, prefix + [d])
+                flat[prefix + (k,)] = v
+        return flat
 
-    return _iterate_dir_leaves(root, [])
+    return _flatten(d)
+
+
+def unflatten(d: Dict[Tuple[str], Any]) -> Dict[str, Union[Dict[str, Any], Any]]:
+    """Unflatten a dict into a nested one."""
+    nested = {}
+    for ks, v in d.items():
+        curr = nested
+        for k in ks[:-1]:
+            curr = curr.setdefault(k, {})
+        curr[ks[-1]] = v
+    return nested
+
+
+def walk_dir(root, is_leaf=lambda x: "params" in os.listdir(x)):
+    """Convert directory structure into nested dicts."""
+
+    def _walk_dir(root):
+        dir_dict = {}
+        for d in os.listdir(os.path.join(*root)):
+            full_path = os.path.join(*root, d)
+            if is_leaf(full_path):
+                dir_dict[d] = full_path
+            else:
+                dir_dict[d] = _walk_dir(root + (d,))
+        return dir_dict
+
+    return _walk_dir((root,))
