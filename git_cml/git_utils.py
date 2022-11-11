@@ -1,4 +1,4 @@
-"""Utilitis for manipulating git."""
+"""Utilities for manipulating git."""
 
 import fnmatch
 import git
