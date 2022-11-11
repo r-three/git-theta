@@ -1,6 +1,7 @@
 """Tests for utils.py"""
 
 import collections
+import os
 import operator as op
 import random
 import string
@@ -110,3 +111,84 @@ def test_iterate_dict_leaves_are_sorted():
     string_keys = ["/".join(k) for k in keys]
     sorted_string_keys = sorted(string_keys)
     assert string_keys == sorted_string_keys
+
+
+def test_iterate_dir_leaves(tmp_path):
+    d = tmp_path / "a" / "d" / "params"
+    d.mkdir(parents=True)
+    c = tmp_path / "a" / "c" / "params"
+    c.mkdir(parents=True)
+    e = tmp_path / "b" / "e" / "params"
+    e.mkdir(parents=True)
+
+    gold = [
+        (os.path.join(str(tmp_path), "a", "d"), ["a", "d"]),
+        (os.path.join(str(tmp_path), "a", "c"), ["a", "c"]),
+        (os.path.join(str(tmp_path), "b", "e"), ["b", "e"]),
+    ]
+
+    results = list(utils.iterate_dir_leaves(tmp_path))
+    assert sorted(results) == sorted(gold)
+
+
+def test_iterate_dir_leaves_empty_dir(tmp_path):
+    d = tmp_path / "a" / "d" / "params"
+    d.mkdir(parents=True)
+    c = tmp_path / "a" / "c" / "params"
+    c.mkdir(parents=True)
+    e = tmp_path / "b" / "e" / "params"
+    e.mkdir(parents=True)
+    empty = tmp_path / "b" / "f"
+    empty.mkdir(parents=True)
+    double_empty = tmp_path / "g" / "h"
+    double_empty.mkdir(parents=True)
+
+    gold = [
+        (os.path.join(str(tmp_path), "a", "d"), ["a", "d"]),
+        (os.path.join(str(tmp_path), "a", "c"), ["a", "c"]),
+        (os.path.join(str(tmp_path), "b", "e"), ["b", "e"]),
+    ]
+
+    results = list(utils.iterate_dir_leaves(tmp_path))
+    assert sorted(results) == sorted(gold)
+
+
+def test_iterate_dir_leaves_params_and_dirs(tmp_path):
+    """Test that the presence of a `params` dir stops expanding dirs."""
+    d = tmp_path / "a" / "d" / "params"
+    d.mkdir(parents=True)
+    c = tmp_path / "a" / "c" / "params"
+    c.mkdir(parents=True)
+    e = tmp_path / "b" / "e" / "params"
+    e.mkdir(parents=True)
+    f = tmp_path / "b" / "e" / "f" / "params"
+    f.mkdir(parents=True)
+
+    gold = [
+        (os.path.join(str(tmp_path), "a", "d"), ["a", "d"]),
+        (os.path.join(str(tmp_path), "a", "c"), ["a", "c"]),
+        (os.path.join(str(tmp_path), "b", "e"), ["b", "e"]),
+    ]
+    results = list(utils.iterate_dir_leaves(tmp_path))
+    assert sorted(results) == sorted(gold)
+
+
+def test_iterate_dir_leaves_dirs_within_params(tmp_path):
+    """Test that we don't go looking in the `params` even if there is another inside it."""
+    d = tmp_path / "a" / "d" / "params"
+    d.mkdir(parents=True)
+    c = tmp_path / "a" / "c" / "params"
+    c.mkdir(parents=True)
+    e = tmp_path / "b" / "e" / "params"
+    e.mkdir(parents=True)
+    f = tmp_path / "b" / "e" / "params" / "f" / "params"
+    f.mkdir(parents=True)
+
+    gold = [
+        (os.path.join(str(tmp_path), "a", "d"), ["a", "d"]),
+        (os.path.join(str(tmp_path), "a", "c"), ["a", "c"]),
+        (os.path.join(str(tmp_path), "b", "e"), ["b", "e"]),
+    ]
+    results = list(utils.iterate_dir_leaves(tmp_path))
+    print(results)
+    assert sorted(results) == sorted(gold)
