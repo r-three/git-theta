@@ -5,7 +5,7 @@ import operator as op
 import random
 import string
 
-from git_cml import utils
+from git_theta import utils
 
 
 def make_nested_dict():

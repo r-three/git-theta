@@ -24,10 +24,10 @@ def get_git_repo():
     return git.Repo(os.getcwd(), search_parent_directories=True)
 
 
-def get_git_cml(repo, create=False):
+def get_git_theta(repo, create=False):
     """
-    If create argument is true, create $git_root/.git_cml and return path
-    Otherwise return $git_root/.git_cml path
+    If create argument is true, create $git_root/.git_theta and return path
+    Otherwise return $git_root/.git_theta path
 
     Parameters
     ----------
@@ -39,18 +39,18 @@ def get_git_cml(repo, create=False):
     Returns
     -------
     str
-        path to $git_root/.git_cml directory
+        path to $git_root/.git_theta directory
     """
-    git_cml = os.path.join(repo.working_dir, ".git_cml")
-    if not os.path.exists(git_cml) and create:
-        logging.debug(f"Creating git cml directory {git_cml}")
-        os.makedirs(git_cml)
-    return git_cml
+    git_theta = os.path.join(repo.working_dir, ".git_theta")
+    if not os.path.exists(git_theta) and create:
+        logging.debug(f"Creating git theta directory {git_theta}")
+        os.makedirs(git_theta)
+    return git_theta
 
 
-def get_git_cml_model_dir(repo, model_path, create=False):
+def get_git_theta_model_dir(repo, model_path, create=False):
     """
-    If create is true, create directory under $git_root/.git_cml/ to store a model and return path
+    If create is true, create directory under $git_root/.git_theta/ to store a model and return path
     Otherwise just return path that stores a model
 
     Parameters
@@ -66,16 +66,16 @@ def get_git_cml_model_dir(repo, model_path, create=False):
     Returns
     -------
     str
-        path to $git_root/.git_cml/$model_path directory
+        path to $git_root/.git_theta/$model_path directory
     """
-    git_cml = get_git_cml(repo)
-    git_cml_model_dir = os.path.join(git_cml, model_path)
+    git_theta = get_git_theta(repo)
+    git_theta_model_dir = os.path.join(git_theta, model_path)
 
-    if not os.path.exists(git_cml_model_dir) and create:
-        logging.debug(f"Creating model directory {git_cml_model_dir}")
-        os.makedirs(git_cml_model_dir)
+    if not os.path.exists(git_theta_model_dir) and create:
+        logging.debug(f"Creating model directory {git_theta_model_dir}")
+        os.makedirs(git_theta_model_dir)
 
-    return git_cml_model_dir
+    return git_theta_model_dir
 
 
 def get_relative_path_from_root(repo, path):
@@ -225,8 +225,8 @@ def git_lfs_track(repo, directory):
     return out.returncode
 
 
-def add_filter_cml_to_gitattributes(gitattributes: List[str], path: str) -> str:
-    """Add a filter=cml that covers file_name.
+def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
+    """Add a filter=theta that covers file_name.
 
     Parameters
     ----------
@@ -237,7 +237,7 @@ def add_filter_cml_to_gitattributes(gitattributes: List[str], path: str) -> str:
     -------
     List[str]
         The lines to write to the new gitattribute file with a (possibly) new
-        filter=cml added that covers the given file.
+        filter=theta added that covers the given file.
     """
     pattern_found = False
     new_gitattributes = []
@@ -250,11 +250,11 @@ def add_filter_cml_to_gitattributes(gitattributes: List[str], path: str) -> str:
             # to that.
             if fnmatch.fnmatchcase(path, match.group("pattern")):
                 pattern_found = True
-                if not "filter=cml" in match.group("attributes"):
-                    line = f"{line.rstrip()} filter=cml\n"
+                if not "filter=theta" in match.group("attributes"):
+                    line = f"{line.rstrip()} filter=theta\n"
         new_gitattributes.append(line)
     # If we don't find a matching pattern, add a new line that covers just this
     # specific file.
     if not pattern_found:
-        new_gitattributes.append(f"{path} filter=cml\n")
+        new_gitattributes.append(f"{path} filter=theta\n")
     return new_gitattributes
