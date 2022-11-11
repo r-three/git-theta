@@ -57,7 +57,8 @@ def iterate_dir_leaves(root):
         generates directory tree leaf, subdirectory list tuples
     """
     yield from map(
-        lambda kv: (kv[1], list(kv[0])), sorted(flatten(walk_dir(root)).items())
+        lambda kv: (kv[1], list(kv[0])),
+        sorted(flatten(walk_parameter_dir(root)).items()),
     )
 
 
@@ -87,7 +88,12 @@ def unflatten(d: Dict[Tuple[str], Any]) -> Dict[str, Union[Dict[str, Any], Any]]
     return nested
 
 
-def walk_dir(root, is_leaf=lambda x: "params" in os.listdir(x)):
+def walk_parameter_dir(root):
+    """Convert a directory structure into nested dicts use the presence of a params dict for leaf detection."""
+    return walk_dir(root, lambda path: "params" in os.listdir(path))
+
+
+def walk_dir(root, is_leaf):
     """Convert directory structure into nested dicts."""
 
     def _walk_dir(root):

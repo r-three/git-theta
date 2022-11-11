@@ -61,7 +61,7 @@ def add(args):
         file_io.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
 
-    for param_file in utils.removed_params(param_dict, utils.walk_dir(theta_model_dir)):
+    for param_file in utils.removed_params(param_dict, utils.walk_parameter_dir(theta_model_dir)):
         git_utils.remove_file(param_file, repo)
 
     git_utils.add_file(model_path, repo)
