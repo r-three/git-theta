@@ -3,7 +3,7 @@
 
 import operator as op
 import os
-from typing import Dict, Any, Tuple, Union
+from typing import Dict, Any, Tuple, Union, Callable
 
 
 def iterate_dict_leaves(d):
@@ -63,7 +63,20 @@ def iterate_dir_leaves(root):
 
 
 def flatten(d: Dict[str, Any]) -> Dict[Tuple[str, ...], Any]:
-    """Flatten a nested dictionary."""
+    """Flatten a nested dictionary.
+
+    Parameters
+    ----------
+    d:
+        The nested dictionary to flatten.
+
+    Returns
+    -------
+    Dict[Tuple[str, ...], Any]
+        The flattened version of the dictionary where the key is now a tuple
+        of keys representing the path of keys to reach the value in the nested
+        dictionary.
+    """
 
     def _flatten(d, prefix: Tuple[str] = ()):
         flat = {}
@@ -78,7 +91,18 @@ def flatten(d: Dict[str, Any]) -> Dict[Tuple[str, ...], Any]:
 
 
 def unflatten(d: Dict[Tuple[str], Any]) -> Dict[str, Union[Dict[str, Any], Any]]:
-    """Unflatten a dict into a nested one."""
+    """Unflatten a dict into a nested one.
+
+    Parameters
+    ----------
+    d:
+        The dictionary to unflatten. Each key should be a tuple of keys the
+        represent the nesting.
+
+    Returns
+    Dict
+        The nested version of the dictionary.
+    """
     nested = {}
     for ks, v in d.items():
         curr = nested
@@ -88,13 +112,37 @@ def unflatten(d: Dict[Tuple[str], Any]) -> Dict[str, Union[Dict[str, Any], Any]]
     return nested
 
 
-def walk_parameter_dir(root):
-    """Convert a directory structure into nested dicts use the presence of a params dict for leaf detection."""
+def walk_parameter_dir(root: str):
+    """Convert a directory structure into nested dicts use the presence of a params dict for leaf detection.
+
+    Parameters
+    ----------
+    root:
+        The root of the directory to search in.
+
+    Returns
+    -------
+    dict
+        A nested dictionary representing directories on the file system. Leaf
+        values are directories that had a `"params"` directory in them."""
     return walk_dir(root, lambda path: "params" in os.listdir(path))
 
 
-def walk_dir(root, is_leaf):
-    """Convert directory structure into nested dicts."""
+def walk_dir(root: str, is_leaf: Callable[[str], bool]):
+    """Convert directory structure into nested dicts.
+
+    Parameters
+    ----------
+    root:
+        The root of the directory to search in.
+    is_leaf:
+        A function the decides if the current directory is a leaf. It will be
+        passed the full path to this directory.
+
+    Returns
+    -------
+    dict
+        A nested dictionary representing the directories on the file system."""
 
     def _walk_dir(root):
         dir_dict = {}
@@ -109,8 +157,23 @@ def walk_dir(root, is_leaf):
     return _walk_dir((root,))
 
 
+# TODO(blester125): If we need similar code, convert this to using a more
+# general dict difference function.
 def removed_params(new_model, old_model):
-    """Yield removed params, i.e. they are old_model but not new_model."""
+    """Yield removed params, i.e. they are old_model but not new_model.
+
+    Parameters
+    ----------
+    new_model:
+        The model that we expect to be missing keys.
+    old_model:
+        The model that we expect to have extra keys.
+
+    Returns
+    -------
+    generator
+        Generates the values that are in old_model but not in new_model.
+    """
     new_model = flatten(new_model)
     old_model = flatten(old_model)
     yield from (old_model[k] for k in old_model.keys() - new_model.keys())

@@ -73,7 +73,7 @@ def smudge(args):
 
     model_dict = {}
     for keys, param_dir in utils.walk_parameter_dir(
-        os.path.abspath(git_utils.get_git_cml_model_dir(repo, staged_file["model_dir"]))
+        os.path.abspath(staged_file["model_dir"])
     ):
         param_file = os.path.join(param_dir, "params")
         logging.debug(f"Populating model parameter {'/'.join(keys)}")

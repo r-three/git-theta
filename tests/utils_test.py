@@ -114,6 +114,7 @@ def test_iterate_dict_leaves_are_sorted():
 
 
 def test_iterate_dir_leaves(tmp_path):
+    """Test the dir leaves happy path."""
     d = tmp_path / "a" / "d" / "params"
     d.mkdir(parents=True)
     c = tmp_path / "a" / "c" / "params"
@@ -132,6 +133,7 @@ def test_iterate_dir_leaves(tmp_path):
 
 
 def test_iterate_dir_leaves_empty_dir(tmp_path):
+    """Test that we don't include directory paths that don't end with "params"."""
     d = tmp_path / "a" / "d" / "params"
     d.mkdir(parents=True)
     c = tmp_path / "a" / "c" / "params"
@@ -154,7 +156,7 @@ def test_iterate_dir_leaves_empty_dir(tmp_path):
 
 
 def test_iterate_dir_leaves_params_and_dirs(tmp_path):
-    """Test that the presence of a `params` dir stops expanding dirs."""
+    """Test that the presence of a `params` dir stops expanding dirs, even if there are multiple subdirs."""
     d = tmp_path / "a" / "d" / "params"
     d.mkdir(parents=True)
     c = tmp_path / "a" / "c" / "params"
@@ -195,12 +197,16 @@ def test_iterate_dir_leaves_dirs_within_params(tmp_path):
 
 
 def test_remove_params():
+    """Test that removed values are actually detected and returned."""
     nested = make_nested_dict()
 
+    # Stochastically remove keys from the dict, but track what was removed.
     def _remove(curr, kept, removed):
         for k, v in curr.items():
             if random.random() > 0.33:
                 if isinstance(v, dict):
+                    # Recurse into a dict which will return both the kept and
+                    # removed values from that sub-dict.
                     keep, remove = _remove(v, {}, {})
                     kept[k] = keep
                     removed[k] = remove
