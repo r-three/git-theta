@@ -11,16 +11,16 @@ import logging
 import hashlib
 from collections import defaultdict, OrderedDict
 
-from git_cml import git_utils, checkpoints, params, file_io
+from git_theta import git_utils, checkpoints, params, file_io
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="git-cml-filter: [%(asctime)s] %(levelname)s - %(message)s",
+    format="git-theta-filter: [%(asctime)s] %(levelname)s - %(message)s",
 )
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="git-cml filter program")
+    parser = argparse.ArgumentParser(description="git-theta filter program")
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
@@ -44,7 +44,7 @@ def clean(args):
 
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
-    cml_model_dir = git_utils.get_git_cml_model_dir(repo, model_path)
+    theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
 
     model_checkpoint = checkpoints.PyTorchCheckpoint.from_file(sys.stdin.buffer)
     staged_file_contents = OrderedDict({"model_dir": model_path})

@@ -6,15 +6,15 @@ import sys
 import git
 import logging
 
-from git_cml import git_utils, checkpoints, file_io
+from git_theta import git_utils, checkpoints, file_io
 
 logging.basicConfig(
-    level=logging.DEBUG, format="git-cml: [%(asctime)s] %(levelname)s - %(message)s"
+    level=logging.DEBUG, format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
 )
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="git-cml filter program")
+    parser = argparse.ArgumentParser(description="git-theta filter program")
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
@@ -31,7 +31,7 @@ def parse_args():
 
     track_parser = subparsers.add_parser(
         "track",
-        help="track command used to identify model checkpoint for git-cml to track",
+        help="track command used to identify model checkpoint for git-theta to track",
     )
     track_parser.add_argument(
         "file", help="model checkpoint file or file pattern to track"
@@ -93,15 +93,15 @@ def add(args):
     """
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
-    cml_model_dir = git_utils.get_git_cml_model_dir(repo, model_path, create=True)
+    theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
 
     param_dict = checkpoints.PyTorchCheckpoint.from_file(args.file)
-    for (param, param_dir) in iterate_dict_and_dir_leaves(param_dict, cml_model_dir):
+    for (param, param_dir) in iterate_dict_and_dir_leaves(param_dict, theta_model_dir):
         param_file = os.path.join(param_dir, "params")
         file_io.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
 
-    for param_file in iterate_removed_params(param_dict, cml_model_dir):
+    for param_file in iterate_removed_params(param_dict, theta_model_dir):
         git_utils.remove_file(param_file, repo)
 
     git_utils.add_file(model_path, repo)
@@ -109,34 +109,34 @@ def add(args):
 
 def install(args):
     """
-    Install git-lfs and initialize the git-cml filter driver
+    Install git-lfs and initialize the git-theta filter driver
     """
     git_utils.git_lfs_install()
     config_writer = git.GitConfigParser(
         git.config.get_config_path("global"), config_level="global", read_only=False
     )
     config_writer.remove_option('filter "lfs"', "process")
-    config_writer.set_value('filter "cml"', "clean", "git-cml-filter clean %f")
-    config_writer.set_value('filter "cml"', "smudge", "git-cml-filter smudge %f")
-    config_writer.set_value('filter "cml"', "required", "true")
+    config_writer.set_value('filter "theta"', "clean", "git-theta-filter clean %f")
+    config_writer.set_value('filter "theta"', "smudge", "git-theta-filter smudge %f")
+    config_writer.set_value('filter "theta"', "required", "true")
     config_writer.release()
 
 
 def track(args):
     """
-    Track a particular model checkpoint file with git-cml
+    Track a particular model checkpoint file with git-theta
     """
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
 
-    # Initialize git lfs to track model files in .git_cml
-    cml_model_dir = git_utils.get_git_cml_model_dir(repo, model_path)
-    git_utils.git_lfs_track(repo, cml_model_dir)
+    # Initialize git lfs to track model files in .git_theta
+    theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
+    git_utils.git_lfs_track(repo, theta_model_dir)
 
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
-    new_gitattributes = git_utils.add_filter_cml_to_gitattributes(gitattributes, model_path)
+    new_gitattributes = git_utils.add_filter_theta_to_gitattributes(gitattributes, model_path)
 
     git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
     git_utils.add_file(gitattributes_file, repo)

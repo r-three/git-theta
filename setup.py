@@ -39,14 +39,14 @@ def get_version(file_name: str, version_variable: str = "__version__") -> str:
 
 
 setup(
-    name="git_cml",
-    version=get_version("git_cml/__init__.py"),
+    name="git_theta",
+    version=get_version("git_theta/__init__.py"),
     description="Version control system for model checkpoints.",
     author="Colin Raffel",
     author_email="craffel@gmail.com",
     url="https://github.com/r-three/checkpoint-vcs",
-    packages=["git_cml"],
-    scripts=["bin/git-cml", "bin/git-cml-filter"],
+    packages=["git_theta"],
+    scripts=["bin/git-theta", "bin/git-theta-filter"],
     long_description="Version control system for model checkpoints.",
     python_requires=">=3.6",
     classifiers=[

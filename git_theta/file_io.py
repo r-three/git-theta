@@ -11,7 +11,7 @@ def load_tracked_file(f):
     Parameters
     ----------
     f : str
-        path to file tracked by git-cml filter
+        path to file tracked by git-theta filter
 
     Returns
     -------
