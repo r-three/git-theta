@@ -133,7 +133,7 @@ def read_gitattributes(gitattributes_file):
     """
     if os.path.exists(gitattributes_file):
         with open(gitattributes_file, "r") as f:
-            return f.readlines()
+            return [line.rstrip("\n") for line in f]
     else:
         return []
 
@@ -151,7 +151,9 @@ def write_gitattributes(gitattributes_file, attributes):
         Attributes to write to .gitattributes
     """
     with open(gitattributes_file, "w") as f:
-        f.writelines(attributes)
+        f.write("\n".join(attributes))
+        # End file with newline.
+        f.write("\n")
 
 
 def add_file(f, repo):
@@ -251,10 +253,10 @@ def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> st
             if fnmatch.fnmatchcase(path, match.group("pattern")):
                 pattern_found = True
                 if not "filter=theta" in match.group("attributes"):
-                    line = f"{line.rstrip()} filter=theta\n"
+                    line = f"{line.rstrip()} filter=theta"
         new_gitattributes.append(line)
     # If we don't find a matching pattern, add a new line that covers just this
     # specific file.
     if not pattern_found:
-        new_gitattributes.append(f"{path} filter=theta\n")
+        new_gitattributes.append(f"{path} filter=theta")
     return new_gitattributes
