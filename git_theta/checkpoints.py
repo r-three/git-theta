@@ -4,6 +4,12 @@ import torch
 import os
 import json
 import io
+import sys
+
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
 
 from file_or_name import file_or_name
 
@@ -25,10 +31,10 @@ class Checkpoint(dict):
         checkpoint_path : str or file-like object
             Path to a checkpoint file
         """
-        return cls(cls._load(checkpoint_path))
+        return cls(cls.load(checkpoint_path))
 
     @classmethod
-    def _load(cls, checkpoint_path):
+    def load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
 
         Parameters
@@ -59,7 +65,7 @@ class PyTorchCheckpoint(Checkpoint):
 
     @classmethod
     @file_or_name(checkpoint_path="rb")
-    def _load(cls, checkpoint_path):
+    def load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
 
         Parameters
@@ -91,38 +97,6 @@ class PyTorchCheckpoint(Checkpoint):
         """
         checkpoint_dict = {k: torch.as_tensor(v) for k, v in self.items()}
         torch.save(checkpoint_dict, checkpoint_path)
-
-
-class JSONCheckpoint(Checkpoint):
-    """Class for prototyping with JSON checkpoints"""
-
-    @classmethod
-    @file_or_name(checkpoint_path="r")
-    def _load(cls, checkpoint_path):
-        """Load a checkpoint into a dict format.
-
-        Parameters
-        ----------
-        checkpoint_path : str or file-like object
-            Path to a checkpoint file
-
-        Returns
-        -------
-        model_dict : dict
-            Dictionary mapping parameter names to parameter values
-        """
-        return json.load(checkpoint_path)
-
-    @file_or_name(checkpoint_path="w")
-    def save(self, checkpoint_path):
-        """Load a checkpoint into a dict format.
-
-        Parameters
-        ----------
-        checkpoint_path : str or file-like object
-            Path to write out the checkpoint file to
-        """
-        json.dump(self, checkpoint_path)
 
 
 def iterate_dir_leaves(root):
@@ -161,3 +135,17 @@ def iterate_dir_leaves(root):
                 yield (dir_member, prefix + [d])
 
     return _iterate_dir_leaves(root, [])
+
+
+def sniff_checkpoint(checkpoint) -> str:
+    """Try to determine checkpoint format automagically."""
+    # TODO(bdlester): Expand checkpoint sniffing using things like magic numbers
+    # for binary formats and directory structure. Should we allow sniffers to
+    # be added as plugins?
+    return "pytorch"
+
+
+def get_checkpoint(checkpoint_type: str) -> Checkpoint:
+    """Get a Checkpoint class based on name, including from a plugin."""
+    discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
+    return discovered_plugins[checkpoint_type].load()

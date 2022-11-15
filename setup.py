@@ -63,8 +63,14 @@ setup(
         "torch",
         "tensorstore",
         "file-or-name",
+        "importlib_metadata",
     ],
     extras_require={
         "test": ["pytest"],
+    },
+    entry_points={
+        "git_theta.plugins.checkpoints": [
+            "pytorch = git_theta.checkpoints:PyTorchCheckpoint"
+        ]
     },
 )

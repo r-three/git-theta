@@ -46,6 +46,7 @@ def clean(args):
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
 
+    # TODO(bdlester): How do we know what kind of checkpoint it is here?
     model_checkpoint = checkpoints.PyTorchCheckpoint.from_file(sys.stdin.buffer)
     # TODO(bdlester): If we use Python3.7 as the minimum version, we don't need
     # to use an OrderedDict as the standard dict retains the insertion order.
