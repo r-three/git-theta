@@ -58,7 +58,7 @@ def add(args):
 
     checkpoint_type = args.type or checkpoints.sniff_checkpoint(args.file)
     checkpoint = checkpoints.get_checkpoint(checkpoint_type)
-    param_dict = checkpoint(args.file)
+    param_dict = checkpoint.from_file(args.file)
     for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
         param_file = os.path.join(param_dir, "params")
         os.makedirs(param_file, exist_ok=True)
