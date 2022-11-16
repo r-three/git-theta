@@ -62,6 +62,7 @@ setup(
         "GitPython",
         "torch",
         "tensorstore",
+        "scipy",
     ],
     extras_require={
         "test": ["pytest"],

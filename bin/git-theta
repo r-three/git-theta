@@ -6,7 +6,8 @@ import sys
 import git
 import logging
 
-from git_theta import git_utils, checkpoints, file_io
+from scipy import sparse
+from git_theta import git_utils, checkpoints, file_io, utils, constants, params
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
@@ -22,6 +23,7 @@ def parse_args():
         "add", help="add command used to stage a model file"
     )
     add_parser.add_argument("file", help="file being staged")
+    add_parser.add_argument("--update_type", choices=["dense", "sparse", "lr"], default="dense")
     add_parser.set_defaults(func=add)
 
     install_parser = subparsers.add_parser(
@@ -96,11 +98,48 @@ def add(args):
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
 
     param_dict = checkpoints.PyTorchCheckpoint.from_file(args.file)
-    for (param, param_dir) in iterate_dict_and_dir_leaves(param_dict, theta_model_dir):
-        param_file = os.path.join(param_dir, "params")
-        file_io.write_tracked_file(param_file, param)
-        git_utils.add_file(param_file, repo)
 
+    # Check if sparse update
+    if(args.update_type == constants.DENSE_UPDATE):
+        for (param, param_dir) in iterate_dict_and_dir_leaves(param_dict, theta_model_dir):
+            param_file = os.path.join(param_dir, constants.THETA_PARAMS_FOLDER)
+            file_io.write_tracked_file(param_file, param)
+            git_utils.add_file(param_file, repo)
+
+        # Delete contents of updates folder
+        updates_dir = os.path.join(param_dir, constants.THETA_UPDATES_FOLDER)
+        if(os.path.exists(updates_dir)):
+            for update_file in os.listdir(updates_dir):
+                logging.info(f"Removing file {update_file} from {updates_dir}")
+                git_utils.remove_file(os.path.join(updates_dir, update_file), repo)
+
+    elif(args.update_type == constants.SPARSE_UPDATE):
+        prev_param_dict = utils.get_prev_param_dict(theta_model_dir)
+        sparse_diff_dict = utils.get_sparse_diff(prev_param_dict, param_dict)
+        # write to updates folder
+        if(sparse_diff_dict):
+            for param_name, param in sparse_diff_dict.items():
+                # Get parameter hash
+                file_name = params.get_hash(sparse_diff_dict[param_name].todense()) + '.npz'
+                updates_dir = os.path.join(theta_model_dir, param_name, constants.THETA_UPDATES_FOLDER)
+                param_file = os.path.join(updates_dir, file_name)
+                logging.debug(f"Writing {param_name} updates to {param_file}")
+                # file_io.write_tracked_file(param_file, param)
+                os.makedirs(updates_dir, exist_ok=True)
+                sparse.save_npz(param_file, param)
+
+                # append to metadata file
+                logging.info(f"Appending update file entry {file_name} to metadata file")
+                metadata_file = os.path.join(updates_dir, constants.THETA_UPDATES_METADATA_FILE)
+                with open(metadata_file, 'a+') as f:
+                    f.write(f"{file_name},{constants.SPARSE_UPDATE}\n")
+
+                git_utils.add_file(param_file, repo)
+                git_utils.add_file(metadata_file, repo)
+    else:
+        logging.info("Low Rank not implemented")
+
+    # Remove param groups not present in model from theta_model_dir
     for param_file in iterate_removed_params(param_dict, theta_model_dir):
         git_utils.remove_file(param_file, repo)
 
