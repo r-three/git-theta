@@ -60,8 +60,8 @@ class Checkpoint(dict):
         raise NotImplementedError
 
 
-class PyTorchCheckpoint(Checkpoint):
-    """Class for wrapping PyTorch checkpoints."""
+class PickledDictCheckpoint(Checkpoint):
+    """Class for wrapping picked dict checkpoints, commonly used with PyTorch."""
 
     @classmethod
     @file_or_name(checkpoint_path="rb")
@@ -135,14 +135,6 @@ def iterate_dir_leaves(root):
                 yield (dir_member, prefix + [d])
 
     return _iterate_dir_leaves(root, [])
-
-
-def sniff_checkpoint(checkpoint) -> str:
-    """Try to determine checkpoint format automagically."""
-    # TODO(bdlester): Expand checkpoint sniffing using things like magic numbers
-    # for binary formats and directory structure. Should we allow sniffers to
-    # be added as plugins?
-    return "pytorch"
 
 
 def get_checkpoint(checkpoint_type: str) -> Checkpoint:

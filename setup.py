@@ -70,7 +70,8 @@ setup(
     },
     entry_points={
         "git_theta.plugins.checkpoints": [
-            "pytorch = git_theta.checkpoints:PyTorchCheckpoint"
+            "pytorch = git_theta.checkpoints:PickledDictCheckpoint",
+            "pickled-dict = git_theta.checkpoints:PickledDictCheckpoint",
         ]
     },
 )

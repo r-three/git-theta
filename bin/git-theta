@@ -56,7 +56,7 @@ def add(args):
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
 
-    checkpoint_type = args.type or checkpoints.sniff_checkpoint(args.file)
+    checkpoint_type = args.type or "pytorch"
     checkpoint = checkpoints.get_checkpoint(checkpoint_type)
     param_dict = checkpoint.from_file(args.file)
     for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
