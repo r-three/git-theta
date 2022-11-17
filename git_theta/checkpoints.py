@@ -138,6 +138,22 @@ def iterate_dir_leaves(root):
 
 
 def get_checkpoint(checkpoint_type: str) -> Checkpoint:
-    """Get a Checkpoint class based on name, including from a plugin."""
+    """Get a Checkpoint class by name.
+
+    The available checkpoint classes are enumerated in the `entry_points` field
+    of the package's setup.py. Additionally, user installed checkpoint plugins
+    are accessible via this function.
+
+    Parameters
+    ----------
+    checkpoint_type:
+        The name of the checkpoint type we want to use.
+
+    Returns
+    -------
+    Checkpoint
+        The checkpoint class. Returned class may be defined in a user installed
+        plugin.
+    """
     discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
     return discovered_plugins[checkpoint_type].load()
