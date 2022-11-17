@@ -1,6 +1,5 @@
 """Utilities for git theta"""
 
-
 import os
 from typing import Dict, Any, Tuple, Union, Callable
 import re
@@ -92,3 +91,10 @@ def is_valid_commit_hash(commit_hash: str) -> bool:
         Whether this commit hash is valid
     """
     return re.match("^[0-9a-f]{40}$", commit_hash) is not None
+
+
+def remove_suffix(s: str, suffix: str) -> str:
+    """Remove suffix matching copy semantics of methods in later pythons."""
+    if suffix and s.endswith(suffix):
+        return s[: -len(suffix)]
+    return s[:]
