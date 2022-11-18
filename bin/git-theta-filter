@@ -11,16 +11,16 @@ import logging
 import hashlib
 from collections import defaultdict, OrderedDict
 
-from git_cml import git_utils, checkpoints, params, file_io
+from git_theta import git_utils, checkpoints, params, file_io
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="git-cml-filter: [%(asctime)s] %(levelname)s - %(message)s",
+    format="git-theta-filter: [%(asctime)s] %(levelname)s - %(message)s",
 )
 
 
 def parse_args():
-    parser = argparse.ArgumentParser("git-cml filter program")
+    parser = argparse.ArgumentParser(description="git-theta filter program")
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
@@ -43,12 +43,11 @@ def clean(args):
     logging.debug(f"Running clean filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    model_dir = git_utils.create_git_cml_model_dir(repo, args.file)
+    model_path = git_utils.get_relative_path_from_root(repo, args.file)
+    theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
 
     model_checkpoint = checkpoints.PyTorchCheckpoint.from_file(sys.stdin.buffer)
-    staged_file_contents = OrderedDict(
-        {"model_dir": os.path.relpath(model_dir, repo.working_dir)}
-    )
+    staged_file_contents = OrderedDict({"model_dir": model_path})
     for param, keys in checkpoints.iterate_dict_leaves(model_checkpoint):
         param_name = "/".join(keys)
         staged_file_contents[f"{param_name} shape"] = params.get_shape_str(param)

@@ -5,6 +5,11 @@ import os
 import json
 import io
 
+from file_or_name import file_or_name
+
+# Maintain access via checkpoints module for now.
+from .utils import iterate_dict_leaves
+
 
 class Checkpoint(dict):
     """Abstract base class for wrapping checkpoint formats."""
@@ -51,6 +56,7 @@ class PyTorchCheckpoint(Checkpoint):
     """Class for wrapping PyTorch checkpoints."""
 
     @classmethod
+    @file_or_name(checkpoint_path="rb")
     def _load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
 
@@ -64,10 +70,7 @@ class PyTorchCheckpoint(Checkpoint):
         model_dict : dict
             Dictionary mapping parameter names to parameter values
         """
-        if isinstance(checkpoint_path, io.IOBase):
-            checkpoint_path = io.BytesIO(checkpoint_path.read())
-
-        model_dict = torch.load(checkpoint_path)
+        model_dict = torch.load(io.BytesIO(checkpoint_path.read()))
         if not isinstance(model_dict, dict):
             raise ValueError("Supplied PyTorch checkpoint must be a dict.")
         if not all(isinstance(k, str) for k in model_dict.keys()):
@@ -92,6 +95,7 @@ class JSONCheckpoint(Checkpoint):
     """Class for prototyping with JSON checkpoints"""
 
     @classmethod
+    @file_or_name(checkpoint_path="r")
     def _load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
 
@@ -105,12 +109,9 @@ class JSONCheckpoint(Checkpoint):
         model_dict : dict
             Dictionary mapping parameter names to parameter values
         """
-        if isinstance(checkpoint_path, io.IOBase):
-            return json.load(checkpoint_path)
-        else:
-            with open(checkpoint_path, "r") as f:
-                return json.load(f)
+        return json.load(checkpoint_path)
 
+    @file_or_name(checkpoint_path="w")
     def save(self, checkpoint_path):
         """Load a checkpoint into a dict format.
 
@@ -119,44 +120,7 @@ class JSONCheckpoint(Checkpoint):
         checkpoint_path : str or file-like object
             Path to write out the checkpoint file to
         """
-        if isinstance(checkpoint_path, io.IOBase):
-            json.dump(self, checkpoint_path)
-        else:
-            with open(checkpoint_path, "w") as f:
-                json.dump(self, f)
-
-
-def iterate_dict_leaves(d):
-    """
-    Generator that iterates through a dictionary and produces (leaf, keys) tuples where leaf is a dictionary leaf
-    and keys is the sequence of keys used to access leaf. Dictionary is iterated in depth-first
-    order with lexicographic ordering of keys.
-
-    Example
-    -------
-    d = {'a': {'b': {'c': 10, 'd': 20, 'e': 30}}}
-    iterate_dict_leaves(d) --> ((10, ['a','b','c']), (20, ['a','b','d']), (30, ['a','b','e']))
-
-    Parameters
-    ----------
-    d : dict
-        dictionary to iterate over
-
-    Returns
-    -------
-    generator
-        generates dict leaf, key path tuples
-    """
-
-    def _iterate_dict_leaves(d, prefix):
-        for k in sorted(d.keys()):
-            v = d[k]
-            if isinstance(v, dict):
-                yield from _iterate_dict_leaves(v, prefix + [k])
-            else:
-                yield (v, prefix + [k])
-
-    return _iterate_dict_leaves(d, [])
+        json.dump(self, checkpoint_path)
 
 
 def iterate_dir_leaves(root):

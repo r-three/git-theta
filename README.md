@@ -78,3 +78,19 @@ The remote will contain the `.git_theta/model.pt` directory where the actual mod
 `git merge` will assume that all merges to the checkpoint (i.e. to parameter group files) result in merge conflicts and offer various possible automated merging strategies that can be tried and vetted.
 
 `git checkout` to a commit will construct a checkpoint based on the contents of `.git_theta/<model_checkpoint_name>` at that commit. 
+
+# Development Setup
+
+This project uses black for code formatting and includes CI checks for black compliance.
+To configure pre-commit hooks, which will automatically run black against any files
+staged for commit before allowing the commit to happen run the following:
+
+``` sh
+$ pip install -r requirements-dev.txt
+$ pre-commit install
+```
+
+When black must reformat your file, it will show as the black pre-commit hook
+failing. When this happens you will see that the source file has been reformatted
+and is ready to be re-added to the index. Running `git commit` again should
+result in all the hooks passing and the commit actually happening.
