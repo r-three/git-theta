@@ -7,8 +7,10 @@ import io
 
 from file_or_name import file_or_name
 
+from . import utils
+
 # Maintain access via checkpoints module for now.
-from .utils import iterate_dict_leaves
+from .utils import iterate_dict_leaves, iterate_dir_leaves
 
 
 class Checkpoint(dict):

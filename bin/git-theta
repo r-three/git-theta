@@ -6,7 +6,7 @@ import sys
 import git
 import logging
 
-from git_theta import git_utils, checkpoints, file_io
+from git_theta import git_utils, checkpoints, file_io, utils
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
@@ -42,49 +42,9 @@ def parse_args():
     return args
 
 
-def iterate_dict_and_dir_leaves(d, root):
-    """
-    Generator that iterates through dictionary leaves and produces (param, param_file) tuples where param is a dictionary leaf
-    and param_file is the file below root corresponding to the sequence of keys used to access the dictionary leaf. Each subdirectory
-    between root and param_file is created if it does not exist.
-
-    Example
-    -------
-    d = {'a': {'b': {'c': 10, 'd': 20, 'e': 30}}}
-    root = 'rootdir'
-    iterate_dict_and_dir_leaves(d, root) --> ((10, 'rootdir/a/b/c'), (20, 'rootdir/a/b/d'), (30, 'rootdir/a/b/e'))
-
-    Parameters
-    ----------
-    d : dict
-        dictionary to iterate over
-    root : str
-        path to root directory where directory tree representing `d` is created
-    """
-    for leaf, keys in checkpoints.iterate_dict_leaves(d):
-        param_dir = os.path.join(root, "/".join(keys))
-        if not os.path.exists(param_dir):
-            os.makedirs(param_dir)
-        yield leaf, param_dir
-
-
-def iterate_removed_params(d, root):
-    """
-    Generator that iterates a model directory and yields the parameter groups that are present in the model directory but not in the model dictionary
-
-    Example
-    -------
-
-    Parameters
-    ----------
-    """
-    for leaf, keys in checkpoints.iterate_dir_leaves(root):
-        curr_d = d
-        for k in keys:
-            if curr_d.get(k) is None:
-                yield leaf
-                continue
-            curr_d = curr_d[k]
+def paths_and_parameters(model_dict, root):
+    """Convert the keys of the model dict to parameters based starting at root."""
+    return {os.path.join(root, *k): v for k, v in utils.flatten(model_dict).items()}
 
 
 def add(args):
@@ -96,12 +56,13 @@ def add(args):
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
 
     param_dict = checkpoints.PyTorchCheckpoint.from_file(args.file)
-    for (param, param_dir) in iterate_dict_and_dir_leaves(param_dict, theta_model_dir):
+    for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
         param_file = os.path.join(param_dir, "params")
+        os.makedirs(param_file, exist_ok=True)
         file_io.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
 
-    for param_file in iterate_removed_params(param_dict, theta_model_dir):
+    for param_file in utils.removed_params(param_dict, utils.walk_parameter_dir(theta_model_dir)):
         git_utils.remove_file(param_file, repo)
 
     git_utils.add_file(model_path, repo)

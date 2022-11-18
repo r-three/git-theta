@@ -11,7 +11,7 @@ import logging
 import hashlib
 from collections import defaultdict, OrderedDict
 
-from git_theta import git_utils, checkpoints, params, file_io
+from git_theta import git_utils, checkpoints, params, file_io, utils
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -47,8 +47,13 @@ def clean(args):
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
 
     model_checkpoint = checkpoints.PyTorchCheckpoint.from_file(sys.stdin.buffer)
+    # TODO(bdlester): If we use Python3.7 as the minimum version, we don't need
+    # to use an OrderedDict as the standard dict retains the insertion order.
     staged_file_contents = OrderedDict({"model_dir": model_path})
-    for param, keys in checkpoints.iterate_dict_leaves(model_checkpoint):
+    # Sort the keys so we don't get changing diffs based on serialization order.
+    for keys, param in sorted(utils.flatten(model_checkpoint)):
+        # TODO(bdlester): We should update this staged_file_content from having
+        # different keys for shape, dtype, and hash to a dict.
         param_name = "/".join(keys)
         staged_file_contents[f"{param_name} shape"] = params.get_shape_str(param)
         staged_file_contents[f"{param_name} dtype"] = params.get_dtype_str(param)
@@ -66,17 +71,15 @@ def smudge(args):
     repo = git_utils.get_git_repo()
     staged_file = file_io.load_staged_file(sys.stdin)
 
-    model_dict = defaultdict(dict)
-    for leaf_dir, keys in checkpoints.iterate_dir_leaves(
+    model_dict = {}
+    for keys, param_dir in utils.flatten(utils.walk_parameter_dir(
         os.path.abspath(staged_file["model_dir"])
-    ):
-        param_file = os.path.join(leaf_dir, "params")
+    )).items():
+        param_file = os.path.join(param_dir, "params")
         logging.debug(f"Populating model parameter {'/'.join(keys)}")
-        d = model_dict
-        for k in keys[:-1]:
-            d = d[k]
-        d[keys[-1]] = file_io.load_tracked_file(param_file)
+        model_dict[keys] = file_io.load_tracked_file(param_file)
 
+    model_dict = utils.unflatten(model_dict)
     model_checkpoint = checkpoints.PyTorchCheckpoint(model_dict)
     model_checkpoint.save(sys.stdout.buffer)
 
