@@ -50,7 +50,7 @@ git init
 ```
 In order to track the model checkpoint using git theta, run the command
 ```bash 
-git theta track {path_to_model_checkpoint}
+git theta track model.pt
 ```
 
 The above command adds the following lines to the `.gitattributes` files in the home directory.
