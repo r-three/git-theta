@@ -97,8 +97,9 @@ result in all the hooks passing and the commit actually happening.
 
 ## Add support for new checkpoint types
 
-We support new plug ins via plug-ins. Third-party users do this by writing small installable
-packages that define and register a new checkpoint type.
+We support new checkpoint types via plug-ins. Third-party users do this by
+writing small installable packages that define and register a new checkpoint
+type.
 
 For first part development, instead of writing an external plugin, write the new checkpoint
 handler and add it to the `entry_points` dict of `setup.py`, you don't need to make your
