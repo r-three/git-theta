@@ -5,11 +5,9 @@ import os
 import json
 import io
 
-<<<<<<< HEAD
 from file_or_name import file_or_name
-=======
+
 from . import utils
->>>>>>> b367c80 (Add unittest to iterate_dir_leaves to help refactor)
 
 # Maintain access via checkpoints module for now.
 from .utils import iterate_dict_leaves, iterate_dir_leaves
