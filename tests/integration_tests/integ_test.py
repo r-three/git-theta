@@ -3,6 +3,7 @@ import os
 import pytest
 import torch
 import subprocess
+import shutil
 
 REPO_NAME = "test_repo"
 MODEL_NAME = "pytorch_model.bin"
@@ -36,7 +37,8 @@ def get_repo(tmp_path_factory):
     with open(f"{repo_path}/{TEXT_FILE}", "w") as f:
         f.write("Create a new text file!")
 
-    subprocess.run("git init", cwd=repo_path)
+    cmd = f"{shutil.which('git')} init"
+    subprocess.run(cmd, cwd=repo_path)
 
     return repo_path
 
@@ -49,7 +51,8 @@ def test_repo_creation(get_repo):
 
 
 def test_git_theta_install():
-    subprocess.run("git theta install")
+    cmd = f"{shutil.which('git')} theta install"
+    subprocess.run(cmd)
     config = git.GitConfigParser(
         git.config.get_config_path("global"), config_level="global", read_only=True
     )
