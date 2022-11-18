@@ -72,9 +72,9 @@ def smudge(args):
     staged_file = file_io.load_staged_file(sys.stdin)
 
     model_dict = {}
-    for keys, param_dir in utils.walk_parameter_dir(
+    for keys, param_dir in utils.flatten(utils.walk_parameter_dir(
         os.path.abspath(staged_file["model_dir"])
-    ):
+    )):
         param_file = os.path.join(param_dir, "params")
         logging.debug(f"Populating model parameter {'/'.join(keys)}")
         model_dict[keys] = file_io.load_tracked_file(param_file)

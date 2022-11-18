@@ -44,7 +44,7 @@ def parse_args():
 
 def paths_and_parameters(model_dict, root):
     """Convert the keys of the model dict to parameters based starting at root."""
-    return {os.path.join(root, "/".join(k)): v for k, v in utils.flatten(model_dict).items()}
+    return {os.path.join(root, *k): v for k, v in utils.flatten(model_dict).items()}
 
 
 def add(args):
