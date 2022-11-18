@@ -51,7 +51,7 @@ def clean(args):
     # to use an OrderedDict as the standard dict retains the insertion order.
     staged_file_contents = OrderedDict({"model_dir": model_path})
     # Sort the keys so we don't get changing diffs based on serialization order.
-    for keys, param in sorted(utils.flatten(model_checkpoint)):
+    for keys, param in sorted(utils.flatten(model_checkpoint).items()):
         # TODO(bdlester): We should update this staged_file_content from having
         # different keys for shape, dtype, and hash to a dict.
         param_name = "/".join(keys)
