@@ -62,6 +62,7 @@ setup(
         "GitPython",
         "torch",
         "tensorstore",
+        "file-or-name",
     ],
     extras_require={
         "test": ["pytest"],

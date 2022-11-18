@@ -8,8 +8,10 @@ import logging
 import io
 import re
 import torch
-from typing import List
+from typing import List, Union
 import subprocess
+
+from file_or_name import file_or_name
 
 
 def get_git_repo():
@@ -138,22 +140,24 @@ def read_gitattributes(gitattributes_file):
         return []
 
 
-def write_gitattributes(gitattributes_file, attributes):
+@file_or_name(gitattributes_file="w")
+def write_gitattributes(
+    gitattributes_file: Union[str, io.FileIO], attributes: List[str]
+):
     """
     Write list of attributes to this repo's .gitattributes file
 
     Parameters
     ----------
-    gitattributes_file : str
+    gitattributes_file:
         Path to this repo's .gitattributes file
 
-    attributes : List[str]
+    attributes:
         Attributes to write to .gitattributes
     """
-    with open(gitattributes_file, "w") as f:
-        f.write("\n".join(attributes))
-        # End file with newline.
-        f.write("\n")
+    gitattributes_file.write("\n".join(attributes))
+    # End file with newline.
+    gitattributes_file.write("\n")
 
 
 def add_file(f, repo):
