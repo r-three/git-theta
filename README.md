@@ -1,29 +1,28 @@
 # git-theta
 
-git extension for collaborative, continual, and communal model development. 
+A git extension for collaborative, continual, and communal development of machine learning models. 
 
 # How to use this repository?
-## LFS installation 
-Download the LFS package from the [website](https://github.com/git-lfs/git-lfs/releases/tag/v3.2.0). For Linux users, download the amd64 version from the list of assests in the website. 
+## Git LFS installation 
+Download and install Git LFS using the instructions from [the Git LFS website](https://git-lfs.github.com)
 
-## Getting started
+## Installing the git-theta package
 clone the repository  
 ```bash
 git clone https://github.com/r-three/git-theta.git
 ```
-Install the packages by running:
+Install the git-theta package by running:
 ```bash
 cd git-theta
-pip install -e .
+pip install .
 ```
-## Installing git theta
-<!--Is repository same as codebase?-->
-You can initialize the git theta in the home directory of the codebase to track code and models as follows:
+## Initializing git theta
+Initialize git theta by running:
 ```bash
 git theta install
 ```
 
-The following lines will be added to the `.gitconfig` file in the root directory of the user after the successful installation. 
+The following lines will be added to `~.gitconfig` after successful installation. 
 ```
 [filter "lfs"]
         smudge = git-lfs smudge -- %f
@@ -37,34 +36,41 @@ The following lines will be added to the `.gitconfig` file in the root directory
 
 # Example Usage
 <!--Create a folder with a text file and a model checkpoint. Initialize it as a git repository.-->
-First, initialize git in the home directory of the codebase
+Imagine you have a codebase containing code for training a model and a trained model checkpoint.
+```bash
+my_ml_repo
+├── model.pt
+└── train.py
+```
+You may want to version control both your model and your training code. git-theta extends git to efficiently and meaningfully track ML models.
+
+First, initialize your codebase as a git repository.
 ```bash
 git init
 ```
-In order to track the model checkpoint using git theta, run this command
+In order to track the model checkpoint using git theta, run the command
 ```bash 
 git theta track {path_to_model_checkpoint}
 ```
 
 The above command adds the following lines to the `.gitattributes` files in the home directory.
 ```
-".git_theta/{model_checkpoint_name}/**" filter=lfs diff=lfs merge=lfs -text
-{path_to_model_checkpoint} filter=theta
+".git_theta/model.pt/**" filter=lfs diff=lfs merge=lfs -text
+model.pt filter=theta
 ```
-It also creates a `.git_theta/{model_checkpoint_name}` folder  in the home directory of the codebase. 
 
-Add the model to git by running the command 
+Stage the model in git by running the command 
 ```bash
-git theta add {path_to_model_checkpoint}
+git theta add model.pt
 ```
 
-This will store the parameters of the model in the tensorstore format inside the `.git_theta/{model_checkpoint_name}` folder. For example, consider a parameter name `decoder.block.0.layer.0.SelfAttention.k.weight` in the model checkpoint with name `pytorch_model.bin`, the corresponding parameters are stored as the following hierarchy `.git_theta/pytorch_model.bin/decoder.block.0.layer.0.SelfAttention.k.weight`. 
+This will store the parameters of the model using tensorstore inside a newly created `.git_theta/model.pt` directory. For example, consider a parameter name `decoder.block.0.layer.0.SelfAttention.k.weight` in the model checkpoint. The corresponding parameter values will be stored in `.git_theta/model.pt/decoder.block.0.layer.0.SelfAttention.k.weight`. 
 
-At this step, run `git status`, you should see all the `.git_theta/{model_checkpoint_name}/{parameter_name}` files in "Changes to be committed" along with the model checkpoint file and the `.gitattributes` file.
+At this step, you can run `git status` and see all the `.git_theta/model.pt/{parameter_name}` files in "Changes to be committed" along with the model checkpoint file and the `.gitattributes` file.
 
-After adding the model checkpoint, add any other code/text files that are modified using `git add`. You can then commit the changes and push to remote. 
+Since this is just a normal git repo, you can also add any other code/text files that you would like to version control using `git add`. You can then commit the changes and push to a git remote. 
 
-The remote will have the `.git_theta/{model_checkpoint_name}` folder in it where instead of the actual params, git remote shows the params are stored as LFS objects. A metadata file describing the contents of the params like shape, dtype, and hash are stored inside `.git_theta/{model_checkpoint_name}/{parameter_name}`on git remote. The actual model checkpoint will be stored as a file containing the hash, shape and type of each of the keys in the checkpoint. 
+The remote will contain the `.git_theta/model.pt` directory where the actual model parameters are stored. These parameteres are actually stored using Git LFS, and on certain git remotes (like Github and BitBucket) you should see them listed as LFS objects. The actual model checkpoint on the remove will simply contain some metadata related to the model parameters, such as the hash, shape and type of each of the parameter groups. 
 
 ## TBA
 `git diff` on the model checkpoint will identify which parameter groups are modified or added or removed. 
