@@ -7,9 +7,12 @@ import git
 import logging
 
 from git_theta import git_utils, checkpoints, file_io, utils
+from git_theta import updates
 
 logging.basicConfig(
-    level=logging.DEBUG, format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
+    level=logging.DEBUG,
+    filename="/tmp/git-theta.log",
+    format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
 )
 
 
@@ -22,7 +25,8 @@ def parse_args():
         "add", help="add command used to stage a model file"
     )
     add_parser.add_argument("file", help="file being staged")
-    add_parser.add_argument("--type", help="The type of checkpoint being added.")
+    add_parser.add_argument("--type", help="The type of checkpoint being added.", default="pytorch")
+    add_parser.add_argument("--update-type", help="The type of update being applied.", default="dense")
     add_parser.set_defaults(func=add)
 
     install_parser = subparsers.add_parser(
@@ -52,23 +56,32 @@ def add(args):
     """
     Splits model parameters file into parameter groups on filesystem and stages files
     """
+    logging.debug(f"Running git theta add on {args.file}")
+
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
 
     # TODO: Don't default to pytorch once other checkpoint formats are supported.
-    checkpoint_type = args.type or "pytorch"
-    checkpoint = checkpoints.get_checkpoint(checkpoint_type)
+    checkpoint = checkpoints.get_checkpoint(args.checkpoint_type)
+    logging.debug("Using checkpoint type={args.checkpoint_type}")
     param_dict = checkpoint.from_file(args.file)
+    update = updates.get_update(args.update_type)()
+    logging.debug("Using update type={args.update_type}")
     for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
         param_file = os.path.join(param_dir, "params")
         os.makedirs(param_file, exist_ok=True)
-        file_io.write_tracked_file(param_file, param)
+        # file_io.write_tracked_file(param_file, param)
+        update.write(param_file, param)
         git_utils.add_file(param_file, repo)
 
     for param_file in utils.removed_params(param_dict, utils.walk_parameter_dir(theta_model_dir)):
         git_utils.remove_file(param_file, repo)
 
+    repo.git.update_environment(
+        GIT_THETA_CHECKPOINT_TYPE=args.checkpoint_type,
+        GIT_THETA_UPDATE_TYPE=args.update_type
+    )
     git_utils.add_file(model_path, repo)
 
 

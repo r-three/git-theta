@@ -8,7 +8,7 @@ import logging
 import io
 import re
 import torch
-from typing import List, Union
+from typing import List, Union, Optional
 import subprocess
 
 from file_or_name import file_or_name
@@ -231,6 +231,18 @@ def git_lfs_track(repo, directory):
     return out.returncode
 
 
+def git_cat_file(repo, path, commit: str = "HEAD"):
+    # return repo.git.cat_file("--filters", f"{commit}:{path}")
+    # Manually run git cat file as the git python version does some sort of
+    # strange string conversion that messes up tensorstore.
+    result = subprocess.run(
+        ["git", "cat-file", "--filters", f"{commit}:{path}"],
+        capture_output=True,
+        cwd=repo.working_dir,
+    )
+    return result.stdout
+
+
 def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
     """Add a filter=theta that covers file_name.
 
@@ -264,3 +276,77 @@ def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> st
     if not pattern_found:
         new_gitattributes.append(f"{path} filter=theta")
     return new_gitattributes
+
+
+def load_tracked_file_from_git(
+    f: str, commit: str = "HEAD", apply_filters: bool = False
+):
+    """Load a tracked file from some commit in git.
+
+    Like other load functions, this assumes we are using tensorstore for writing.
+
+    Parameters
+    ----------
+    f:
+        The path to the tracked directory.
+    commit:
+        The commit we want to get the value from.
+
+    Returns
+    -------
+    np.ndarray
+        numpy array stored in tracked file at `commit`.
+    """
+    logging.debug(f"Loading tracked file {f} from {commit=}")
+    repo = get_git_repo()
+    file_blob = repo.commit(commit).tree[get_relative_path_from_root(repo, f)]
+    if apply_filters:
+        return git_cat_file(repo, file_blob.path, commit)
+    return file_blob.data_stream.read()
+
+
+def load_tracked_dir_from_git(
+    f: str, commit: str = "HEAD", apply_filters: bool = False
+):
+    """Load files in a tracked dir from some commit in git.
+
+    Like other load functions, this assumes we are using tensorstore for writing.
+
+    Note
+    ----
+        This does not recurse into subdirectories.
+
+    Parameters
+    ----------
+    f:
+        The path to the tracked directory.
+    commit:
+        The commit we want to get the value from.
+
+    Returns
+    -------
+    np.ndarray
+        numpy array stored in tracked file at `commit`.
+    """
+    logging.debug(f"Loading tracked file {f} from {commit=}")
+    repo = get_git_repo()
+    dir_contents = repo.commit(commit).tree[get_relative_path_from_root(repo, f)]
+    if apply_filters:
+        file_contents = {
+            blob.name: git_cat_file(repo, blob.path, commit)
+            for blob in dir_contents.blobs
+        }
+    else:
+        file_contents = {
+            blob.name: blob.data_stream.read() for blob in dir_contents.blobs
+        }
+    return file_contents
+
+
+def get_previous_commit(path: str, commit: Optional[str] = None) -> str:
+    repo = get_git_repo()
+    commit = f"{commit}~1" if commit is not None else commit
+    prev_commits = list(repo.iter_commits(commit, paths=path, max_count=1))
+    if prev_commits:
+        return str(prev_commits[0])
+    return None

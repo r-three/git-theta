@@ -6,6 +6,16 @@ import logging
 from file_or_name import file_or_name
 
 
+def read_tensorstore_from_memory(files):
+    ctx = ts.Context()
+    kvs = ts.KvStore.open("memory://", context=ctx).result()
+    for name, contents in files.items():
+        kvs[name] = contents
+
+    store = ts.open({"driver": "zarr", "kvstore": "memory://"}, context=ctx).result()
+    return store.read().result()
+
+
 def load_tracked_file(f):
     """
     Load tracked file
