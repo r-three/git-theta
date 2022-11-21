@@ -46,7 +46,12 @@ def clean(args):
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
 
-    model_checkpoint = checkpoints.PyTorchCheckpoint.from_file(sys.stdin.buffer)
+    # TODO(bdlester): Find a better way to include checkpoint type information
+    # in git clean filters that are run without `git theta add`.
+    # TODO: Don't default to pytorch once other checkpoint formats are supported.
+    checkpoint_type = os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
+    checkpoint = checkpoints.get_checkpoint(checkpoint_type)
+    model_checkpoint = checkpoint.from_file(sys.stdin.buffer)
     # TODO(bdlester): If we use Python3.7 as the minimum version, we don't need
     # to use an OrderedDict as the standard dict retains the insertion order.
     staged_file_contents = OrderedDict({"model_dir": model_path})

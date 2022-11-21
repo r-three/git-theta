@@ -4,6 +4,12 @@ import torch
 import os
 import json
 import io
+import sys
+
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
 
 from file_or_name import file_or_name
 
@@ -25,10 +31,10 @@ class Checkpoint(dict):
         checkpoint_path : str or file-like object
             Path to a checkpoint file
         """
-        return cls(cls._load(checkpoint_path))
+        return cls(cls.load(checkpoint_path))
 
     @classmethod
-    def _load(cls, checkpoint_path):
+    def load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
 
         Parameters
@@ -54,12 +60,12 @@ class Checkpoint(dict):
         raise NotImplementedError
 
 
-class PyTorchCheckpoint(Checkpoint):
-    """Class for wrapping PyTorch checkpoints."""
+class PickledDictCheckpoint(Checkpoint):
+    """Class for wrapping picked dict checkpoints, commonly used with PyTorch."""
 
     @classmethod
     @file_or_name(checkpoint_path="rb")
-    def _load(cls, checkpoint_path):
+    def load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
 
         Parameters
@@ -91,38 +97,6 @@ class PyTorchCheckpoint(Checkpoint):
         """
         checkpoint_dict = {k: torch.as_tensor(v) for k, v in self.items()}
         torch.save(checkpoint_dict, checkpoint_path)
-
-
-class JSONCheckpoint(Checkpoint):
-    """Class for prototyping with JSON checkpoints"""
-
-    @classmethod
-    @file_or_name(checkpoint_path="r")
-    def _load(cls, checkpoint_path):
-        """Load a checkpoint into a dict format.
-
-        Parameters
-        ----------
-        checkpoint_path : str or file-like object
-            Path to a checkpoint file
-
-        Returns
-        -------
-        model_dict : dict
-            Dictionary mapping parameter names to parameter values
-        """
-        return json.load(checkpoint_path)
-
-    @file_or_name(checkpoint_path="w")
-    def save(self, checkpoint_path):
-        """Load a checkpoint into a dict format.
-
-        Parameters
-        ----------
-        checkpoint_path : str or file-like object
-            Path to write out the checkpoint file to
-        """
-        json.dump(self, checkpoint_path)
 
 
 def iterate_dir_leaves(root):
@@ -161,3 +135,25 @@ def iterate_dir_leaves(root):
                 yield (dir_member, prefix + [d])
 
     return _iterate_dir_leaves(root, [])
+
+
+def get_checkpoint(checkpoint_type: str) -> Checkpoint:
+    """Get a Checkpoint class by name.
+
+    The available checkpoint classes are enumerated in the `entry_points` field
+    of the package's setup.py. Additionally, user installed checkpoint plugins
+    are accessible via this function.
+
+    Parameters
+    ----------
+    checkpoint_type:
+        The name of the checkpoint type we want to use.
+
+    Returns
+    -------
+    Checkpoint
+        The checkpoint class. Returned class may be defined in a user installed
+        plugin.
+    """
+    discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
+    return discovered_plugins[checkpoint_type].load()

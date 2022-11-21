@@ -22,6 +22,7 @@ def parse_args():
         "add", help="add command used to stage a model file"
     )
     add_parser.add_argument("file", help="file being staged")
+    add_parser.add_argument("--type", help="The type of checkpoint being added.")
     add_parser.set_defaults(func=add)
 
     install_parser = subparsers.add_parser(
@@ -55,7 +56,10 @@ def add(args):
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
 
-    param_dict = checkpoints.PyTorchCheckpoint.from_file(args.file)
+    # TODO: Don't default to pytorch once other checkpoint formats are supported.
+    checkpoint_type = args.type or "pytorch"
+    checkpoint = checkpoints.get_checkpoint(checkpoint_type)
+    param_dict = checkpoint.from_file(args.file)
     for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
         param_file = os.path.join(param_dir, "params")
         os.makedirs(param_file, exist_ok=True)
