@@ -22,7 +22,7 @@ def parse_args():
         "add", help="add command used to stage a model file"
     )
     add_parser.add_argument("file", help="file being staged")
-    add_parser.add_argument("--type", help="The type of checkpoint we are adding.")
+    add_parser.add_argument("--type", help="The type of checkpoint being added.")
     add_parser.set_defaults(func=add)
 
     install_parser = subparsers.add_parser(

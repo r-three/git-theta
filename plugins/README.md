@@ -2,8 +2,6 @@
 
 git-theta support plugins for custom model checkpoint formats.
 
-## Writing a Checkpoint Plug-in.
-
 A checkpoint plug-in should subclass `git_theta.checkpoints.Checkpoint`.  The plugin
 should implement the `load` method which reads the checkpoint format into a dict
 mapping parameter names to parameter weights. It should also implement `save` which
@@ -24,7 +22,7 @@ setup(
     ]
     entry_points={
         "git_theta.plugins.checkpoints": [
-            "my-cool-checkpoint = package.subpatch:MyCoolCheckpointClass",
+            "my-cool-checkpoint = package.module:MyCoolCheckpointClass",
         ],
     },
     ...,

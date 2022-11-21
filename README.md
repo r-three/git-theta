@@ -1,13 +1,13 @@
 # git-theta
 
-A git extension for collaborative, continual, and communal development of machine learning models. 
+A git extension for collaborative, continual, and communal development of machine learning models.
 
 # How to use this repository?
-## Git LFS installation 
+## Git LFS installation
 Download and install Git LFS using the instructions from [the Git LFS website](https://git-lfs.github.com)
 
 ## Installing the git-theta package
-clone the repository  
+clone the repository
 ```bash
 git clone https://github.com/r-three/git-theta.git
 ```
@@ -22,7 +22,7 @@ Initialize git theta by running:
 git theta install
 ```
 
-The following lines will be added to `~.gitconfig` after successful installation. 
+The following lines will be added to `~.gitconfig` after successful installation.
 ```
 [filter "lfs"]
         smudge = git-lfs smudge -- %f
@@ -49,7 +49,7 @@ First, initialize your codebase as a git repository.
 git init
 ```
 In order to track the model checkpoint using git theta, run the command
-```bash 
+```bash
 git theta track model.pt
 ```
 
@@ -59,25 +59,25 @@ The above command adds the following lines to the `.gitattributes` files in the 
 model.pt filter=theta
 ```
 
-Stage the model in git by running the command 
+Stage the model in git by running the command
 ```bash
 git theta add model.pt
 ```
 
-This will store the parameters of the model using tensorstore inside a newly created `.git_theta/model.pt` directory. For example, consider a parameter name `decoder.block.0.layer.0.SelfAttention.k.weight` in the model checkpoint. The corresponding parameter values will be stored in `.git_theta/model.pt/decoder.block.0.layer.0.SelfAttention.k.weight`. 
+This will store the parameters of the model using tensorstore inside a newly created `.git_theta/model.pt` directory. For example, consider a parameter name `decoder.block.0.layer.0.SelfAttention.k.weight` in the model checkpoint. The corresponding parameter values will be stored in `.git_theta/model.pt/decoder.block.0.layer.0.SelfAttention.k.weight`.
 
 At this step, you can run `git status` and see all the `.git_theta/model.pt/{parameter_name}` files in "Changes to be committed" along with the model checkpoint file and the `.gitattributes` file.
 
-Since this is just a normal git repo, you can also add any other code/text files that you would like to version control using `git add`. You can then commit the changes and push to a git remote. 
+Since this is just a normal git repo, you can also add any other code/text files that you would like to version control using `git add`. You can then commit the changes and push to a git remote.
 
-The remote will contain the `.git_theta/model.pt` directory where the actual model parameters are stored. These parameteres are actually stored using Git LFS, and on certain git remotes (like Github and BitBucket) you should see them listed as LFS objects. The actual model checkpoint on the remove will simply contain some metadata related to the model parameters, such as the hash, shape and type of each of the parameter groups. 
+The remote will contain the `.git_theta/model.pt` directory where the actual model parameters are stored. These parameteres are actually stored using Git LFS, and on certain git remotes (like Github and BitBucket) you should see them listed as LFS objects. The actual model checkpoint on the remove will simply contain some metadata related to the model parameters, such as the hash, shape and type of each of the parameter groups.
 
 ## TBA
-`git diff` on the model checkpoint will identify which parameter groups are modified or added or removed. 
+`git diff` on the model checkpoint will identify which parameter groups are modified or added or removed.
 
 `git merge` will assume that all merges to the checkpoint (i.e. to parameter group files) result in merge conflicts and offer various possible automated merging strategies that can be tried and vetted.
 
-`git checkout` to a commit will construct a checkpoint based on the contents of `.git_theta/<model_checkpoint_name>` at that commit. 
+`git checkout` to a commit will construct a checkpoint based on the contents of `.git_theta/<model_checkpoint_name>` at that commit.
 
 # Development Setup
 
@@ -101,6 +101,6 @@ We support new checkpoint types via plug-ins. Third-party users do this by
 writing small installable packages that define and register a new checkpoint
 type.
 
-For first part development, instead of writing an external plugin, write the new checkpoint
-handler and add it to the `entry_points` dict of `setup.py`, you don't need to make your
-own package.
+Alternatively, plug-ins can be added directly to the `git-theta` package by
+adding the checkpoint handler to `checkpoints.py` and adding it to the
+`entry_points` dict of `setup.py`.
