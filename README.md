@@ -22,7 +22,7 @@ Initialize git theta by running:
 git theta install
 ```
 
-The following lines will be added to `~.gitconfig` after successful installation.
+The following lines will be added to `~/.gitconfig` after successful installation.
 ```
 [filter "lfs"]
         smudge = git-lfs smudge -- %f
