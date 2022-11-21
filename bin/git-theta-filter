@@ -46,12 +46,8 @@ def clean(args):
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
 
-    # TODO(bdlester): Find a better way to include checkpoint type information
-    # in git clean filters that are run without `git theta add`.
-    # TODO: Don't default to pytorch once other checkpoint formats are supported.
-    checkpoint_type = os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
-    checkpoint = checkpoints.get_checkpoint(checkpoint_type)
-    model_checkpoint = checkpoint.from_file(sys.stdin.buffer)
+    checkpoint_class = checkpoints.get_checkpoint_class()
+    model_checkpoint = checkpoint_class.from_file(sys.stdin.buffer)
     # TODO(bdlester): If we use Python3.7 as the minimum version, we don't need
     # to use an OrderedDict as the standard dict retains the insertion order.
     staged_file_contents = OrderedDict({"model_dir": model_path})
@@ -85,7 +81,8 @@ def smudge(args):
         model_dict[keys] = file_io.load_tracked_file(param_file)
 
     model_dict = utils.unflatten(model_dict)
-    model_checkpoint = checkpoints.PyTorchCheckpoint(model_dict)
+    checkpoint_class = checkpoints.get_checkpoint_class()
+    model_checkpoint = checkpoint_class(model_dict)
     model_checkpoint.save(sys.stdout.buffer)
 
 

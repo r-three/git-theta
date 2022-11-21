@@ -137,7 +137,7 @@ def iterate_dir_leaves(root):
     return _iterate_dir_leaves(root, [])
 
 
-def get_checkpoint(checkpoint_type: str) -> Checkpoint:
+def get_checkpoint_class_by_name(checkpoint_type: str) -> Checkpoint:
     """Get a Checkpoint class by name.
 
     The available checkpoint classes are enumerated in the `entry_points` field
@@ -157,3 +157,23 @@ def get_checkpoint(checkpoint_type: str) -> Checkpoint:
     """
     discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
     return discovered_plugins[checkpoint_type].load()
+
+
+def get_checkpoint_class() -> Checkpoint:
+    """Get the checkpoint class that the current repo is cofigured for.
+    
+    Gets the current checkpoint class from $GIT_THETA_CHECKPOINT_TYPE or defaults
+    to pytorch and returns the correct checkpoint class.
+
+    Returns
+    -------
+    Checkpoint
+        The checkpoint class. Returned class may be defined in a user installed
+        plugin.
+    """
+    # TODO(bdlester): Find a better way to include checkpoint type information
+    # in git clean filters that are run without `git theta add`.
+    # TODO: Don't default to pytorch once other checkpoint formats are supported.
+    checkpoint_name = os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
+    checkpoint_class = get_checkpoint_class_by_name(checkpoint_name)
+    return checkpoint_class
