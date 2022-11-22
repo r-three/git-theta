@@ -5,6 +5,7 @@ import os
 import json
 import io
 import sys
+from typing import Optional
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
