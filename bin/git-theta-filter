@@ -76,9 +76,9 @@ def clean(args):
     staged_file_contents = OrderedDict({"model_dir": theta_model_dir})
     # Sort the keys so we don't get changing diffs based on serialization order.
     for keys, param in sorted(utils.flatten(model_checkpoint).items()):
-         param_name = "/".join(keys)
-         tensor_metadata = OrderedDict({"shape": params.get_shape_str(param), "dtype": params.get_dtype_str(param), "hash": params.get_hash(param)})
-         staged_file_contents[param_name] = OrderedDict({"tensor_metadata": tensor_metadata}) 
+        param_name = "/".join(keys)
+        tensor_metadata = OrderedDict({"shape": params.get_shape_str(param), "dtype": params.get_dtype_str(param), "hash": params.get_hash(param)})
+        staged_file_contents[param_name] = OrderedDict({"tensor_metadata": tensor_metadata}) 
 
     file_io.write_staged_file(sys.stdout, staged_file_contents)
 
