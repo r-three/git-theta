@@ -46,8 +46,8 @@ def clean(args):
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
 
-    checkpoint_class = checkpoints.get_checkpoint_class()
-    model_checkpoint = checkpoint_class.from_file(sys.stdin.buffer)
+    checkpoint_handler = checkpoints.get_checkpoint_handler()
+    model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
     # TODO(bdlester): If we use Python3.7 as the minimum version, we don't need
     # to use an OrderedDict as the standard dict retains the insertion order.
     staged_file_contents = OrderedDict({"model_dir": model_path})
@@ -81,8 +81,8 @@ def smudge(args):
         model_dict[keys] = file_io.load_tracked_file(param_file)
 
     model_dict = utils.unflatten(model_dict)
-    checkpoint_class = checkpoints.get_checkpoint_class()
-    model_checkpoint = checkpoint_class(model_dict)
+    checkpoint_handler = checkpoints.get_checkpoint_handler()
+    model_checkpoint = checkpoint_handler(model_dict)
     model_checkpoint.save(sys.stdout.buffer)
 
 

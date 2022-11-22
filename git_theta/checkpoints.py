@@ -137,43 +137,29 @@ def iterate_dir_leaves(root):
     return _iterate_dir_leaves(root, [])
 
 
-def get_checkpoint_class_by_name(checkpoint_type: str) -> Checkpoint:
-    """Get a Checkpoint class by name.
+def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
+    """Get the checkpoint handler either by name or from an environment variable.
 
-    The available checkpoint classes are enumerated in the `entry_points` field
-    of the package's setup.py. Additionally, user installed checkpoint plugins
-    are accessible via this function.
+    Gets the checkpoint handler either for the `checkpoint_type` argument or `$GIT_THETA_CHECKPOINT_TYPE` environment variable.
+    Defaults to pytorch when neither are defined.
 
     Parameters
     ----------
-    checkpoint_type:
-        The name of the checkpoint type we want to use.
+    checkpoint_type
+        Name of the checkpoint handler
 
     Returns
     -------
     Checkpoint
-        The checkpoint class. Returned class may be defined in a user installed
-        plugin.
-    """
-    discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
-    return discovered_plugins[checkpoint_type].load()
-
-
-def get_checkpoint_class() -> Checkpoint:
-    """Get the checkpoint class that the current repo is cofigured for.
-    
-    Gets the current checkpoint class from $GIT_THETA_CHECKPOINT_TYPE or defaults
-    to pytorch and returns the correct checkpoint class.
-
-    Returns
-    -------
-    Checkpoint
-        The checkpoint class. Returned class may be defined in a user installed
+        The checkpoint handler (usually an instance of `git_theta.checkpoints.Checkpoint`). Returned handler may be defined in a user installed
         plugin.
     """
     # TODO(bdlester): Find a better way to include checkpoint type information
     # in git clean filters that are run without `git theta add`.
     # TODO: Don't default to pytorch once other checkpoint formats are supported.
-    checkpoint_name = os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
-    checkpoint_class = get_checkpoint_class_by_name(checkpoint_name)
-    return checkpoint_class
+    checkpoint_type = (
+        checkpoint_type or os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
+    )
+    discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
+    checkpoint_handler = discovered_plugins[checkpoint_type].load()
+    return checkpoint_handler
