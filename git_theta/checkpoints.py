@@ -45,7 +45,8 @@ class Checkpoint(dict):
         Returns
         -------
         model_dict : dict
-            Dictionary mapping parameter names to parameter values
+            Dictionary mapping parameter names to parameter values. Parameters
+            should be numpy arrays.
         """
         raise NotImplementedError
 
@@ -76,7 +77,8 @@ class PickledDictCheckpoint(Checkpoint):
         Returns
         -------
         model_dict : dict
-            Dictionary mapping parameter names to parameter values
+            Dictionary mapping parameter names to parameter values. Parameters
+            should be numpy arrays.
         """
         model_dict = torch.load(io.BytesIO(checkpoint_path.read()))
         if not isinstance(model_dict, dict):
