@@ -15,9 +15,6 @@ from file_or_name import file_or_name
 
 from . import utils
 
-# Maintain access via checkpoints module for now.
-from .utils import iterate_dict_leaves, iterate_dir_leaves
-
 
 class Checkpoint(dict):
     """Abstract base class for wrapping checkpoint formats."""
@@ -97,44 +94,6 @@ class PickledDictCheckpoint(Checkpoint):
         """
         checkpoint_dict = {k: torch.as_tensor(v) for k, v in self.items()}
         torch.save(checkpoint_dict, checkpoint_path)
-
-
-def iterate_dir_leaves(root):
-    """
-    Generator that iterates through files in a directory tree and produces (path, dirs) tuples where
-    path is the file's path and dirs is the sequence of path components from root to the file.
-
-    Example
-    -------
-    root
-    ├── a
-    │   ├── c
-    │   └── d
-    └── b
-        └── e
-
-    iterate_dir_leaves(root) --> ((root/a/c, ['a','c']), (root/a/d, ['a','d']), (root/b/e, ['b','e']))
-
-    Parameters
-    ----------
-    root : str
-        Root of directory tree to iterate over
-
-    Returns
-    -------
-    generator
-        generates directory tree leaf, subdirectory list tuples
-    """
-
-    def _iterate_dir_leaves(root, prefix):
-        for d in os.listdir(root):
-            dir_member = os.path.join(root, d)
-            if not "params" in os.listdir(dir_member):
-                yield from _iterate_dir_leaves(dir_member, prefix=prefix + [d])
-            else:
-                yield (dir_member, prefix + [d])
-
-    return _iterate_dir_leaves(root, [])
 
 
 def get_checkpoint(checkpoint_type: str) -> Checkpoint:
