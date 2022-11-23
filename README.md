@@ -14,8 +14,23 @@ git clone https://github.com/r-three/git-theta.git
 Install the git-theta package by running:
 ```bash
 cd git-theta
-pip install .
+pip install .[all]
 ```
+
+### A Single Deep Learning Framework
+
+If you plan to track model checkpoints created by a single deep learning
+framework, for example only PyTorch or only Tensorflow, you can elect to only
+ensure the framework you use will be installed, avoiding the long install times
+and possible version requirements issues installing unused frameworks may bring.
+
+For example, install git-theta with only pytorch checkpoint support:
+
+``` bash
+cd git-theta
+pip install .[pytorch]
+```
+
 ## Initializing git theta
 Initialize git theta by running:
 ```bash
