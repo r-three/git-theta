@@ -49,6 +49,11 @@ class SparseUpdate(Update):
 
     def apply(self, path, commit: Optional[str] = None):
         logging.debug(f"Calculating result of sparse update to '{path}' at {commit=}")
+        if commit is None or commit == "HEAD":
+            commit = git_utils.get_previous_commit(path, commit)
+            logging.debug(
+                f"File state at HEAD requested, translating to real {commit=}"
+            )
         sparse_update = self.read(path, commit)
         prev_commit = git_utils.get_previous_commit(path, commit)
         logging.debug(f"The last time '{path}' was updated was commit={prev_commit}")

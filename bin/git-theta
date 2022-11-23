@@ -11,7 +11,6 @@ from git_theta import updates
 
 logging.basicConfig(
     level=logging.DEBUG,
-    filename="/tmp/git-theta.log",
     format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
 )
 
@@ -25,7 +24,7 @@ def parse_args():
         "add", help="add command used to stage a model file"
     )
     add_parser.add_argument("file", help="file being staged")
-    add_parser.add_argument("--type", help="The type of checkpoint being added.", default="pytorch")
+    add_parser.add_argument("--checkpoint-type", help="The type of checkpoint being added.", default="pytorch")
     add_parser.add_argument("--update-type", help="The type of update being applied.", default="dense")
     add_parser.set_defaults(func=add)
 
@@ -64,10 +63,10 @@ def add(args):
 
     # TODO: Don't default to pytorch once other checkpoint formats are supported.
     checkpoint = checkpoints.get_checkpoint(args.checkpoint_type)
-    logging.debug("Using checkpoint type={args.checkpoint_type}")
+    logging.debug(f"Using checkpoint type={args.checkpoint_type}")
     param_dict = checkpoint.from_file(args.file)
     update = updates.get_update(args.update_type)()
-    logging.debug("Using update type={args.update_type}")
+    logging.debug(f"Using update type={args.update_type}")
     for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
         param_file = os.path.join(param_dir, "params")
         os.makedirs(param_file, exist_ok=True)

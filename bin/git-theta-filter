@@ -87,13 +87,13 @@ def smudge(args):
         # TODO load tracked file from git
         param_file = os.path.join(param_dir, "params")
         update_type = json.loads(git_utils.load_tracked_file_from_git(
-            os.path.join(param_file, "metadata"), str(repo.commit())))["update"]
+            os.path.join(param_file, "metadata")))["update"]
         logging.debug(f"smudge-filter: Loading parameter '{param_dir}' with a '{update_type}' update")
         update = updates.get_update(update_type)()
             # staged_file["model_dir"],
             # os.path.abspath(git_utils.get_git_theta_model_dir(repo, staged_file["model_dir"])))
         logging.debug(f"Populating model parameter {'/'.join(keys)}")
-        model_dict[keys] = update.apply(param_file, str(repo.commit()))
+        model_dict[keys] = update.apply(param_file)
 
     model_dict = utils.unflatten(model_dict)
     logging.debug(model_dict)
