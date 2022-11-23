@@ -63,7 +63,9 @@ def clean(args):
 
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
-    theta_model_dir = git_utils.get_relative_path_from_root(repo, git_utils.get_git_theta_model_dir(repo, model_path))
+    theta_model_dir = git_utils.get_relative_path_from_root(
+        repo, git_utils.get_git_theta_model_dir(repo, model_path)
+    )
 
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
@@ -77,7 +79,9 @@ def clean(args):
         tensor_metadata = OrderedDict({"shape": params.get_shape_str(param)})
         tensor_metadata["dtype"] = params.get_dtype_str(param)
         tensor_metadata["hash"] = params.get_hash(param)
-        staged_file_contents[param_name] = OrderedDict({"tensor_metadata": tensor_metadata})
+        staged_file_contents[param_name] = OrderedDict(
+            {"tensor_metadata": tensor_metadata}
+        )
 
     file_io.write_staged_file(sys.stdout, staged_file_contents)
 
@@ -92,9 +96,9 @@ def smudge(args):
     staged_file = file_io.load_staged_file(sys.stdin)
 
     model_dict = {}
-    for keys, param_dir in utils.flatten(utils.walk_parameter_dir(
-        os.path.abspath(staged_file["model_dir"])
-    )).items():
+    for keys, param_dir in utils.flatten(
+        utils.walk_parameter_dir(os.path.abspath(staged_file["model_dir"]))
+    ).items():
         param_file = os.path.join(param_dir, "params")
         logging.debug(f"Populating model parameter {'/'.join(keys)}")
         model_dict[keys] = file_io.load_tracked_file(param_file)
