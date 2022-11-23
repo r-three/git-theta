@@ -11,10 +11,12 @@ import logging
 import hashlib
 from collections import defaultdict, OrderedDict
 
-from git_theta import git_utils, checkpoints, params, file_io, utils
+from git_theta import git_utils, checkpoints, params, file_io, utils, updates
 
 logging.basicConfig(
     level=logging.DEBUG,
+    # Log to a file for clean/smudge as they don't appear on the console when called via git.
+    filename="/tmp/git-theta.log",
     format="git-theta-filter: [%(asctime)s] %(levelname)s - %(message)s",
 )
 
@@ -99,13 +101,30 @@ def smudge(args):
     for keys, param_dir in utils.flatten(
         utils.walk_parameter_dir(os.path.abspath(staged_file["model_dir"]))
     ).items():
+        parameter_name = ".".join(keys)
+        logging.debug(f"Populating model parameter {parameter_name}")
         param_file = os.path.join(param_dir, "params")
-        logging.debug(f"Populating model parameter {'/'.join(keys)}")
-        model_dict[keys] = file_io.load_tracked_file(param_file)
+
+        # Look up the most recent update applied to the parameter in the
+        # .../params/metadata file.
+        update_location = updates.most_recent_update(param_file)
+        logging.debug(f"{parameter_name} as lasted updated with {update_location}.")
+        # Look up what type of update this most recent one is using the
+        # .../params/updates/${hash}/metadata file.
+        update_type = updates.read_update_type(update_location)
+        logging.debug(f"{parameter_name}'s last update was a {update_type} update.")
+        # Get the update type from the plugin registry.
+        update = updates.get_update_handler(update_type)()
+        # Apply the most recent update (which may get previous values recursively)
+        # to get the current value of the parameter.
+        model_dict[keys] = update.apply(update_location)
 
     model_dict = utils.unflatten(model_dict)
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler(model_dict)
+    logging.debug(
+        f"git theta smudge filter: Using checkpoint type = {model_checkpoint.name}"
+    )
     model_checkpoint.save(sys.stdout.buffer)
 
 
