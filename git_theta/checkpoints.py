@@ -138,6 +138,30 @@ def iterate_dir_leaves(root):
     return _iterate_dir_leaves(root, [])
 
 
+def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
+    """Get the name of the checkpoint handler to use.
+
+    Order of precedence is
+    1. `checkpoint_type` argument
+    2. `$GIT_THETA_CHECKPOINT_TYPE` environment variable
+    3. default value (currently pytorch)
+
+    Parameters
+    ----------
+    checkpoint_type
+        Name of the checkpoint handler
+
+    Returns
+    -------
+    str
+        Name of the checkpoint handler
+    """
+    # TODO(bdlester): Find a better way to include checkpoint type information
+    # in git clean filters that are run without `git theta add`.
+    # TODO: Don't default to pytorch once other checkpoint formats are supported.
+    return checkpoint_type or os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
+
+
 def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
     """Get the checkpoint handler either by name or from an environment variable.
 
@@ -155,12 +179,6 @@ def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
         The checkpoint handler (usually an instance of `git_theta.checkpoints.Checkpoint`). Returned handler may be defined in a user installed
         plugin.
     """
-    # TODO(bdlester): Find a better way to include checkpoint type information
-    # in git clean filters that are run without `git theta add`.
-    # TODO: Don't default to pytorch once other checkpoint formats are supported.
-    checkpoint_type = (
-        checkpoint_type or os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
-    )
+    checkpoint_type = get_checkpoint_handler_name(checkpoint_type)
     discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
-    checkpoint_handler = discovered_plugins[checkpoint_type].load()
-    return checkpoint_handler
+    return discovered_plugins[checkpoint_type].load()
