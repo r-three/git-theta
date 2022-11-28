@@ -22,6 +22,11 @@ from .utils import iterate_dict_leaves, iterate_dir_leaves
 class Checkpoint(dict):
     """Abstract base class for wrapping checkpoint formats."""
 
+    @property
+    def name(self):
+        """The name of this checkpoint handler, can be used to lookup the plugin."""
+        raise NotImplementedError
+
     @classmethod
     def from_file(cls, checkpoint_path):
         """Create a new Checkpoint object.
@@ -63,6 +68,10 @@ class Checkpoint(dict):
 
 class PickledDictCheckpoint(Checkpoint):
     """Class for wrapping picked dict checkpoints, commonly used with PyTorch."""
+
+    @property
+    def name(self):
+        return "pickled-dict"
 
     @classmethod
     @file_or_name(checkpoint_path="rb")
