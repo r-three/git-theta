@@ -84,6 +84,7 @@ def install(args):
     config_writer.set_value('filter "theta"', "clean", "git-theta-filter clean %f")
     config_writer.set_value('filter "theta"', "smudge", "git-theta-filter smudge %f")
     config_writer.set_value('filter "theta"', "required", "true")
+    config_writer.set_value('diff "theta"', "command", "git-theta-diff")
     config_writer.release()
 
 
@@ -102,6 +103,7 @@ def track(args):
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
     new_gitattributes = git_utils.add_filter_theta_to_gitattributes(gitattributes, model_path)
+    new_gitattributes = git_utils.add_diff_theta_to_gitattributes(new_gitattributes, model_path)
 
     git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
     git_utils.add_file(gitattributes_file, repo)
