@@ -60,8 +60,6 @@ setup(
     license="MIT",
     install_requires=[
         "GitPython",
-        # TODO: Remove torch as a default requirement once the params module is updated.
-        "torch",
         "tensorstore",
         "file-or-name",
         "importlib_metadata",

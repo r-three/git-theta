@@ -31,6 +31,9 @@ cd git-theta
 pip install .[pytorch]
 ```
 
+If you already have your framework of choice installed (i.e. pip doesn't need
+to ensure it is installed), you can just install git-theta with `pip install .`
+
 ## Initializing git theta
 Initialize git theta by running:
 ```bash
