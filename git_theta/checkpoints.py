@@ -129,7 +129,11 @@ def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
     # TODO(bdlester): Find a better way to include checkpoint type information
     # in git clean filters that are run without `git theta add`.
     # TODO: Don't default to pytorch once other checkpoint formats are supported.
-    return checkpoint_type or os.environ.get(utils.EnvVarConstants.CHECKPOINT_TYPE) or "pytorch"
+    return (
+        checkpoint_type
+        or os.environ.get(utils.EnvVarConstants.CHECKPOINT_TYPE)
+        or "pytorch"
+    )
 
 
 def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
