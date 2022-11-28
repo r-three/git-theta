@@ -6,6 +6,11 @@ import os
 from typing import Dict, Any, Tuple, Union, Callable
 
 
+class EnvVarConstants:
+    CHECKPOINT_TYPE: str = "GIT_THETA_CHECKPOINT_TYPE"
+    UPDATE_TYPE: str = "GIT_THETA_UPDATE_TYPE"
+
+
 def flatten(d: Dict[str, Any]) -> Dict[Tuple[str, ...], Any]:
     """Flatten a nested dictionary.
 

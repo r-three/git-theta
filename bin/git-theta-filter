@@ -68,7 +68,7 @@ def clean(args):
     # TODO(bdlester): Find a better way to include checkpoint type information
     # in git clean filters that are run without `git theta add`.
     # TODO: Don't default to pytorch once other checkpoint formats are supported.
-    checkpoint_type = os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
+    checkpoint_type = os.environ.get(utils.EnvVarConstants.CHECKPOINT_TYPE) or "pytorch"
     checkpoint = checkpoints.get_checkpoint(checkpoint_type)
     logging.debug("git theta clean filter using checkpoint_type={checkpoint.name}")
     model_checkpoint = checkpoint.from_file(sys.stdin.buffer)
