@@ -5,6 +5,7 @@ import os
 import json
 import io
 import sys
+from typing import Optional
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
@@ -107,23 +108,51 @@ class PickledDictCheckpoint(Checkpoint):
         torch.save(checkpoint_dict, checkpoint_path)
 
 
-def get_checkpoint(checkpoint_type: str) -> Checkpoint:
-    """Get a Checkpoint class by name.
+def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
+    """Get the name of the checkpoint handler to use.
 
-    The available checkpoint classes are enumerated in the `entry_points` field
-    of the package's setup.py. Additionally, user installed checkpoint plugins
-    are accessible via this function.
+    Order of precedence is
+    1. `checkpoint_type` argument
+    2. `$GIT_THETA_CHECKPOINT_TYPE` environment variable
+    3. default value (currently pytorch)
 
     Parameters
     ----------
-    checkpoint_type:
-        The name of the checkpoint type we want to use.
+    checkpoint_type
+        Name of the checkpoint handler
+
+    Returns
+    -------
+    str
+        Name of the checkpoint handler
+    """
+    # TODO(bdlester): Find a better way to include checkpoint type information
+    # in git clean filters that are run without `git theta add`.
+    # TODO: Don't default to pytorch once other checkpoint formats are supported.
+    return (
+        checkpoint_type
+        or os.environ.get(utils.EnvVarConstants.CHECKPOINT_TYPE)
+        or "pytorch"
+    )
+
+
+def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
+    """Get the checkpoint handler either by name or from an environment variable.
+
+    Gets the checkpoint handler either for the `checkpoint_type` argument or `$GIT_THETA_CHECKPOINT_TYPE` environment variable.
+    Defaults to pytorch when neither are defined.
+
+    Parameters
+    ----------
+    checkpoint_type
+        Name of the checkpoint handler
 
     Returns
     -------
     Checkpoint
-        The checkpoint class. Returned class may be defined in a user installed
+        The checkpoint handler (usually an instance of `git_theta.checkpoints.Checkpoint`). Returned handler may be defined in a user installed
         plugin.
     """
+    checkpoint_type = get_checkpoint_handler_name(checkpoint_type)
     discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
     return discovered_plugins[checkpoint_type].load()
