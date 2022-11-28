@@ -60,14 +60,16 @@ def add(args):
     checkpoint_handler = checkpoints.get_checkpoint_handler(args.type)
     logging.debug(f"git theta add using checkpoint type={checkpoint_handler.name}")
     param_dict = checkpoint_handler.from_file(args.file)
-    
+
     for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
         param_file = os.path.join(param_dir, "params")
         os.makedirs(param_file, exist_ok=True)
         file_io.write_tracked_file(param_file, param)
         git_utils.add_file(param_file, repo)
 
-    for param_file in utils.removed_params(param_dict, utils.walk_parameter_dir(theta_model_dir)):
+    for param_file in utils.removed_params(
+        param_dict, utils.walk_parameter_dir(theta_model_dir)
+    ):
         git_utils.remove_file(param_file, repo)
 
     git_utils.add_file(model_path, repo)
@@ -102,7 +104,9 @@ def track(args):
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
-    new_gitattributes = git_utils.add_filter_theta_to_gitattributes(gitattributes, model_path)
+    new_gitattributes = git_utils.add_filter_theta_to_gitattributes(
+        gitattributes, model_path
+    )
 
     git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
     git_utils.add_file(gitattributes_file, repo)
