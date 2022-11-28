@@ -27,19 +27,18 @@ def make_nested_dict():
             curr = curr[key]
             continue
         # Otherwise, add a leaf value
-        else:
-            value = random.choice(values)
-            curr[key] = value
-            # 50/50 are we done adding values to this node?
-            if random.choice([True, False]):
-                curr = prev.pop()
+        value = random.choice(values)
+        curr[key] = value
+        # 50/50 are we done adding values to this node?
+        if random.choice([True, False]):
+            curr = prev.pop()
         # If we have tried to to up the tree from the root, stop generating.
         if not prev:
             break
     return result
 
 
-def test_iterate_dict_leaves_empty_leaf():
+def test_flatten_dict_empty_leaf():
     """Test that empty leaves are ignored."""
     nested = {
         "a": {},
@@ -48,16 +47,15 @@ def test_iterate_dict_leaves_empty_leaf():
             "d": {},
         },
     }
-    gold = [(1, ["b", "c"])]
-    assert list(utils.iterate_dict_leaves(nested)) == gold
+    gold = {("b", "c"): 1}
+    assert utils.flatten(nested) == gold
 
 
-def test_iterate_dict_leaves_empty():
-    """Test that processing an empty dict results in nothing."""
-    assert list(utils.iterate_dict_leaves({})) == []
+def test_flatten_dict_empty():
+    assert utils.flatten({}) == {}
 
 
-def test_iterate_dict_leaves_insertion_order():
+def test_sorted_flatten_dict_insertion_order():
     """Test that key order is consistent for different insertion order."""
     nested_dict = {
         "a": {
@@ -87,33 +85,34 @@ def test_iterate_dict_leaves_insertion_order():
         }
     }
     assert nested_dict == nested_dict_new_order
-    one_leaves = list(utils.iterate_dict_leaves(nested_dict))
-    one_order_leaves = list(utils.iterate_dict_leaves(nested_dict_new_order))
-    for one, one_order in zip(one_leaves, one_order_leaves):
-        assert one[0] == one_order[0]
-        assert one[1] == one_order[1]
+    one_flat = utils.flatten(nested_dict)
+    two_flat = utils.flatten(nested_dict_new_order)
+    assert one_flat == two_flat
+    for one, two in zip(sorted(one_flat.items()), sorted(two_flat.items())):
+        assert one[0] == two[0]
+        assert one[1] == two[1]
 
 
-def test_iterate_dict_leaves_keys_are_correct():
+def test_flattened_dict_keys_are_correct():
     """Test that indexing the nested dict with the keys yields the value."""
     nested = make_nested_dict()
-    for flat_value, flat_key in utils.iterate_dict_leaves(nested):
+    for flat_key, flat_value in utils.flatten(nested).items():
         curr = nested
         for key in flat_key:
             curr = curr[key]
         assert curr == flat_value
 
 
-def test_iterate_dict_leaves_are_sorted():
+def test_flattened_dict_sorted_is_actually_sorted():
     """Test to ensure the leaves are actually sorted."""
     nested = make_nested_dict()
-    keys = tuple(map(op.itemgetter(1), utils.iterate_dict_leaves(nested)))
+    keys = tuple(map(op.itemgetter(0), sorted(utils.flatten(nested).items())))
     string_keys = ["/".join(k) for k in keys]
     sorted_string_keys = sorted(string_keys)
     assert string_keys == sorted_string_keys
 
 
-def test_iterate_dir_leaves(tmp_path):
+def test_walk_parameter_dir(tmp_path):
     """Test the dir leaves happy path."""
     d = tmp_path / "a" / "d" / "params"
     d.mkdir(parents=True)
@@ -122,17 +121,17 @@ def test_iterate_dir_leaves(tmp_path):
     e = tmp_path / "b" / "e" / "params"
     e.mkdir(parents=True)
 
-    gold = [
-        (os.path.join(str(tmp_path), "a", "d"), ["a", "d"]),
-        (os.path.join(str(tmp_path), "a", "c"), ["a", "c"]),
-        (os.path.join(str(tmp_path), "b", "e"), ["b", "e"]),
-    ]
+    gold = {
+        ("a", "d"): os.path.join(str(tmp_path), "a", "d"),
+        ("a", "c"): os.path.join(str(tmp_path), "a", "c"),
+        ("b", "e"): os.path.join(str(tmp_path), "b", "e"),
+    }
 
-    results = list(utils.iterate_dir_leaves(tmp_path))
-    assert sorted(results) == sorted(gold)
+    results = utils.flatten(utils.walk_parameter_dir(tmp_path))
+    assert results == gold
 
 
-def test_iterate_dir_leaves_empty_dir(tmp_path):
+def test_walk_parameter_dir_leaves_empty_dir(tmp_path):
     """Test that we don't include directory paths that don't end with "params"."""
     d = tmp_path / "a" / "d" / "params"
     d.mkdir(parents=True)
@@ -145,17 +144,17 @@ def test_iterate_dir_leaves_empty_dir(tmp_path):
     double_empty = tmp_path / "g" / "h"
     double_empty.mkdir(parents=True)
 
-    gold = [
-        (os.path.join(str(tmp_path), "a", "d"), ["a", "d"]),
-        (os.path.join(str(tmp_path), "a", "c"), ["a", "c"]),
-        (os.path.join(str(tmp_path), "b", "e"), ["b", "e"]),
-    ]
+    gold = {
+        ("a", "d"): os.path.join(str(tmp_path), "a", "d"),
+        ("a", "c"): os.path.join(str(tmp_path), "a", "c"),
+        ("b", "e"): os.path.join(str(tmp_path), "b", "e"),
+    }
 
-    results = list(utils.iterate_dir_leaves(tmp_path))
-    assert sorted(results) == sorted(gold)
+    results = utils.flatten(utils.walk_parameter_dir(tmp_path))
+    assert results == gold
 
 
-def test_iterate_dir_leaves_params_and_dirs(tmp_path):
+def test_walk_parameter_dir_leaves_params_and_dirs(tmp_path):
     """Test that the presence of a `params` dir stops expanding dirs, even if there are multiple subdirs."""
     d = tmp_path / "a" / "d" / "params"
     d.mkdir(parents=True)
@@ -166,16 +165,16 @@ def test_iterate_dir_leaves_params_and_dirs(tmp_path):
     f = tmp_path / "b" / "e" / "f" / "params"
     f.mkdir(parents=True)
 
-    gold = [
-        (os.path.join(str(tmp_path), "a", "d"), ["a", "d"]),
-        (os.path.join(str(tmp_path), "a", "c"), ["a", "c"]),
-        (os.path.join(str(tmp_path), "b", "e"), ["b", "e"]),
-    ]
-    results = list(utils.iterate_dir_leaves(tmp_path))
-    assert sorted(results) == sorted(gold)
+    gold = {
+        ("a", "d"): os.path.join(str(tmp_path), "a", "d"),
+        ("a", "c"): os.path.join(str(tmp_path), "a", "c"),
+        ("b", "e"): os.path.join(str(tmp_path), "b", "e"),
+    }
+    results = utils.flatten(utils.walk_parameter_dir(tmp_path))
+    assert results == gold
 
 
-def test_iterate_dir_leaves_dirs_within_params(tmp_path):
+def test_walk_parameter_dir_leaves_dirs_within_params(tmp_path):
     """Test that we don't go looking in the `params` even if there is another inside it."""
     d = tmp_path / "a" / "d" / "params"
     d.mkdir(parents=True)
@@ -186,14 +185,13 @@ def test_iterate_dir_leaves_dirs_within_params(tmp_path):
     f = tmp_path / "b" / "e" / "params" / "f" / "params"
     f.mkdir(parents=True)
 
-    gold = [
-        (os.path.join(str(tmp_path), "a", "d"), ["a", "d"]),
-        (os.path.join(str(tmp_path), "a", "c"), ["a", "c"]),
-        (os.path.join(str(tmp_path), "b", "e"), ["b", "e"]),
-    ]
-    results = list(utils.iterate_dir_leaves(tmp_path))
-    print(results)
-    assert sorted(results) == sorted(gold)
+    gold = {
+        ("a", "d"): os.path.join(str(tmp_path), "a", "d"),
+        ("a", "c"): os.path.join(str(tmp_path), "a", "c"),
+        ("b", "e"): os.path.join(str(tmp_path), "b", "e"),
+    }
+    results = utils.flatten(utils.walk_parameter_dir(tmp_path))
+    assert results == gold
 
 
 def test_remove_params():
