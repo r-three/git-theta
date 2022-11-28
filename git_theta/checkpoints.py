@@ -16,12 +16,14 @@ from file_or_name import file_or_name
 
 from . import utils
 
-# Maintain access via checkpoints module for now.
-from .utils import iterate_dict_leaves, iterate_dir_leaves
-
 
 class Checkpoint(dict):
     """Abstract base class for wrapping checkpoint formats."""
+
+    @property
+    def name(self):
+        """The name of this checkpoint handler, can be used to lookup the plugin."""
+        raise NotImplementedError
 
     @classmethod
     def from_file(cls, checkpoint_path):
@@ -46,7 +48,8 @@ class Checkpoint(dict):
         Returns
         -------
         model_dict : dict
-            Dictionary mapping parameter names to parameter values
+            Dictionary mapping parameter names to parameter values. Parameters
+            should be numpy arrays.
         """
         raise NotImplementedError
 
@@ -64,6 +67,10 @@ class Checkpoint(dict):
 class PickledDictCheckpoint(Checkpoint):
     """Class for wrapping picked dict checkpoints, commonly used with PyTorch."""
 
+    @property
+    def name(self):
+        return "pickled-dict"
+
     @classmethod
     @file_or_name(checkpoint_path="rb")
     def load(cls, checkpoint_path):
@@ -77,7 +84,8 @@ class PickledDictCheckpoint(Checkpoint):
         Returns
         -------
         model_dict : dict
-            Dictionary mapping parameter names to parameter values
+            Dictionary mapping parameter names to parameter values. Parameters
+            should be numpy arrays.
         """
         model_dict = torch.load(io.BytesIO(checkpoint_path.read()))
         if not isinstance(model_dict, dict):
@@ -98,44 +106,6 @@ class PickledDictCheckpoint(Checkpoint):
         """
         checkpoint_dict = {k: torch.as_tensor(v) for k, v in self.items()}
         torch.save(checkpoint_dict, checkpoint_path)
-
-
-def iterate_dir_leaves(root):
-    """
-    Generator that iterates through files in a directory tree and produces (path, dirs) tuples where
-    path is the file's path and dirs is the sequence of path components from root to the file.
-
-    Example
-    -------
-    root
-    ├── a
-    │   ├── c
-    │   └── d
-    └── b
-        └── e
-
-    iterate_dir_leaves(root) --> ((root/a/c, ['a','c']), (root/a/d, ['a','d']), (root/b/e, ['b','e']))
-
-    Parameters
-    ----------
-    root : str
-        Root of directory tree to iterate over
-
-    Returns
-    -------
-    generator
-        generates directory tree leaf, subdirectory list tuples
-    """
-
-    def _iterate_dir_leaves(root, prefix):
-        for d in os.listdir(root):
-            dir_member = os.path.join(root, d)
-            if not "params" in os.listdir(dir_member):
-                yield from _iterate_dir_leaves(dir_member, prefix=prefix + [d])
-            else:
-                yield (dir_member, prefix + [d])
-
-    return _iterate_dir_leaves(root, [])
 
 
 def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
@@ -159,7 +129,7 @@ def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
     # TODO(bdlester): Find a better way to include checkpoint type information
     # in git clean filters that are run without `git theta add`.
     # TODO: Don't default to pytorch once other checkpoint formats are supported.
-    return checkpoint_type or os.environ.get("GIT_THETA_CHECKPOINT_TYPE") or "pytorch"
+    return checkpoint_type or os.environ.get(utils.EnvVarConstants.CHECKPOINT_TYPE) or "pytorch"
 
 
 def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:

@@ -6,60 +6,9 @@ import os
 from typing import Dict, Any, Tuple, Union, Callable
 
 
-def iterate_dict_leaves(d):
-    """
-    Generator that iterates through a dictionary and produces (leaf, keys) tuples where leaf is a dictionary leaf
-    and keys is the sequence of keys used to access leaf. Dictionary is iterated in depth-first
-    order with lexicographic ordering of keys.
-
-    Example
-    -------
-    d = {'a': {'b': {'c': 10, 'd': 20, 'e': 30}}}
-    iterate_dict_leaves(d) --> ((10, ['a','b','c']), (20, ['a','b','d']), (30, ['a','b','e']))
-
-    Parameters
-    ----------
-    d : dict
-        dictionary to iterate over
-
-    Returns
-    -------
-    generator
-        generates dict leaf, key path tuples
-    """
-    yield from map(lambda kv: (kv[1], list(kv[0])), sorted(flatten(d).items()))
-
-
-def iterate_dir_leaves(root):
-    """
-    Generator that iterates through files in a directory tree and produces (path, dirs) tuples where
-    path is the file's path and dirs is the sequence of path components from root to the file.
-
-    Example
-    -------
-    root
-    ├── a
-    │   ├── c
-    │   └── d
-    └── b
-        └── e
-
-    iterate_dir_leaves(root) --> ((root/a/c, ['a','c']), (root/a/d, ['a','d']), (root/b/e, ['b','e']))
-
-    Parameters
-    ----------
-    root : str
-        Root of directory tree to iterate over
-
-    Returns
-    -------
-    generator
-        generates directory tree leaf, subdirectory list tuples
-    """
-    yield from map(
-        lambda kv: (kv[1], list(kv[0])),
-        sorted(flatten(walk_parameter_dir(root)).items()),
-    )
+class EnvVarConstants:
+    CHECKPOINT_TYPE: str = "GIT_THETA_CHECKPOINT_TYPE"
+    UPDATE_TYPE: str = "GIT_THETA_UPDATE_TYPE"
 
 
 def flatten(d: Dict[str, Any]) -> Dict[Tuple[str, ...], Any]:

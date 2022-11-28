@@ -1,5 +1,7 @@
+"""Utilties to summarize parameters."""
+
 import hashlib
-import torch
+import numpy as np
 
 
 def get_shape_str(p):
@@ -13,7 +15,7 @@ def get_shape_str(p):
     str
         shape of parameter
     """
-    return str(torch.tensor(p).numpy().shape)
+    return str(np.asarray(p).shape)
 
 
 def get_dtype_str(p):
@@ -27,7 +29,7 @@ def get_dtype_str(p):
     str
         dtype of parameter
     """
-    return torch.tensor(p).numpy().dtype.str
+    return np.asarray(p).dtype.str
 
 
 def get_hash(p):
@@ -41,4 +43,4 @@ def get_hash(p):
     str
         hash of parameter bytes
     """
-    return hashlib.sha1(torch.tensor(p).numpy().tobytes()).hexdigest()
+    return hashlib.sha1(np.asarray(p).tobytes()).hexdigest()
