@@ -6,7 +6,7 @@ import sys
 import git
 import logging
 
-from git_theta import git_utils, checkpoints, file_io, utils
+from git_theta import git_utils, checkpoints, file_io, utils, updates
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
@@ -22,7 +22,10 @@ def parse_args():
         "add", help="add command used to stage a model file"
     )
     add_parser.add_argument("file", help="file being staged")
-    add_parser.add_argument("--type", help="The type of checkpoint being added.")
+    add_parser.add_argument(
+        "--checkpoint-type", help="The type of checkpoint being added."
+    )
+    add_parser.add_argument("--update-type", help="The type of update being used.")
     add_parser.set_defaults(func=add)
 
     install_parser = subparsers.add_parser(
@@ -57,14 +60,22 @@ def add(args):
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
     theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
 
-    checkpoint_handler = checkpoints.get_checkpoint_handler(args.type)
-    logging.debug(f"git theta add using checkpoint type={checkpoint_handler.name}")
+    checkpoint_handler = checkpoints.get_checkpoint_handler(args.checkpoint_type)
     param_dict = checkpoint_handler.from_file(args.file)
+    logging.debug(f"git theta add using checkpoint type={param_dict.name}")
 
+    update = updates.get_update_handler(args.update_type)()
+    logging.debug(f"Using update type={update.name}")
+
+    # Iterate through the parameters in the /new/ checkpoint (after some training).
     for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
         param_file = os.path.join(param_dir, "params")
         os.makedirs(param_file, exist_ok=True)
-        file_io.write_tracked_file(param_file, param)
+        # Use the update plugins to add write this new parameter value. The plugin
+        # used controls if it is dense or sparse, if the whole param is written/partial, etc.
+        update.write(param_file, param)
+        # Call add on the .../params dir so that when many files are made under
+        # it they are all added.
         git_utils.add_file(param_file, repo)
 
     for param_file in utils.removed_params(
@@ -72,6 +83,12 @@ def add(args):
     ):
         git_utils.remove_file(param_file, repo)
 
+    repo.git.update_environment(
+        **{
+            utils.EnvVarConstants.CHECKPOINT_TYPE: param_dict.name,
+            utils.EnvVarConstants.UPDATE_TYPE: update.name,
+        }
+    )
     git_utils.add_file(model_path, repo)
 
 
