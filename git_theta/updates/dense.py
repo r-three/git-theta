@@ -56,6 +56,8 @@ class DenseUpdate(Update):
             The values to write.
         """
         # Remove any past updates to begin anew.
+        # TODO: Move to using git_utils.remove_file once the edge case of the
+        # path not existing is git is resolved.
         shutil.rmtree(path)
         parameter_hash = params.get_hash(parameter)
         output_dir = os.path.join(path, UpdateConstants.UPDATES_DIR, parameter_hash)
