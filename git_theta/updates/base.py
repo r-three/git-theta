@@ -9,13 +9,16 @@ Example directory structure of how updates are stored.
 │       └── updates
 │           │   # This is the hash of the parameter after the update, not the contents of the update.
 │           ├── 13f81e06d1a47a437541a26f86fd20c89ccf73ea
+│           │   ├── .zarray
 │           │   ├── 0
 │           │   └── metadata  # Update type and pointer to the last update.
 │           ├── 1f40b7caef2f961b4bde95f9a450c3a12eb6f249
+│           │   ├── .zarray
 │           │   ├── 0
 │           │   └── metadata
 │           └── 77db6ed78df01aecbb9e7990a87d50f7dc2d5579
-│               ├── 0
+│               ├── .zarray
+│               ├── 0
 │               └── metadata
 ├── ...
 └── layers.1.weight
@@ -23,12 +26,15 @@ Example directory structure of how updates are stored.
         ├── metadata
         └── updates
             ├── 2ceb7dac4dd0b012fd404e227c13cf66bd25cf3a
+            │   ├── .zarray
             │   ├── 0.0
             │   └── metadata
             ├── aeefd921f332f102e3e77ca6ec3d46d707afe9a9
+            │   ├── .zarray
             │   ├── 0.0
             │   └── metadata
             └── b16693be23b9146457c20752cdac2796de5a7290
+                ├── .zarray
                 ├── 0.0
                 └── metadata
 
