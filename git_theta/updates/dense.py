@@ -65,10 +65,7 @@ class DenseUpdate(Update):
         # Write all parameter values as is to the update directory.
         file_io.write_tracked_file(output_dir, parameter)
         # Record update type information in the update metadata file.
-        file_io.write_staged_file(
-            os.path.join(output_dir, UpdateConstants.METADATA_FILE),
-            {UpdateConstants.UPDATE_KEY: self.name},
-        )
+        self.write_update_metadata(output_dir)
         # Update the parameter metadata file setting this update as the most recent one.
         self.record_update(path, output_dir)
 
