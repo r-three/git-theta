@@ -11,7 +11,9 @@ class EnvVarConstants:
     UPDATE_TYPE: str = "GIT_THETA_UPDATE_TYPE"
 
 
-def flatten(d: Dict[str, Any]) -> Dict[Tuple[str, ...], Any]:
+def flatten(
+    d: Dict[str, Any], is_leaf: Callable[[object], bool] = lambda v: isinstance(v, dict)
+) -> Dict[Tuple[str, ...], Any]:
     """Flatten a nested dictionary.
 
     Parameters
@@ -30,7 +32,7 @@ def flatten(d: Dict[str, Any]) -> Dict[Tuple[str, ...], Any]:
     def _flatten(d, prefix: Tuple[str] = ()):
         flat = {}
         for k, v in d.items():
-            if isinstance(v, dict):
+            if is_leaf(v):
                 flat.update(_flatten(v, prefix=prefix + (k,)))
             else:
                 flat[prefix + (k,)] = v

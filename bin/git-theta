@@ -5,6 +5,9 @@ import os
 import sys
 import git
 import logging
+import re
+import fnmatch
+import pdb
 
 from git_theta import git_utils, checkpoints, file_io, utils
 
@@ -18,12 +21,16 @@ def parse_args():
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
-    add_parser = subparsers.add_parser(
-        "add", help="add command used to stage a model file"
+    post_commit_parser = subparsers.add_parser("post-commit", help="post-commit command that records parameter groups changed in a commit")
+    post_commit_parser.set_defaults(func=post_commit)
+
+    pre_push_parser = subparsers.add_parser(
+        "pre-push", help="pre-push command used to send parameter groups to an LFS store. Should only be called internally by git push."
     )
-    add_parser.add_argument("file", help="file being staged")
-    add_parser.add_argument("--type", help="The type of checkpoint being added.")
-    add_parser.set_defaults(func=add)
+    pre_push_parser.add_argument("remote_name", help="Name of the remote being pushed to")
+    pre_push_parser.add_argument("remote_location", help="Location of the remote being pushed to")
+    pre_push_parser.set_defaults(func=pre_push)
+
 
     install_parser = subparsers.add_parser(
         "install", help="install command used to setup global .gitconfig"
@@ -43,34 +50,36 @@ def parse_args():
     return args
 
 
-def paths_and_parameters(model_dict, root):
-    """Convert the keys of the model dict to parameters based starting at root."""
-    return {os.path.join(root, *k): v for k, v in utils.flatten(model_dict).items()}
+def post_commit(args):
+    pass
 
 
-def add(args):
+def pre_push(args):
     """
-    Splits model parameters file into parameter groups on filesystem and stages files
+    Pre-push git hook for sending objects to the LFS server
     """
-    logging.debug(f"Running git theta add on {args.file}")
+    # Read lines of the form <local ref> <local sha1> <remote ref> <remote sha1> LF
+    print(args)
     repo = git_utils.get_git_repo()
-    model_path = git_utils.get_relative_path_from_root(repo, args.file)
-    theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
+    gitattributes_file = git_utils.get_gitattributes_file(repo)
+    gitattributes = git_utils.read_gitattributes(gitattributes_file)
+    theta_attributes = [attribute for attribute in gitattributes if 'filter=theta' in attribute]
+    patterns = [attribute.split(' ')[0] for attribute in theta_attributes]
 
-    checkpoint_handler = checkpoints.get_checkpoint_handler(args.type)
-    logging.debug(f"git theta add using checkpoint type={checkpoint_handler.name}")
-    param_dict = checkpoint_handler.from_file(args.file)
-    
-    for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
-        param_file = os.path.join(param_dir, "params")
-        os.makedirs(param_file, exist_ok=True)
-        file_io.write_tracked_file(param_file, param)
-        git_utils.add_file(param_file, repo)
+    lines = sys.stdin.readlines()
+    lines_parsed = [re.match('^(?P<local_ref>[^\s]+) (?P<local_sha1>[^\s]+) (?P<remote_ref>[^\s]+) (?P<remote_sha1>[^\s]+)\n$', l) for l in lines]
+    oids = set()
+    for l in lines_parsed:
+        print(l)
+        commit = repo.commit(l.group('local_sha1'))
+        for obj in commit.tree.traverse():
+            if any([fnmatch.fnmatchcase(obj.path, pattern) for pattern in patterns]):
+                staged_file = file_io.load_staged_file(obj.data_stream)
+                for param_name, param_metadata in staged_file.items():
+                    for file_name, lfs_metadata in param_metadata.items():
+                        oids.add(lfs_metadata['oid'])
 
-    for param_file in utils.removed_params(param_dict, utils.walk_parameter_dir(theta_model_dir)):
-        git_utils.remove_file(param_file, repo)
-
-    git_utils.add_file(model_path, repo)
+    git_utils.git_lfs_push_oids(args.remote_name, oids)
 
 
 def install(args):

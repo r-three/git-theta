@@ -10,6 +10,8 @@ import git
 import logging
 import hashlib
 from collections import defaultdict, OrderedDict
+import tempfile
+import pdb
 
 from git_theta import git_utils, checkpoints, params, file_io, utils
 
@@ -60,26 +62,28 @@ def clean(args):
     }
     """
     logging.debug(f"Running clean filter on {args.file}")
-
     repo = git_utils.get_git_repo()
-    model_path = git_utils.get_relative_path_from_root(repo, args.file)
-    theta_model_dir = git_utils.get_relative_path_from_root(repo, git_utils.get_git_theta_model_dir(repo, model_path))
+    theta_dir = git_utils.get_git_theta(repo)
 
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
 
     # TODO(bdlester): If we use Python3.7 as the minimum version, we don't need
     # to use an OrderedDict as the standard dict retains the insertion order.
-    staged_file_contents = OrderedDict({"model_dir": theta_model_dir})
+    staged_file_contents = OrderedDict()
     # Sort the keys so we don't get changing diffs based on serialization order.
     for keys, param in sorted(utils.flatten(model_checkpoint).items()):
-        param_name = "/".join(keys)
-        tensor_metadata = OrderedDict({"shape": params.get_shape_str(param)})
-        tensor_metadata["dtype"] = params.get_dtype_str(param)
-        tensor_metadata["hash"] = params.get_hash(param)
-        staged_file_contents[param_name] = OrderedDict({"tensor_metadata": tensor_metadata})
+        param_name = ".".join(keys)
+        param_metadata = OrderedDict()
+        with tempfile.TemporaryDirectory(dir=os.path.join(theta_dir, 'tmp')) as tmpdir:
+            param_dir = os.path.join(tmpdir, param_name)
+            file_io.write_tracked_file(param_dir, param)
+            for param_file in sorted(os.listdir(param_dir)):
+                lfs_metadata = git_utils.git_lfs_clean(os.path.join(param_dir, param_file))
+                param_metadata[param_file] = lfs_metadata
 
-    file_io.write_staged_file(sys.stdout, staged_file_contents)
+        staged_file_contents[keys] = param_metadata
+    file_io.write_staged_file(sys.stdout, utils.unflatten(staged_file_contents))
 
 
 def smudge(args):
@@ -89,19 +93,26 @@ def smudge(args):
     logging.debug(f"Running smudge filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    staged_file = file_io.load_staged_file(sys.stdin)
+    theta_dir = git_utils.get_git_theta(repo)
+    theta_tmp_dir = os.path.join(theta_dir, 'tmp')
 
+    staged_file = utils.flatten(file_io.load_staged_file(sys.stdin), is_leaf=lambda v: 'oid' in v)
     model_dict = {}
-    for keys, param_dir in utils.flatten(utils.walk_parameter_dir(
-        os.path.abspath(staged_file["model_dir"])
-    )).items():
-        param_file = os.path.join(param_dir, "params")
-        logging.debug(f"Populating model parameter {'/'.join(keys)}")
-        model_dict[keys] = file_io.load_tracked_file(param_file)
+    for keys, param_metadata in staged_file.items():
+        with tempfile.TemporaryDirectory(dir=theta_tmp_dir) as param_directory:
+            for file, lfs_metadata in param_metadata.items():
+                with tempfile.NamedTemporaryFile(mode='rb+', dir=theta_tmp_dir) as lfs_pointer_file:
+                    lfs_pointer_file.write(f'version {lfs_metadata["lfs_version"]}\noid sha256:{lfs_metadata["oid"]}\nsize {lfs_metadata["size"]}'.encode())
+                    lfs_pointer_file.seek(0)
+                    param_file_contents = git_utils.git_lfs_smudge(lfs_pointer_file)
+                with open(os.path.join(param_directory, file), 'wb') as param_file:
+                    param_file.write(param_file_contents)
 
-    model_dict = utils.unflatten(model_dict)
+            param = file_io.load_tracked_file(param_directory)
+            model_dict[keys] = param
+
     checkpoint_handler = checkpoints.get_checkpoint_handler()
-    model_checkpoint = checkpoint_handler(model_dict)
+    model_checkpoint = checkpoint_handler(utils.unflatten(model_dict))
     model_checkpoint.save(sys.stdout.buffer)
 
 

@@ -9,6 +9,7 @@ import io
 import re
 import torch
 from typing import List, Union
+from collections import OrderedDict
 import subprocess
 
 from file_or_name import file_or_name
@@ -26,7 +27,7 @@ def get_git_repo():
     return git.Repo(os.getcwd(), search_parent_directories=True)
 
 
-def get_git_theta(repo, create=False):
+def get_git_theta(repo):
     """
     If create argument is true, create $git_root/.git_theta and return path
     Otherwise return $git_root/.git_theta path
@@ -43,10 +44,8 @@ def get_git_theta(repo, create=False):
     str
         path to $git_root/.git_theta directory
     """
-    git_theta = os.path.join(repo.working_dir, ".git_theta")
-    if not os.path.exists(git_theta) and create:
-        logging.debug(f"Creating git theta directory {git_theta}")
-        os.makedirs(git_theta)
+    git_theta = os.path.join(repo.git_dir, "theta")
+    os.makedirs(os.path.join(git_theta, "tmp"), exist_ok=True)
     return git_theta
 
 
@@ -229,6 +228,39 @@ def git_lfs_track(repo, directory):
         ["git", "lfs", "track", f'"{track_glob}"'], cwd=repo.working_dir
     )
     return out.returncode
+
+
+@file_or_name(f="rb")
+def git_lfs_clean(f):
+    out = subprocess.run(
+        ["git", "lfs", "clean"], input=f.read(), capture_output=True
+    ).stdout
+    out = re.match(
+        "^version (?P<lfs_version>[^\s]*)\s*oid sha256:(?P<oid>[^\s]*)\s*size (?P<size>[0-9]*)$",
+        out.decode("utf-8"),
+    )
+    return OrderedDict(
+        {
+            "lfs_version": out.group("lfs_version"),
+            "oid": out.group("oid"),
+            "size": out.group("size"),
+        }
+    )
+
+
+@file_or_name(f="rb")
+def git_lfs_smudge(f):
+    out = subprocess.run(
+        ["git", "lfs", "smudge"], input=f.read(), capture_output=True
+    ).stdout
+    return out
+
+
+def git_lfs_push_oids(remote_name, oids):
+    out = subprocess.run(
+        ["git", "lfs", "push", "--object-id", remote_name] + list(oids)
+    )
+    return out
 
 
 def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
