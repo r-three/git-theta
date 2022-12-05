@@ -46,6 +46,7 @@ def get_git_theta(repo):
     """
     git_theta = os.path.join(repo.git_dir, "theta")
     os.makedirs(os.path.join(git_theta, "tmp"), exist_ok=True)
+    os.makedirs(os.path.join(git_theta, "commits"), exist_ok=True)
     return git_theta
 
 

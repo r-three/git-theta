@@ -7,6 +7,7 @@ import git
 import logging
 import re
 import fnmatch
+import json
 import pdb
 
 from git_theta import git_utils, checkpoints, file_io, utils
@@ -51,7 +52,35 @@ def parse_args():
 
 
 def post_commit(args):
-    pass
+    repo = git_utils.get_git_repo()
+    gitattributes_file = git_utils.get_gitattributes_file(repo)
+    gitattributes = git_utils.read_gitattributes(gitattributes_file)
+    theta_attributes = [attribute for attribute in gitattributes if 'filter=theta' in attribute]
+    patterns = [attribute.split(' ')[0] for attribute in theta_attributes]
+
+    oids = set()
+    commit = repo.commit('HEAD')
+    for obj in commit.tree.traverse():
+        if any([fnmatch.fnmatchcase(obj.path, pattern) for pattern in patterns]):
+            staged_file = file_io.load_staged_file(obj.data_stream)
+
+            last_staged_file = {}
+            try:
+                last_commit = repo.commit('HEAD~1')
+                for last_obj in last_commit.tree.traverse():
+                    if last_obj.path == obj.path:
+                        last_staged_file = file_io.load_staged_file(last_obj.data_stream)
+                        break
+            except Exception:
+                pass
+
+            for param_name, param_metadata in staged_file.items():
+                for file_name, lfs_metadata in param_metadata.items():
+                    if not param_name in last_staged_file or not file_name in last_staged_file[param_name] or lfs_metadata != last_staged_file[param_name][file_name]:
+                        oids.add(lfs_metadata['oid'])
+
+    with open(os.path.join(repo.git_dir, 'theta', 'commits', commit.hexsha), 'w') as f:
+        json.dump(list(oids), f)
 
 
 def pre_push(args):
@@ -70,15 +99,18 @@ def pre_push(args):
     lines_parsed = [re.match('^(?P<local_ref>[^\s]+) (?P<local_sha1>[^\s]+) (?P<remote_ref>[^\s]+) (?P<remote_sha1>[^\s]+)\n$', l) for l in lines]
     oids = set()
     for l in lines_parsed:
-        print(l)
-        commit = repo.commit(l.group('local_sha1'))
-        for obj in commit.tree.traverse():
-            if any([fnmatch.fnmatchcase(obj.path, pattern) for pattern in patterns]):
-                staged_file = file_io.load_staged_file(obj.data_stream)
-                for param_name, param_metadata in staged_file.items():
-                    for file_name, lfs_metadata in param_metadata.items():
-                        oids.add(lfs_metadata['oid'])
+        print(l.groupdict())
+        if not re.match('^0+$', l.group("remote_sha1")):
+            commits = repo.iter_commits(f'{l.group("remote_sha1")}..{l.group("local_sha1")}')
+        else:
+            commits = repo.iter_commits(l.group("local_sha1"))
+        for commit in commits:
+            with open(os.path.join(repo.git_dir, 'theta', 'commits', commit.hexsha), 'r') as f:
+                commit_oids = json.load(f)
+                print(commit_oids)
+                oids.update(commit_oids)
 
+    print(oids)
     git_utils.git_lfs_push_oids(args.remote_name, oids)
 
 
