@@ -10,7 +10,7 @@ import fnmatch
 import json
 import pdb
 
-from git_theta import git_utils, checkpoints, file_io, utils
+from git_theta import git_utils, checkpoints, file_io, utils, theta
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
@@ -53,64 +53,42 @@ def parse_args():
 
 def post_commit(args):
     repo = git_utils.get_git_repo()
+    theta_dir = theta.ThetaDirectory(repo)
+
     gitattributes_file = git_utils.get_gitattributes_file(repo)
-    gitattributes = git_utils.read_gitattributes(gitattributes_file)
-    theta_attributes = [attribute for attribute in gitattributes if 'filter=theta' in attribute]
-    patterns = [attribute.split(' ')[0] for attribute in theta_attributes]
+    patterns = git_utils.get_gitattributes_tracked_patterns(gitattributes_file)
 
     oids = set()
     commit = repo.commit('HEAD')
     for obj in commit.tree.traverse():
         if any([fnmatch.fnmatchcase(obj.path, pattern) for pattern in patterns]):
             staged_file = file_io.load_staged_file(obj.data_stream)
-
-            last_staged_file = {}
-            try:
-                last_commit = repo.commit('HEAD~1')
-                for last_obj in last_commit.tree.traverse():
-                    if last_obj.path == obj.path:
-                        last_staged_file = file_io.load_staged_file(last_obj.data_stream)
-                        break
-            except Exception:
-                pass
+            prev_obj = git_utils.get_file_version(repo, obj.path, 'HEAD~1')
+            prev_staged_file = file_io.load_staged_file(prev_obj.data_stream) if prev_obj else {}
 
             for param_name, param_metadata in staged_file.items():
                 for file_name, lfs_metadata in param_metadata.items():
-                    if not param_name in last_staged_file or not file_name in last_staged_file[param_name] or lfs_metadata != last_staged_file[param_name][file_name]:
+                    if not param_name in prev_staged_file or not file_name in prev_staged_file[param_name] or lfs_metadata != prev_staged_file[param_name][file_name]:
                         oids.add(lfs_metadata['oid'])
 
-    with open(os.path.join(repo.git_dir, 'theta', 'commits', commit.hexsha), 'w') as f:
-        json.dump(list(oids), f)
+    theta_dir.commits.write_commit_oids(commit.hexsha, oids)
 
 
 def pre_push(args):
     """
     Pre-push git hook for sending objects to the LFS server
     """
-    # Read lines of the form <local ref> <local sha1> <remote ref> <remote sha1> LF
-    print(args)
     repo = git_utils.get_git_repo()
-    gitattributes_file = git_utils.get_gitattributes_file(repo)
-    gitattributes = git_utils.read_gitattributes(gitattributes_file)
-    theta_attributes = [attribute for attribute in gitattributes if 'filter=theta' in attribute]
-    patterns = [attribute.split(' ')[0] for attribute in theta_attributes]
+    theta_dir = theta.ThetaDirectory(repo)
 
+    gitattributes_file = git_utils.get_gitattributes_file(repo)
+    patterns = git_utils.get_gitattributes_tracked_patterns(gitattributes_file)
+
+    # Read lines of the form <local ref> <local sha1> <remote ref> <remote sha1> LF
     lines = sys.stdin.readlines()
     lines_parsed = [re.match('^(?P<local_ref>[^\s]+) (?P<local_sha1>[^\s]+) (?P<remote_ref>[^\s]+) (?P<remote_sha1>[^\s]+)\n$', l) for l in lines]
-    oids = set()
-    for l in lines_parsed:
-        print(l.groupdict())
-        if not re.match('^0+$', l.group("remote_sha1")):
-            commits = repo.iter_commits(f'{l.group("remote_sha1")}..{l.group("local_sha1")}')
-        else:
-            commits = repo.iter_commits(l.group("local_sha1"))
-        for commit in commits:
-            with open(os.path.join(repo.git_dir, 'theta', 'commits', commit.hexsha), 'r') as f:
-                commit_oids = json.load(f)
-                print(commit_oids)
-                oids.update(commit_oids)
-
-    print(oids)
+    commit_ranges = [(l.group('remote_sha1'), l.group('local_sha1')) for l in lines_parsed]
+    oids = theta_dir.commits.get_commit_oids_ranges(*commit_ranges)
     git_utils.git_lfs_push_oids(args.remote_name, oids)
 
 
@@ -118,11 +96,9 @@ def install(args):
     """
     Install git-lfs and initialize the git-theta filter driver
     """
-    git_utils.git_lfs_install()
     config_writer = git.GitConfigParser(
         git.config.get_config_path("global"), config_level="global", read_only=False
     )
-    config_writer.remove_option('filter "lfs"', "process")
     config_writer.set_value('filter "theta"', "clean", "git-theta-filter clean %f")
     config_writer.set_value('filter "theta"', "smudge", "git-theta-filter smudge %f")
     config_writer.set_value('filter "theta"', "required", "true")
@@ -136,10 +112,6 @@ def track(args):
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
 
-    # Initialize git lfs to track model files in .git_theta
-    theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
-    git_utils.git_lfs_track(repo, theta_model_dir)
-
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
@@ -151,4 +123,5 @@ def track(args):
 
 if __name__ == "__main__":
     args = parse_args()
+    git_utils.set_hooks()
     args.func(args)

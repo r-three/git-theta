@@ -3,6 +3,7 @@
 import fnmatch
 import git
 import os
+import stat
 import json
 import logging
 import io
@@ -80,6 +81,23 @@ def get_git_theta_model_dir(repo, model_path, create=False):
     return git_theta_model_dir
 
 
+def set_hooks():
+    repo = get_git_repo()
+    hooks = os.path.join(repo.git_dir, "hooks")
+    post_commit = os.path.join(hooks, "post-commit")
+    pre_push = os.path.join(hooks, "pre-push")
+    with open(post_commit, "w") as f:
+        f.write('git-theta post-commit "$@"')
+    with open(pre_push, "w") as f:
+        f.write('git-theta pre-push "$@"')
+
+    post_commit_st = os.stat(post_commit)
+    os.chmod(post_commit, post_commit_st.st_mode | stat.S_IEXEC)
+
+    pre_push_st = os.stat(pre_push)
+    os.chmod(pre_push, pre_push_st.st_mode | stat.S_IEXEC)
+
+
 def get_relative_path_from_root(repo, path):
     """
     Get relative path from repo root
@@ -140,6 +158,15 @@ def read_gitattributes(gitattributes_file):
         return []
 
 
+def get_gitattributes_tracked_patterns(gitattributes_file):
+    gitattributes = read_gitattributes(gitattributes_file)
+    theta_attributes = [
+        attribute for attribute in gitattributes if "filter=theta" in attribute
+    ]
+    patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
+    return patterns
+
+
 @file_or_name(gitattributes_file="w")
 def write_gitattributes(
     gitattributes_file: Union[str, io.FileIO], attributes: List[str]
@@ -191,6 +218,17 @@ def remove_file(f, repo):
         repo.git.rm("-r", f)
     else:
         repo.git.rm(f)
+
+
+def get_file_version(repo, path, commit_hash):
+    try:
+        commit = repo.commit(commit_hash)
+        for obj in commit.tree.traverse():
+            if obj.path == path:
+                return obj
+
+    except git.BadName:
+        return None
 
 
 def git_lfs_install():
