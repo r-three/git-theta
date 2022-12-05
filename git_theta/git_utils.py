@@ -28,59 +28,6 @@ def get_git_repo():
     return git.Repo(os.getcwd(), search_parent_directories=True)
 
 
-def get_git_theta(repo):
-    """
-    If create argument is true, create $git_root/.git_theta and return path
-    Otherwise return $git_root/.git_theta path
-
-    Parameters
-    ----------
-    git_root : str
-        path to git repository's root directory
-    create : bool
-        argument to create the directory
-
-    Returns
-    -------
-    str
-        path to $git_root/.git_theta directory
-    """
-    git_theta = os.path.join(repo.git_dir, "theta")
-    os.makedirs(os.path.join(git_theta, "tmp"), exist_ok=True)
-    os.makedirs(os.path.join(git_theta, "commits"), exist_ok=True)
-    return git_theta
-
-
-def get_git_theta_model_dir(repo, model_path, create=False):
-    """
-    If create is true, create directory under $git_root/.git_theta/ to store a model and return path
-    Otherwise just return path that stores a model
-
-    Parameters
-    ----------
-    repo : git.Repo
-        Repo object for the current git repository
-
-    model_path : str
-        path to model file being saved
-
-    create : bool
-        argument to create the directory
-    Returns
-    -------
-    str
-        path to $git_root/.git_theta/$model_path directory
-    """
-    git_theta = get_git_theta(repo)
-    git_theta_model_dir = os.path.join(git_theta, model_path)
-
-    if not os.path.exists(git_theta_model_dir) and create:
-        logging.debug(f"Creating model directory {git_theta_model_dir}")
-        os.makedirs(git_theta_model_dir)
-
-    return git_theta_model_dir
-
-
 def set_hooks():
     repo = get_git_repo()
     hooks = os.path.join(repo.git_dir, "hooks")
@@ -158,15 +105,6 @@ def read_gitattributes(gitattributes_file):
         return []
 
 
-def get_gitattributes_tracked_patterns(gitattributes_file):
-    gitattributes = read_gitattributes(gitattributes_file)
-    theta_attributes = [
-        attribute for attribute in gitattributes if "filter=theta" in attribute
-    ]
-    patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
-    return patterns
-
-
 @file_or_name(gitattributes_file="w")
 def write_gitattributes(
     gitattributes_file: Union[str, io.FileIO], attributes: List[str]
@@ -185,6 +123,50 @@ def write_gitattributes(
     gitattributes_file.write("\n".join(attributes))
     # End file with newline.
     gitattributes_file.write("\n")
+
+
+def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
+    """Add a filter=theta that covers file_name.
+
+    Parameters
+    ----------
+        gitattributes: A list of the lines from the gitattribute files.
+        path: The path to the model we are adding a filter to.
+
+    Returns
+    -------
+    List[str]
+        The lines to write to the new gitattribute file with a (possibly) new
+        filter=theta added that covers the given file.
+    """
+    pattern_found = False
+    new_gitattributes = []
+    for line in gitattributes:
+        # TODO(bdlester): Revisit this regex to see if it when the pattern
+        # is escaped due to having spaces in it.
+        match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
+        if match:
+            # If there is already a pattern that covers the file, add the filter
+            # to that.
+            if fnmatch.fnmatchcase(path, match.group("pattern")):
+                pattern_found = True
+                if not "filter=theta" in match.group("attributes"):
+                    line = f"{line.rstrip()} filter=theta"
+        new_gitattributes.append(line)
+    # If we don't find a matching pattern, add a new line that covers just this
+    # specific file.
+    if not pattern_found:
+        new_gitattributes.append(f"{path} filter=theta")
+    return new_gitattributes
+
+
+def get_gitattributes_tracked_patterns(gitattributes_file):
+    gitattributes = read_gitattributes(gitattributes_file)
+    theta_attributes = [
+        attribute for attribute in gitattributes if "filter=theta" in attribute
+    ]
+    patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
+    return patterns
 
 
 def add_file(f, repo):
@@ -231,44 +213,6 @@ def get_file_version(repo, path, commit_hash):
         return None
 
 
-def git_lfs_install():
-    """
-    Run the `git lfs install` command
-
-    Returns
-    -------
-    int
-        Return code of `git lfs install`
-    """
-    out = subprocess.run(["git", "lfs", "install"])
-    return out.returncode
-
-
-def git_lfs_track(repo, directory):
-    """
-    Run the `git lfs track` command to track the files under `directory`
-
-    Parameters
-    ----------
-    repo : git.Repo
-        Repo object for current git repository
-    directory : str
-        Track all files under this directory
-
-    Returns
-    -------
-    int
-        Return code of `git lfs track`
-    """
-    track_glob = os.path.relpath(
-        os.path.join(directory, "**", "params", "[0-9]*"), repo.working_dir
-    )
-    out = subprocess.run(
-        ["git", "lfs", "track", f'"{track_glob}"'], cwd=repo.working_dir
-    )
-    return out.returncode
-
-
 @file_or_name(f="rb")
 def git_lfs_clean(f):
     out = subprocess.run(
@@ -300,38 +244,3 @@ def git_lfs_push_oids(remote_name, oids):
         ["git", "lfs", "push", "--object-id", remote_name] + list(oids)
     )
     return out
-
-
-def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
-    """Add a filter=theta that covers file_name.
-
-    Parameters
-    ----------
-        gitattributes: A list of the lines from the gitattribute files.
-        path: The path to the model we are adding a filter to.
-
-    Returns
-    -------
-    List[str]
-        The lines to write to the new gitattribute file with a (possibly) new
-        filter=theta added that covers the given file.
-    """
-    pattern_found = False
-    new_gitattributes = []
-    for line in gitattributes:
-        # TODO(bdlester): Revisit this regex to see if it when the pattern
-        # is escaped due to having spaces in it.
-        match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
-        if match:
-            # If there is already a pattern that covers the file, add the filter
-            # to that.
-            if fnmatch.fnmatchcase(path, match.group("pattern")):
-                pattern_found = True
-                if not "filter=theta" in match.group("attributes"):
-                    line = f"{line.rstrip()} filter=theta"
-        new_gitattributes.append(line)
-    # If we don't find a matching pattern, add a new line that covers just this
-    # specific file.
-    if not pattern_found:
-        new_gitattributes.append(f"{path} filter=theta")
-    return new_gitattributes
