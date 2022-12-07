@@ -13,7 +13,7 @@ import pdb
 from git_theta import git_utils, checkpoints, file_io, utils, theta
 
 logging.basicConfig(
-    level=logging.DEBUG, format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
+    level=logging.DEBUG, format="git-theta: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s"
 )
 
 
@@ -53,7 +53,7 @@ def parse_args():
 
 def post_commit(args):
     repo = git_utils.get_git_repo()
-    theta_dir = theta.ThetaDirectory(repo)
+    theta_commits = theta.ThetaCommits(repo)
 
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     patterns = git_utils.get_gitattributes_tracked_patterns(gitattributes_file)
@@ -71,7 +71,7 @@ def post_commit(args):
                     if not param_name in prev_staged_file or not file_name in prev_staged_file[param_name] or lfs_metadata != prev_staged_file[param_name][file_name]:
                         oids.add(lfs_metadata['oid'])
 
-    theta_dir.commits.write_commit_oids(commit.hexsha, oids)
+    theta_commits.write_commit_oids(commit.hexsha, oids)
 
 
 def pre_push(args):
@@ -79,7 +79,7 @@ def pre_push(args):
     Pre-push git hook for sending objects to the LFS server
     """
     repo = git_utils.get_git_repo()
-    theta_dir = theta.ThetaDirectory(repo)
+    theta_commits = theta.ThetaCommits(repo)
 
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     patterns = git_utils.get_gitattributes_tracked_patterns(gitattributes_file)
@@ -88,7 +88,7 @@ def pre_push(args):
     lines = sys.stdin.readlines()
     lines_parsed = [re.match('^(?P<local_ref>[^\s]+) (?P<local_sha1>[^\s]+) (?P<remote_ref>[^\s]+) (?P<remote_sha1>[^\s]+)\n$', l) for l in lines]
     commit_ranges = [(l.group('remote_sha1'), l.group('local_sha1')) for l in lines_parsed]
-    oids = theta_dir.commits.get_commit_oids_ranges(*commit_ranges)
+    oids = theta_commits.get_commit_oids_ranges(*commit_ranges)
     git_utils.git_lfs_push_oids(args.remote_name, oids)
 
 

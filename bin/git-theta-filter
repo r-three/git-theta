@@ -17,7 +17,7 @@ from git_theta import git_utils, checkpoints, params, file_io, utils, theta
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="git-theta-filter: [%(asctime)s] %(levelname)s - %(message)s",
+    format="git-theta-filter: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s",
 )
 
 
@@ -63,7 +63,6 @@ def clean(args):
     """
     logging.debug(f"Running clean filter on {args.file}")
     repo = git_utils.get_git_repo()
-    theta_dir = theta.ThetaDirectory(repo)
 
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
@@ -73,15 +72,13 @@ def clean(args):
     staged_file_contents = OrderedDict()
     # Sort the keys so we don't get changing diffs based on serialization order.
     for keys, param in sorted(utils.flatten(model_checkpoint).items()):
-        param_name = ".".join(keys)
+        param_name = "/".join(keys)
+        logging.debug(f"Cleaning {param_name}")
         param_metadata = OrderedDict()
-        with tempfile.TemporaryDirectory(dir=theta_dir.tmp) as tmpdir:
-            param_dir = os.path.join(tmpdir, param_name)
-            file_io.write_tracked_file(param_dir, param)
-            for param_file in sorted(os.listdir(param_dir)):
-                lfs_metadata = git_utils.git_lfs_clean(os.path.join(param_dir, param_file))
-                param_metadata[param_file] = lfs_metadata
-
+        tensor_files = file_io.write_tracked_file_to_memory(param)
+        for file, file_contents in tensor_files.items():
+            lfs_metadata = git_utils.git_lfs_clean(file_contents)
+            param_metadata[file] = lfs_metadata
         staged_file_contents[keys] = param_metadata
     file_io.write_staged_file(sys.stdout, utils.unflatten(staged_file_contents))
 
@@ -93,23 +90,17 @@ def smudge(args):
     logging.debug(f"Running smudge filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    theta_dir = theta.ThetaDirectory(repo)
-
     staged_file = utils.flatten(file_io.load_staged_file(sys.stdin), is_leaf=lambda l: any(('oid' in v for v in l.values())))
     model_dict = {}
-    for keys, param_metadata in staged_file.items():
-        with tempfile.TemporaryDirectory(dir=theta_dir.tmp) as param_directory:
-            for file, lfs_metadata in param_metadata.items():
-                with tempfile.NamedTemporaryFile(mode='rb+', dir=theta_dir.tmp) as lfs_pointer_file:
-                    lfs_pointer_file.write(f'version {lfs_metadata["lfs_version"]}\noid sha256:{lfs_metadata["oid"]}\nsize {lfs_metadata["size"]}'.encode())
-                    lfs_pointer_file.seek(0)
-                    param_file_contents = git_utils.git_lfs_smudge(lfs_pointer_file)
-                with open(os.path.join(param_directory, file), 'wb') as param_file:
-                    param_file.write(param_file_contents)
-
-            param = file_io.load_tracked_file(param_directory)
-            model_dict[keys] = param
-
+    for param_keys, param_files in staged_file.items():
+        logging.debug(f"Smudging {'/'.join(param_keys)}")
+        param_in_memory_files = {}
+        for file, lfs_metadata in param_files.items():
+            lfs_pointer = f'version {lfs_metadata["lfs_version"]}\noid sha256:{lfs_metadata["oid"]}\nsize {lfs_metadata["size"]}'.encode()
+            param_in_memory = git_utils.git_lfs_smudge(lfs_pointer)
+            param_in_memory_files[file] = param_in_memory
+        param = file_io.load_tracked_file_from_memory(param_in_memory_files)
+        model_dict[param_keys] = param
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler(utils.unflatten(model_dict))
     model_checkpoint.save(sys.stdout.buffer)

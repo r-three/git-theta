@@ -6,64 +6,30 @@ import logging
 from file_or_name import file_or_name
 
 
-def load_tracked_file(f):
-    """
-    Load tracked file
+def load_tracked_file_from_memory(files):
+    ctx = ts.Context()
+    kvs = ts.KvStore.open("memory://", context=ctx).result()
+    for name, contents in files.items():
+        kvs[name] = contents
 
-    Parameters
-    ----------
-    f : str
-        path to file tracked by git-theta filter
+    store = ts.open({"driver": "zarr", "kvstore": "memory://"}, context=ctx).result()
+    return store.read().result()
 
-    Returns
-    -------
-    np.ndarray
-        numpy array stored in tracked file
 
-    """
-    logging.debug(f"Loading tracked file {f}")
-    ts_file = ts.open(
+def write_tracked_file_to_memory(param):
+    store = ts.open(
         {
             "driver": "zarr",
-            "open": True,
-            "kvstore": {
-                "driver": "file",
-                "path": f,
-            },
-        }
-    ).result()
-    return ts_file.read().result()
-
-
-def write_tracked_file(f, param):
-    """
-    Dump param into tracked file
-
-    Parameters
-    ----------
-    f : str
-        path to output file
-    param : np.ndarray
-        param value to dump to file
-
-    """
-    logging.debug(f"Dumping param to {f}")
-    ts_file = ts.open(
-        {
-            "driver": "zarr",
-            "kvstore": {
-                "driver": "file",
-                "path": f,
-            },
-            "metadata": {
-                "shape": param.shape,
-                "dtype": param.dtype.str,
-            },
+            "kvstore": {"driver": "memory"},
+            "metadata": {"shape": param.shape, "dtype": param.dtype.str},
             "create": True,
-            "delete_existing": True,
-        }
+        },
     ).result()
-    return ts_file.write(param).result()
+    store.write(param).result()
+    tensor_files = {
+        k.decode("utf-8"): store.kvstore[k] for k in store.kvstore.list().result()
+    }
+    return tensor_files
 
 
 @file_or_name

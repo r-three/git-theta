@@ -206,6 +206,7 @@ def get_file_version(repo, path, commit_hash):
         return None
 
 
+"""
 @file_or_name(f="rb")
 def git_lfs_clean(f):
     out = subprocess.run(
@@ -222,12 +223,29 @@ def git_lfs_clean(f):
             "size": out.group("size"),
         }
     )
+"""
 
 
-@file_or_name(f="rb")
-def git_lfs_smudge(f):
+def git_lfs_clean(file):
     out = subprocess.run(
-        ["git", "lfs", "smudge"], input=f.read(), capture_output=True
+        ["git", "lfs", "clean"], input=file, capture_output=True
+    ).stdout
+    out = re.match(
+        "^version (?P<lfs_version>[^\s]*)\s*oid sha256:(?P<oid>[^\s]*)\s*size (?P<size>[0-9]*)$",
+        out.decode("utf-8"),
+    )
+    return OrderedDict(
+        {
+            "lfs_version": out.group("lfs_version"),
+            "oid": out.group("oid"),
+            "size": out.group("size"),
+        }
+    )
+
+
+def git_lfs_smudge(pointer_file):
+    out = subprocess.run(
+        ["git", "lfs", "smudge"], input=pointer_file, capture_output=True
     ).stdout
     return out
 

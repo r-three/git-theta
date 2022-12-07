@@ -41,12 +41,14 @@ class ThetaCommits:
         return commit
 
     def get_commit_range(self, start_commit, end_commit):
+        logging.debug(f"Getting commits from {start_commit}..{end_commit}")
         if re.match("^0+$", start_commit):
             commits = self.repo.iter_commits(end_commit)
         else:
-            commits = self.repo.iter_commits(start_commit, end_commit)
+            commits = self.repo.iter_commits(f"{start_commit}..{end_commit}")
 
         commits = [commit.hexsha for commit in commits]
+        logging.debug(f"Found commits {commits}")
         return commits
 
     def get_commit_oids(self, commit_hash):
@@ -60,7 +62,9 @@ class ThetaCommits:
         logging.debug(f"Getting oids from commit range {start_commit}..{end_commit}")
         commits = self.get_commit_range(start_commit, end_commit)
         oids = [self.get_commit_oids(commit) for commit in commits]
-        return self.combine_oid_sets(oids)
+        oids = self.combine_oid_sets(oids)
+        logging.debug(f"Found oids {oids}")
+        return oids
 
     def get_commit_oids_ranges(self, *ranges):
         oids = [
@@ -76,11 +80,3 @@ class ThetaCommits:
             raise ValueError(f"Cannot duplicate commit at {path}. Something is wrong!")
 
         self.write_commit_file(path, oids)
-
-
-class ThetaDirectory:
-    def __init__(self, repo):
-        self.path = os.path.abspath(os.path.join(repo.git_dir, "theta"))
-        self.tmp = os.path.join(self.path, "tmp")
-        os.makedirs(self.tmp, exist_ok=True)
-        self.commits = ThetaCommits(repo)
