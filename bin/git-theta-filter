@@ -95,7 +95,7 @@ def smudge(args):
     repo = git_utils.get_git_repo()
     theta_dir = theta.ThetaDirectory(repo)
 
-    staged_file = utils.flatten(file_io.load_staged_file(sys.stdin), is_leaf=lambda v: 'oid' in v)
+    staged_file = utils.flatten(file_io.load_staged_file(sys.stdin), is_leaf=lambda l: any(('oid' in v for v in l.values())))
     model_dict = {}
     for keys, param_metadata in staged_file.items():
         with tempfile.TemporaryDirectory(dir=theta_dir.tmp) as param_directory:

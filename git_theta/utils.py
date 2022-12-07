@@ -33,7 +33,7 @@ def flatten(
     def _flatten(d, prefix: Tuple[str] = ()):
         flat = {}
         for k, v in d.items():
-            if is_leaf(v):
+            if not is_leaf(v):
                 flat.update(_flatten(v, prefix=prefix + (k,)))
             else:
                 flat[prefix + (k,)] = v

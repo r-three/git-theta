@@ -12,8 +12,10 @@ import torch
 from typing import List, Union
 from collections import OrderedDict
 import subprocess
+import shutil
 
 from file_or_name import file_or_name
+from . import hooks
 
 
 def get_git_repo():
@@ -30,19 +32,10 @@ def get_git_repo():
 
 def set_hooks():
     repo = get_git_repo()
-    hooks = os.path.join(repo.git_dir, "hooks")
-    post_commit = os.path.join(hooks, "post-commit")
-    pre_push = os.path.join(hooks, "pre-push")
-    with open(post_commit, "w") as f:
-        f.write('git-theta post-commit "$@"')
-    with open(pre_push, "w") as f:
-        f.write('git-theta pre-push "$@"')
-
-    post_commit_st = os.stat(post_commit)
-    os.chmod(post_commit, post_commit_st.st_mode | stat.S_IEXEC)
-
-    pre_push_st = os.stat(pre_push)
-    os.chmod(pre_push, pre_push_st.st_mode | stat.S_IEXEC)
+    hooks_dst = os.path.join(repo.git_dir, "hooks")
+    hooks_src = hooks.__path__[0]
+    for hook in os.listdir(hooks_src):
+        shutil.copy(os.path.join(hooks_src, hook), hooks_dst)
 
 
 def get_relative_path_from_root(repo, path):
