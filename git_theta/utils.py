@@ -12,7 +12,8 @@ class EnvVarConstants:
 
 
 def flatten(
-    d: Dict[str, Any], is_leaf: Callable[[object], bool] = lambda v: isinstance(v, dict)
+    d: Dict[str, Any],
+    is_leaf: Callable[[object], bool] = lambda v: not isinstance(v, dict),
 ) -> Dict[Tuple[str, ...], Any]:
     """Flatten a nested dictionary.
 

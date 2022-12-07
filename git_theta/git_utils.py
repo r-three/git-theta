@@ -240,7 +240,10 @@ def git_lfs_smudge(f):
 
 
 def git_lfs_push_oids(remote_name, oids):
-    out = subprocess.run(
-        ["git", "lfs", "push", "--object-id", remote_name] + list(oids)
-    )
-    return out
+    if len(oids):
+        out = subprocess.run(
+            ["git", "lfs", "push", "--object-id", remote_name] + list(oids)
+        )
+        return out.returncode
+    else:
+        return 0

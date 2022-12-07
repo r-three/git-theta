@@ -28,7 +28,7 @@ class ThetaCommits:
 
     @staticmethod
     def combine_oid_sets(oids):
-        return functools.reduce(lambda a, b: a.union(b), oids)
+        return functools.reduce(lambda a, b: a.union(b), oids, set())
 
     def get_commit_path(self, commit_hash):
         return os.path.join(self.path, commit_hash)
