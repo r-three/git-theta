@@ -67,9 +67,8 @@ def post_commit(args):
             prev_staged_file = file_io.load_staged_file(prev_obj.data_stream) if prev_obj else {}
 
             for param_name, param_metadata in staged_file.items():
-                for file_name, lfs_metadata in param_metadata.items():
-                    if not param_name in prev_staged_file or not file_name in prev_staged_file[param_name] or lfs_metadata != prev_staged_file[param_name][file_name]:
-                        oids.add(lfs_metadata['oid'])
+                if not param_name in prev_staged_file or param_metadata != prev_staged_file[param_name]:
+                    oids.add(param_metadata['oid'])
 
     theta_commits.write_commit_oids(commit.hexsha, oids)
 

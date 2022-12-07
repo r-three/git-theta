@@ -74,12 +74,9 @@ def clean(args):
     for keys, param in sorted(utils.flatten(model_checkpoint).items()):
         param_name = "/".join(keys)
         logging.debug(f"Cleaning {param_name}")
-        param_metadata = OrderedDict()
-        tensor_files = file_io.write_tracked_file_to_memory(param)
-        for file, file_contents in tensor_files.items():
-            lfs_metadata = git_utils.git_lfs_clean(file_contents)
-            param_metadata[file] = lfs_metadata
-        staged_file_contents[keys] = param_metadata
+        file_contents = file_io.write_tracked_file_to_memory(param)
+        lfs_metadata = git_utils.git_lfs_clean(file_contents)
+        staged_file_contents[keys] = lfs_metadata
     file_io.write_staged_file(sys.stdout, utils.unflatten(staged_file_contents))
 
 
@@ -90,16 +87,13 @@ def smudge(args):
     logging.debug(f"Running smudge filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    staged_file = utils.flatten(file_io.load_staged_file(sys.stdin), is_leaf=lambda l: any(('oid' in v for v in l.values())))
+    staged_file = utils.flatten(file_io.load_staged_file(sys.stdin), is_leaf=lambda l: 'oid' in l)
     model_dict = {}
-    for param_keys, param_files in staged_file.items():
+    for param_keys, param_metadata in staged_file.items():
         logging.debug(f"Smudging {'/'.join(param_keys)}")
-        param_in_memory_files = {}
-        for file, lfs_metadata in param_files.items():
-            lfs_pointer = f'version {lfs_metadata["lfs_version"]}\noid sha256:{lfs_metadata["oid"]}\nsize {lfs_metadata["size"]}'.encode()
-            param_in_memory = git_utils.git_lfs_smudge(lfs_pointer)
-            param_in_memory_files[file] = param_in_memory
-        param = file_io.load_tracked_file_from_memory(param_in_memory_files)
+        lfs_pointer = f'version {param_metadata["lfs_version"]}\noid sha256:{param_metadata["oid"]}\nsize {param_metadata["size"]}'.encode()
+        param_contents = git_utils.git_lfs_smudge(lfs_pointer)
+        param = file_io.load_tracked_file_from_memory(param_contents)
         model_dict[param_keys] = param
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler(utils.unflatten(model_dict))
