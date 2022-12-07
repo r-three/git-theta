@@ -17,6 +17,16 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.6", "3.7", "3.8", "3.9"]
+        # Python 3.6 is not available in the ubuntu-latest container github
+        # provides, so skip that configuration.
+        exclude:
+          - os: ubuntu-latest
+            python-version: "3.6"
+        # Python 3.6 is still in the ubuntu-20.04 container from github so
+        # test git-theta in that container instead.
+        include:
+          - os: "ubuntu-20.04"
+            python-version: "3.6"
 
     steps:
     - uses: actions/checkout@v2
