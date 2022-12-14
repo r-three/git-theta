@@ -199,11 +199,11 @@ def remove_file(f, repo):
 def get_file_version(repo, path, commit_hash):
     path = get_relative_path_from_root(repo, path)
     try:
-        commit = repo.commit(commit_hash)
-        for obj in commit.tree.traverse():
-            if obj.path == path:
-                return obj
-
+        tree = repo.commit(commit_hash).tree
+        if path in tree:
+            return tree[path]
+        else:
+            return None
     except git.BadName:
         return None
 
@@ -221,19 +221,6 @@ def git_lfs_clean(file):
         ["git", "lfs", "clean"], input=file, capture_output=True
     ).stdout.decode("utf-8")
     return out
-    """
-    out = re.match(
-        "^version (?P<version>[^\s]*)\s*oid sha256:(?P<oid>[^\s]*)\s*size (?P<size>[0-9]*)$",
-        out.decode("utf-8"),
-    )
-    return OrderedDict(
-        {
-            "version": out.group("version"),
-            "oid": out.group("oid"),
-            "size": out.group("size"),
-        }
-    )
-    """
 
 
 def git_lfs_smudge(pointer_file):
