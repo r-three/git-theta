@@ -89,7 +89,8 @@ def pre_push(args):
 
     # Read lines of the form <local ref> <local sha1> <remote ref> <remote sha1> LF
     lines = sys.stdin.readlines()
-    lines_parsed = [re.match('^(?P<local_ref>[^\s]+) (?P<local_sha1>[^\s]+) (?P<remote_ref>[^\s]+) (?P<remote_sha1>[^\s]+)\n$', l) for l in lines]
+    print(lines)
+    lines_parsed = [re.match('^(?P<local_ref>[^\s]+)\s+(?P<local_sha1>[a-f0-9]{40})\s+(?P<remote_ref>[^\s]+)\s+(?P<remote_sha1>[a-f0-9]{40})\s+$', l) for l in lines]
     commit_ranges = [(l.group('remote_sha1'), l.group('local_sha1')) for l in lines_parsed]
     oids = theta_commits.get_commit_oids_ranges(*commit_ranges)
     git_utils.git_lfs_push_oids(args.remote_name, oids)

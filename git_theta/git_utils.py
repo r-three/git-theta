@@ -32,9 +32,10 @@ def get_git_repo():
 
 def set_hooks():
     repo = get_git_repo()
+    hook_scripts = ["pre-push", "post-commit"]
     hooks_dst = os.path.join(repo.git_dir, "hooks")
     hooks_src = hooks.__path__[0]
-    for hook in os.listdir(hooks_src):
+    for hook in hook_scripts:
         shutil.copy(os.path.join(hooks_src, hook), hooks_dst)
 
 
