@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 
 import argparse
-import os
 import sys
 import git
 import logging
 import re
 import fnmatch
-import json
 import subprocess
 
-from git_theta import git_utils, checkpoints, file_io, utils, theta, params
+from git_theta import git_utils, utils, theta, params
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-theta: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s"
@@ -57,7 +55,7 @@ def parse_args():
     return args
 
 
-def post_commit(args, unparsed_args):
+def post_commit(args):
     repo = git_utils.get_git_repo()
     theta_commits = theta.ThetaCommits(repo)
 
@@ -68,11 +66,11 @@ def post_commit(args, unparsed_args):
     commit = repo.commit('HEAD')
     for obj in commit.tree.traverse():
         if any([fnmatch.fnmatchcase(obj.path, pattern) for pattern in patterns]):
-            metadata = file_io.load_metadata_file(obj.data_stream).flatten()
+            metadata = params.Metadata.from_file(obj.data_stream).flatten()
 
             prev_obj = git_utils.get_file_version(repo, obj.path, 'HEAD~1')
             if prev_obj:
-                prev_metadata = file_io.load_metadata_file(prev_obj.data_stream).flatten()
+                prev_metadata = params.Metadata.from_file(prev_obj.data_stream).flatten()
             else:
                 prev_metadata = params.Metadata()
 
@@ -82,15 +80,12 @@ def post_commit(args, unparsed_args):
     theta_commits.write_commit_oids(commit.hexsha, oids)
 
 
-def pre_push(args, unparsed_args):
+def pre_push(args):
     """
     Pre-push git hook for sending objects to the LFS server
     """
     repo = git_utils.get_git_repo()
     theta_commits = theta.ThetaCommits(repo)
-
-    gitattributes_file = git_utils.get_gitattributes_file(repo)
-    patterns = git_utils.get_gitattributes_tracked_patterns(gitattributes_file)
 
     # Read lines of the form <local ref> <local sha1> <remote ref> <remote sha1> LF
     lines = sys.stdin.readlines()
@@ -100,7 +95,7 @@ def pre_push(args, unparsed_args):
     git_utils.git_lfs_push_oids(args.remote_name, oids)
 
 
-def install(args, unparsed_args):
+def install(args):
     """
     Install git-lfs and initialize the git-theta filter driver
     """
@@ -113,7 +108,7 @@ def install(args, unparsed_args):
     config_writer.release()
 
 
-def track(args, unparsed_args):
+def track(args):
     """
     Track a particular model checkpoint file with git-theta
     """
@@ -141,4 +136,7 @@ if __name__ == "__main__":
     args, unparsed_args = parse_args()
     if not args.func == install:
         git_utils.set_hooks()
-    args.func(args, unparsed_args)
+    if args.func == add:
+        args.func(args, unparsed_args)
+    else:
+        args.func(args)

@@ -1,19 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
-import os
 import sys
-import subprocess
-import re
-import json
-import git
 import logging
-import hashlib
-from collections import defaultdict, OrderedDict
-import tempfile
-import pdb
 
-from git_theta import git_utils, checkpoints, params, file_io, utils, theta, updates
+from git_theta import git_utils, checkpoints, params, updates
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -69,7 +60,7 @@ def clean(args):
 
     obj = git_utils.get_file_version(repo, args.file, "HEAD")
     if obj:
-        metadata = file_io.load_metadata_file(obj.data_stream).flatten()
+        metadata = params.Metadata.from_file(obj.data_stream).flatten()
     else:
         metadata = params.Metadata()
 
@@ -81,23 +72,24 @@ def clean(args):
         param_metadata = metadata.get(param_keys)
         new_tensor_metadata = params.TensorMetadata.from_tensor(new_param)
         # If the parameter tensor has not changed, just keep the metadata the same
-        #TODO: check if parameter has changed based on something fuzzier than tensor hash
+        #TODO: currently checks if rounded parameter hash has changed. Look into better parameter equality checks.
         if param_metadata and param_metadata.tensor_metadata == new_tensor_metadata:
             new_param_metadata = param_metadata
         # If it's changed, update this parameter's metadata
         else:
             update = updates.get_update()()
-            new_theta_metadata = params.ThetaMetadata(update_type=update.name, last_commit=git_utils.get_head(repo))
+            update_serializer = params.get_update_serializer()
 
+            new_theta_metadata = params.ThetaMetadata(update_type=update.name, last_commit=git_utils.get_head(repo))
             param_update = update.calculate_update(repo, args.file, param_keys, param_metadata, new_param)
-            update_contents = file_io.write_tracked_file_to_memory(param_update)
-            new_lfs_metadata = params.LfsMetadata.from_bytes(update_contents)
+            serialized_update = update_serializer.serialize(param_update)
+            new_lfs_metadata = params.LfsMetadata.from_bytes(serialized_update)
             new_param_metadata = params.ParamMetadata(lfs_metadata=new_lfs_metadata,
                                                       tensor_metadata=new_tensor_metadata,
                                                       theta_metadata=new_theta_metadata)
 
         new_metadata[param_keys] = new_param_metadata
-    file_io.write_metadata_file(sys.stdout, new_metadata.unflatten())
+    new_metadata.unflatten().write(sys.stdout)
 
 
 def smudge(args):
@@ -107,7 +99,7 @@ def smudge(args):
     logging.debug(f"Running smudge filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    metadata = file_io.load_metadata_file(sys.stdin).flatten()
+    metadata = params.Metadata.from_file(sys.stdin).flatten()
 
     model_dict = {}
     for param_keys, param_metadata in metadata.items():

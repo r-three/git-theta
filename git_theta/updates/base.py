@@ -12,7 +12,6 @@ import logging
 from typing import Optional
 
 from git_theta import git_utils
-from git_theta import file_io
 from git_theta import params
 from git_theta import utils
 
@@ -21,10 +20,9 @@ class Update:
     """Base class for parameter update plugins."""
 
     def read(self, param_metadata):
-        param_contents = git_utils.git_lfs_smudge(
-            param_metadata.lfs_metadata.lfs_pointer
-        )
-        param = file_io.load_tracked_file_from_memory(param_contents)
+        lfs_pointer = param_metadata.lfs_metadata.lfs_pointer
+        serialized_param = git_utils.git_lfs_smudge(lfs_pointer)
+        param = params.get_update_serializer().deserialize(serialized_param)
         return param
 
     def get_last_version(self, repo, path, param_keys, param_metadata):
@@ -32,10 +30,9 @@ class Update:
         logging.debug(f"Getting data from commit {last_commit}")
         if last_commit:
             last_metadata_obj = git_utils.get_file_version(repo, path, last_commit)
-            last_metadata = file_io.load_metadata_file(
-                last_metadata_obj.data_stream
-            ).flatten()[param_keys]
-            return last_metadata
+            last_metadata = params.Metadata.from_file(last_metadata_obj.data_stream)
+            last_param_metadata = last_metadata.flatten()[param_keys]
+            return last_param_metadata
         else:
             raise ValueError("Cannot find previous version for parameters")
 
