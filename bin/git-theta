@@ -8,9 +8,9 @@ import logging
 import re
 import fnmatch
 import json
-import pdb
+import subprocess
 
-from git_theta import git_utils, checkpoints, file_io, utils, theta
+from git_theta import git_utils, checkpoints, file_io, utils, theta, params
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-theta: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s"
@@ -47,11 +47,17 @@ def parse_args():
     )
     track_parser.set_defaults(func=track)
 
-    args = parser.parse_args()
+    add_parser = subparsers.add_parser(
+        "add", help="add command used to stage files."
+    )
+    add_parser.add_argument("--update-type", choices=["dense", "sparse"], help="Type of update being applied")
+    add_parser.set_defaults(func=add)
+
+    args = parser.parse_known_args()
     return args
 
 
-def post_commit(args):
+def post_commit(args, unparsed_args):
     repo = git_utils.get_git_repo()
     theta_commits = theta.ThetaCommits(repo)
 
@@ -62,18 +68,21 @@ def post_commit(args):
     commit = repo.commit('HEAD')
     for obj in commit.tree.traverse():
         if any([fnmatch.fnmatchcase(obj.path, pattern) for pattern in patterns]):
-            staged_file = file_io.load_staged_file(obj.data_stream)
-            prev_obj = git_utils.get_file_version(repo, obj.path, 'HEAD~1')
-            prev_staged_file = file_io.load_staged_file(prev_obj.data_stream) if prev_obj else {}
+            metadata = file_io.load_metadata_file(obj.data_stream).flatten()
 
-            for param_name, param_metadata in staged_file.items():
-                if not param_name in prev_staged_file or param_metadata != prev_staged_file[param_name]:
-                    oids.add(param_metadata['oid'])
+            prev_obj = git_utils.get_file_version(repo, obj.path, 'HEAD~1')
+            if prev_obj:
+                prev_metadata = file_io.load_metadata_file(prev_obj.data_stream).flatten()
+            else:
+                prev_metadata = params.Metadata()
+
+            added, removed, modified = metadata.diff(prev_metadata)
+            oids.update([param.lfs_metadata.oid for param in added + modified])
 
     theta_commits.write_commit_oids(commit.hexsha, oids)
 
 
-def pre_push(args):
+def pre_push(args, unparsed_args):
     """
     Pre-push git hook for sending objects to the LFS server
     """
@@ -91,7 +100,7 @@ def pre_push(args):
     git_utils.git_lfs_push_oids(args.remote_name, oids)
 
 
-def install(args):
+def install(args, unparsed_args):
     """
     Install git-lfs and initialize the git-theta filter driver
     """
@@ -104,7 +113,7 @@ def install(args):
     config_writer.release()
 
 
-def track(args):
+def track(args, unparsed_args):
     """
     Track a particular model checkpoint file with git-theta
     """
@@ -120,7 +129,16 @@ def track(args):
     git_utils.add_file(gitattributes_file, repo)
 
 
+def add(args, unparsed_args):
+    env_vars = {utils.EnvVarConstants.UPDATE_TYPE: args.update_type}
+    with utils.augment_environment(**env_vars):
+        command = ['git', 'add'] + unparsed_args
+        logging.debug(f'Running {" ".join(command)}')
+        subprocess.run(command)
+
+
 if __name__ == "__main__":
-    args = parse_args()
-    git_utils.set_hooks()
-    args.func(args)
+    args, unparsed_args = parse_args()
+    if not args.func == install:
+        git_utils.set_hooks()
+    args.func(args, unparsed_args)

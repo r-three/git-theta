@@ -6,6 +6,7 @@ import zipfile
 import tarfile
 
 from file_or_name import file_or_name
+from git_theta import params
 
 
 def untar_tracked_file_in_memory(file_bytes):
@@ -58,7 +59,7 @@ def write_tracked_file_to_memory(param):
 
 
 @file_or_name
-def load_staged_file(f):
+def load_metadata_file(f):
     """
     Load staged file
 
@@ -72,11 +73,12 @@ def load_staged_file(f):
     dict
         staged file contents
     """
-    return json.load(f)
+    staged_file_dict = json.load(f)
+    return params.Metadata.from_metadata_dict(staged_file_dict)
 
 
 @file_or_name(f="w")
-def write_staged_file(f, contents):
+def write_metadata_file(f, metadata):
     """
     Write staged file
 
@@ -87,4 +89,5 @@ def write_staged_file(f, contents):
     contents : dict
         dictionary to write to staged file
     """
-    json.dump(contents, f, indent=4)
+    staged_file_dict = metadata.to_serializable()
+    json.dump(staged_file_dict, f, indent=4)

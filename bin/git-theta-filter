@@ -13,7 +13,7 @@ from collections import defaultdict, OrderedDict
 import tempfile
 import pdb
 
-from git_theta import git_utils, checkpoints, params, file_io, utils, theta
+from git_theta import git_utils, checkpoints, params, file_io, utils, theta, updates
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -67,17 +67,37 @@ def clean(args):
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
 
-    # TODO(bdlester): If we use Python3.7 as the minimum version, we don't need
-    # to use an OrderedDict as the standard dict retains the insertion order.
-    staged_file_contents = OrderedDict()
+    obj = git_utils.get_file_version(repo, args.file, "HEAD")
+    if obj:
+        metadata = file_io.load_metadata_file(obj.data_stream).flatten()
+    else:
+        metadata = params.Metadata()
+
+    new_metadata = params.Metadata()
     # Sort the keys so we don't get changing diffs based on serialization order.
-    for keys, param in sorted(utils.flatten(model_checkpoint).items()):
-        param_name = "/".join(keys)
-        logging.debug(f"Cleaning {param_name}")
-        file_contents = file_io.write_tracked_file_to_memory(param)
-        lfs_metadata = git_utils.git_lfs_clean(file_contents)
-        staged_file_contents[keys] = lfs_metadata
-    file_io.write_staged_file(sys.stdout, utils.unflatten(staged_file_contents))
+    for param_keys, new_param in sorted(model_checkpoint.flatten().items()):
+        logging.debug(f"Cleaning {'/'.join(param_keys)}")
+
+        param_metadata = metadata.get(param_keys)
+        new_tensor_metadata = params.TensorMetadata.from_tensor(new_param)
+        # If the parameter tensor has not changed, just keep the metadata the same
+        #TODO: check if parameter has changed based on something fuzzier than tensor hash
+        if param_metadata and param_metadata.tensor_metadata == new_tensor_metadata:
+            new_param_metadata = param_metadata
+        # If it's changed, update this parameter's metadata
+        else:
+            update = updates.get_update()()
+            new_theta_metadata = params.ThetaMetadata(update_type=update.name, last_commit=git_utils.get_head(repo))
+
+            param_update = update.calculate_update(repo, args.file, param_keys, param_metadata, new_param)
+            update_contents = file_io.write_tracked_file_to_memory(param_update)
+            new_lfs_metadata = params.LfsMetadata.from_bytes(update_contents)
+            new_param_metadata = params.ParamMetadata(lfs_metadata=new_lfs_metadata,
+                                                      tensor_metadata=new_tensor_metadata,
+                                                      theta_metadata=new_theta_metadata)
+
+        new_metadata[param_keys] = new_param_metadata
+    file_io.write_metadata_file(sys.stdout, new_metadata.unflatten())
 
 
 def smudge(args):
@@ -87,16 +107,16 @@ def smudge(args):
     logging.debug(f"Running smudge filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    staged_file = utils.flatten(file_io.load_staged_file(sys.stdin), is_leaf=lambda l: 'oid' in l)
+    metadata = file_io.load_metadata_file(sys.stdin).flatten()
+
     model_dict = {}
-    for param_keys, param_metadata in staged_file.items():
+    for param_keys, param_metadata in metadata.items():
         logging.debug(f"Smudging {'/'.join(param_keys)}")
-        lfs_pointer = f'version {param_metadata["lfs_version"]}\noid sha256:{param_metadata["oid"]}\nsize {param_metadata["size"]}'.encode()
-        param_contents = git_utils.git_lfs_smudge(lfs_pointer)
-        param = file_io.load_tracked_file_from_memory(param_contents)
-        model_dict[param_keys] = param
+        update = updates.get_update(param_metadata.theta_metadata.update_type)()
+        model_dict[param_keys] = update.apply(repo, args.file, param_keys, param_metadata)
+
     checkpoint_handler = checkpoints.get_checkpoint_handler()
-    model_checkpoint = checkpoint_handler(utils.unflatten(model_dict))
+    model_checkpoint = checkpoint_handler(model_dict).unflatten()
     model_checkpoint.save(sys.stdout.buffer)
 
 

@@ -1,11 +1,11 @@
 """Backends for different checkpoint formats."""
 
-import torch
 import os
 import json
 import io
 import sys
 from typing import Optional
+import numpy as np
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
@@ -63,6 +63,12 @@ class Checkpoint(dict):
         """
         raise NotImplementedError
 
+    def flatten(self):
+        return utils.flatten(self, is_leaf=lambda v: isinstance(v, np.ndarray))
+
+    def unflatten(self):
+        return utils.unflatten(self)
+
 
 class PickledDictCheckpoint(Checkpoint):
     """Class for wrapping picked dict checkpoints, commonly used with PyTorch."""
@@ -87,6 +93,12 @@ class PickledDictCheckpoint(Checkpoint):
             Dictionary mapping parameter names to parameter values. Parameters
             should be numpy arrays.
         """
+        # TODO(bdlester): Once multiple checkpoint types are supported and
+        # this checkpoint object is moved to its own module, move this import
+        # back to toplevel. Currently it is inside the object methods to allow
+        # for optional framework installs.
+        import torch
+
         model_dict = torch.load(io.BytesIO(checkpoint_path.read()))
         if not isinstance(model_dict, dict):
             raise ValueError("Supplied PyTorch checkpoint must be a dict.")
@@ -104,6 +116,12 @@ class PickledDictCheckpoint(Checkpoint):
         checkpoint_path : str or file-like object
             Path to write out the checkpoint file to
         """
+        # TODO(bdlester): Once multiple checkpoint types are supported and
+        # this checkpoint object is moved to its own module, move this import
+        # back to toplevel. Currently it is inside the object methods to allow
+        # for optional framework installs.
+        import torch
+
         checkpoint_dict = {k: torch.as_tensor(v) for k, v in self.items()}
         torch.save(checkpoint_dict, checkpoint_path)
 
