@@ -11,9 +11,7 @@ else:
 import logging
 from typing import Optional
 
-from git_theta import git_utils
-from git_theta import params
-from git_theta import utils
+from git_theta import git_utils, utils, params, metadata
 
 
 class Update:
@@ -30,7 +28,7 @@ class Update:
         logging.debug(f"Getting data from commit {last_commit}")
         if last_commit:
             last_metadata_obj = git_utils.get_file_version(repo, path, last_commit)
-            last_metadata = params.Metadata.from_file(last_metadata_obj.data_stream)
+            last_metadata = metadata.Metadata.from_file(last_metadata_obj.data_stream)
             last_param_metadata = last_metadata.flatten()[param_keys]
             return last_param_metadata
         else:

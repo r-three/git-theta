@@ -8,7 +8,7 @@ import re
 import fnmatch
 import subprocess
 
-from git_theta import git_utils, utils, theta, params
+from git_theta import git_utils, utils, theta, metadata
 
 logging.basicConfig(
     level=logging.DEBUG, format="git-theta: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s"
@@ -66,15 +66,15 @@ def post_commit(args):
     commit = repo.commit('HEAD')
     for obj in commit.tree.traverse():
         if any([fnmatch.fnmatchcase(obj.path, pattern) for pattern in patterns]):
-            metadata = params.Metadata.from_file(obj.data_stream).flatten()
+            curr_metadata = metadata.Metadata.from_file(obj.data_stream).flatten()
 
             prev_obj = git_utils.get_file_version(repo, obj.path, 'HEAD~1')
             if prev_obj:
-                prev_metadata = params.Metadata.from_file(prev_obj.data_stream).flatten()
+                prev_metadata = metadata.Metadata.from_file(prev_obj.data_stream).flatten()
             else:
-                prev_metadata = params.Metadata()
+                prev_metadata = metadata.Metadata()
 
-            added, removed, modified = metadata.diff(prev_metadata)
+            added, removed, modified = curr_metadata.diff(prev_metadata)
             oids.update([param.lfs_metadata.oid for param in added + modified])
 
     theta_commits.write_commit_oids(commit.hexsha, oids)
