@@ -6,8 +6,6 @@ import git
 import logging
 import re
 import fnmatch
-import subprocess
-import shlex
 
 from git_theta import git_utils, utils, theta, metadata
 
