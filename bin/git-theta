@@ -7,6 +7,7 @@ import logging
 import re
 import fnmatch
 import subprocess
+import shlex
 
 from git_theta import git_utils, utils, theta, metadata
 
@@ -126,11 +127,10 @@ def track(args):
 
 
 def add(args, unparsed_args):
+    repo = git_utils.get_git_repo()
     env_vars = {utils.EnvVarConstants.UPDATE_TYPE: args.update_type}
-    with utils.augment_environment(**env_vars):
-        command = ['git', 'add'] + unparsed_args
-        logging.debug(f'Running {" ".join(command)}')
-        subprocess.run(command)
+    with repo.git.custom_environment(**env_vars):
+        repo.git.add(*unparsed_args)
 
 
 if __name__ == "__main__":

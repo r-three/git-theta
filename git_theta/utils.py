@@ -62,15 +62,3 @@ def unflatten(d: Dict[Tuple[str], Any]) -> Dict[str, Union[Dict[str, Any], Any]]
             curr = curr.setdefault(k, {})
         curr[ks[-1]] = v
     return nested
-
-
-@contextlib.contextmanager
-def augment_environment(**kwargs):
-    current_env = dict(os.environ)
-    for env_var, value in kwargs.items():
-        os.environ[env_var] = value
-
-    yield
-
-    os.environ.clear()
-    os.environ.update(current_env)
