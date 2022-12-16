@@ -10,9 +10,10 @@ from git_theta import git_utils, utils
 from file_or_name import file_or_name
 
 
+@dataclasses.dataclass
 class MetadataField:
-    def to_serializable(self):
-        d = dataclasses.asdict(self)
+    def serialize(self):
+        d = dataclasses.asdict(self, dict_factory=OrderedDict)
         for k, v in d.items():
             d[k] = v if v is None else str(v)
         return d
@@ -32,15 +33,19 @@ class LfsMetadata(MetadataField):
     @property
     def lfs_pointer(self):
         return (
-            f"version {self.version}\noid sha256:{self.oid}\nsize {self.size}".encode()
+            f"version {self.version}\noid sha256:{self.oid}\nsize {self.size}\n".encode(
+                "utf-8"
+            )
         )
 
     @classmethod
-    def from_pointer(cls, pointer_file):
+    def from_pointer(cls, pointer_contents):
         match = re.match(
-            "^version (?P<version>[^\s]*)\s*oid sha256:(?P<oid>[^\s]*)\s*size (?P<size>[0-9]*)$",
-            pointer_file,
+            "^version (?P<version>[^\s]+)\noid sha256:(?P<oid>[0-9a-f]{64})\nsize (?P<size>[0-9]+)\n$",
+            pointer_contents,
         )
+        if match is None:
+            raise ValueError(f"Failed to parse pointer file {pointer_contents}")
         return cls(
             version=match.group("version"),
             oid=match.group("oid"),
@@ -95,22 +100,22 @@ class ParamMetadata(OrderedDict):
         theta_metadata = ThetaMetadata(**d[ThetaMetadata.name])
         return cls(tensor_metadata, lfs_metadata, theta_metadata)
 
-    def to_serializable(self):
+    def serialize(self):
         for metadata_key, metadata in self.items():
-            self[metadata_key] = metadata.to_serializable()
+            self[metadata_key] = metadata.serialize()
         return self
 
     @property
     def theta_metadata(self):
-        return self.get(ThetaMetadata.name)
+        return self[ThetaMetadata.name]
 
     @property
     def tensor_metadata(self):
-        return self.get(TensorMetadata.name)
+        return self[TensorMetadata.name]
 
     @property
     def lfs_metadata(self):
-        return self.get(LfsMetadata.name)
+        return self[LfsMetadata.name]
 
 
 class Metadata(OrderedDict):
@@ -130,7 +135,7 @@ class Metadata(OrderedDict):
 
     @file_or_name(file="w")
     def write(self, file):
-        metadata_dict = self.to_serializable()
+        metadata_dict = self.serialize()
         json.dump(metadata_dict, file, indent=4)
 
     def flatten(self):
@@ -160,8 +165,8 @@ class Metadata(OrderedDict):
 
         return added, removed, modified
 
-    def to_serializable(self):
+    def serialize(self):
         flattened = self.flatten()
         for param_keys, param_metadata in flattened.items():
-            flattened[param_keys] = param_metadata.to_serializable()
+            flattened[param_keys] = param_metadata.serialize()
         return flattened.unflatten()
