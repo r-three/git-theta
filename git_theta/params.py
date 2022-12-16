@@ -69,11 +69,10 @@ class TarCombiner(FileCombiner):
         file = io.BytesIO(tarred_file)
         param_files = defaultdict(dict)
         with tarfile.open(fileobj=file, mode="r") as archive:
-            for archive_file in archive.getnames():
-                param_name = posixpath.split(archive_file)[0]
-                filename = posixpath.join(*posixpath.split(archive_file)[1:])
+            for file_in_archive in archive.getnames():
+                param_name, filename = posixpath.split(file_in_archive)
                 param_files[param_name][filename] = archive.extractfile(
-                    archive_file
+                    file_in_archive
                 ).read()
 
         return param_files
