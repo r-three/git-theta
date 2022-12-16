@@ -10,13 +10,10 @@ from git_theta import git_utils, utils
 from file_or_name import file_or_name
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=True)
 class MetadataField:
     def serialize(self):
-        d = dataclasses.asdict(self, dict_factory=OrderedDict)
-        for k, v in d.items():
-            d[k] = v if v is None else str(v)
-        return d
+        return dataclasses.asdict(self, dict_factory=OrderedDict)
 
 
 @dataclasses.dataclass(eq=True)
@@ -87,11 +84,11 @@ class ThetaMetadata(MetadataField):
         return "theta_metadata"
 
 
-class ParamMetadata(OrderedDict):
-    def __init__(self, tensor_metadata, lfs_metadata, theta_metadata):
-        self[TensorMetadata.name] = tensor_metadata
-        self[LfsMetadata.name] = lfs_metadata
-        self[ThetaMetadata.name] = theta_metadata
+@dataclasses.dataclass(eq=True)
+class ParamMetadata(MetadataField):
+    tensor_metadata: TensorMetadata
+    lfs_metadata: LfsMetadata
+    theta_metadata: ThetaMetadata
 
     @classmethod
     def from_metadata_dict(cls, d):
@@ -99,23 +96,6 @@ class ParamMetadata(OrderedDict):
         lfs_metadata = LfsMetadata(**d[LfsMetadata.name])
         theta_metadata = ThetaMetadata(**d[ThetaMetadata.name])
         return cls(tensor_metadata, lfs_metadata, theta_metadata)
-
-    def serialize(self):
-        for metadata_key, metadata in self.items():
-            self[metadata_key] = metadata.serialize()
-        return self
-
-    @property
-    def theta_metadata(self):
-        return self[ThetaMetadata.name]
-
-    @property
-    def tensor_metadata(self):
-        return self[TensorMetadata.name]
-
-    @property
-    def lfs_metadata(self):
-        return self[LfsMetadata.name]
 
 
 class Metadata(OrderedDict):
@@ -147,13 +127,19 @@ class Metadata(OrderedDict):
     def diff(self, other):
         self_flattened = self.flatten()
         other_flattened = other.flatten()
-        added = [
-            self_flattened[k] for k in self_flattened.keys() - other_flattened.keys()
-        ]
-        removed = [
-            other_flattened[k] for k in other_flattened.keys() - self_flattened.keys()
-        ]
-        modified = []
+        added = Metadata(
+            {
+                k: self_flattened[k]
+                for k in self_flattened.keys() - other_flattened.keys()
+            }
+        ).unflatten()
+        removed = Metadata(
+            {
+                k: other_flattened[k]
+                for k in other_flattened.keys() - self_flattened.keys()
+            }
+        ).unflatten()
+        modified = Metadata()
         for param_keys in set(self_flattened.keys()).intersection(
             other_flattened.keys()
         ):
@@ -161,8 +147,9 @@ class Metadata(OrderedDict):
                 self_flattened[param_keys].tensor_metadata
                 != other_flattened[param_keys].tensor_metadata
             ):
-                modified.append(self_flattened[param_keys])
+                modified[param_keys] = self_flattened[param_keys]
 
+        modified = modified.unflatten()
         return added, removed, modified
 
     def serialize(self):

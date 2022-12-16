@@ -74,7 +74,8 @@ def post_commit(args):
                 prev_metadata = metadata.Metadata()
 
             added, removed, modified = curr_metadata.diff(prev_metadata)
-            oids.update([param.lfs_metadata.oid for param in added + modified])
+            oids.update([param.lfs_metadata.oid for param in added.flatten().values()])
+            oids.update([param.lfs_metadata.oid for param in modified.flatten().values()])
 
     commit_info = theta.CommitInfo(oids)
     theta_commits.write_commit_info(commit.hexsha, commit_info)
