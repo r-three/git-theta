@@ -1,7 +1,7 @@
 """Install the git-theta package."""
 
 import ast
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def get_version(file_name: str, version_variable: str = "__version__") -> str:
@@ -45,7 +45,7 @@ setup(
     author="Colin Raffel",
     author_email="craffel@gmail.com",
     url="https://github.com/r-three/checkpoint-vcs",
-    packages=["git_theta", "git_theta.updates"],
+    packages=find_packages(),
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
     scripts=["bin/git-theta", "bin/git-theta-filter"],
     long_description="Version control system for model checkpoints.",

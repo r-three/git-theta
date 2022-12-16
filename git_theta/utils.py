@@ -3,7 +3,6 @@
 
 import os
 from typing import Dict, Any, Tuple, Union, Callable
-import contextlib
 
 
 class EnvVarConstants:
@@ -13,7 +12,7 @@ class EnvVarConstants:
 
 def flatten(
     d: Dict[str, Any],
-    is_leaf: Callable[[object], bool] = lambda v: not isinstance(v, dict),
+    is_leaf: Callable[[Any], bool] = lambda v: not isinstance(v, dict),
 ) -> Dict[Tuple[str, ...], Any]:
     """Flatten a nested dictionary.
 
