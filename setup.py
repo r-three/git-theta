@@ -63,9 +63,9 @@ setup(
         "GitPython",
         "tensorstore",
         "file-or-name",
-        "importlib_metadata",
+        'importlib_metadata; python_version < "3.9.0"',
         'dataclasses; python_version < "3.7.0"',
-        'importlib_resources; python_version < "3.7.0"',
+        'importlib_resources; python_version < "3.9.0"',
     ],
     extras_require={
         "test": ["pytest"],
