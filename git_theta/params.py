@@ -58,6 +58,8 @@ class TarCombiner(FileCombiner):
         with tarfile.open(fileobj=tarred_file, mode="w") as archive:
             for param_name, param_files in param_files.items():
                 for filename, file_bytes in param_files.items():
+                    # N.b. posixpath is used to create the "virtual path" in the tar file to each underlying parameter file
+                    # Ensures consistent reading/writing of virtual paths across platforms
                     tarinfo = tarfile.TarInfo(posixpath.join(param_name, filename))
                     tarinfo.size = len(file_bytes)
                     archive.addfile(tarinfo, io.BytesIO(file_bytes))

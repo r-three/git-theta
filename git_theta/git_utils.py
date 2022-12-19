@@ -160,6 +160,7 @@ def get_gitattributes_tracked_patterns(gitattributes_file):
     theta_attributes = [
         attribute for attribute in gitattributes if "filter=theta" in attribute
     ]
+    # TODO: Correctly handle patterns with escaped spaces in them
     patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
     return patterns
 
