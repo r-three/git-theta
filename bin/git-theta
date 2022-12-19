@@ -63,11 +63,11 @@ def post_commit(args):
 
     oids = set()
     commit = repo.commit('HEAD')
-    for obj in commit.tree.traverse():
-        if any([fnmatch.fnmatchcase(obj.path, pattern) for pattern in patterns]):
-            curr_metadata = metadata.Metadata.from_file(obj.data_stream).flatten()
+    for path in commit.stats.files.keys():
+        if any([fnmatch.fnmatchcase(path, pattern) for pattern in patterns]):
+            curr_metadata = metadata.Metadata.from_file(commit.tree[path].data_stream).flatten()
 
-            prev_obj = git_utils.get_file_version(repo, obj.path, 'HEAD~1')
+            prev_obj = git_utils.get_file_version(repo, path, 'HEAD~1')
             if prev_obj:
                 prev_metadata = metadata.Metadata.from_file(prev_obj.data_stream).flatten()
             else:
