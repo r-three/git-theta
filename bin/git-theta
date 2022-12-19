@@ -55,6 +55,9 @@ def parse_args():
 
 
 def post_commit(args):
+    """
+    Post-commit git hook that records the LFS objects that were created (equivalent to parameter groups that were modified) in this commit
+    """
     repo = git_utils.get_git_repo()
     theta_commits = theta.ThetaCommits(repo)
 
@@ -85,8 +88,7 @@ def pre_push(args):
 
     # Read lines of the form <local ref> <local sha1> <remote ref> <remote sha1> LF
     lines = sys.stdin.readlines()
-    print(lines)
-    lines_parsed = [re.match('^(?P<local_ref>[^\s]+)\s+(?P<local_sha1>[a-f0-9]{40})\s+(?P<remote_ref>[^\s]+)\s+(?P<remote_sha1>[a-f0-9]{40})\s+$', l) for l in lines]
+    lines_parsed = git_utils.parse_pre_push_args(lines)
     commit_ranges = [(l.group('remote_sha1'), l.group('local_sha1')) for l in lines_parsed]
     oids = theta_commits.get_commit_oids_ranges(*commit_ranges)
     git_utils.git_lfs_push_oids(args.remote_name, oids)

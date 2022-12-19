@@ -239,3 +239,14 @@ def git_lfs_push_oids(remote_name, oids):
         )
         return out.returncode
     return 0
+
+
+def parse_pre_push_args(lines):
+    lines_parsed = [
+        re.match(
+            "^(?P<local_ref>[^\s]+)\s+(?P<local_sha1>[a-f0-9]{40})\s+(?P<remote_ref>[^\s]+)\s+(?P<remote_sha1>[a-f0-9]{40})\s+$",
+            l,
+        )
+        for l in lines
+    ]
+    return lines_parsed
