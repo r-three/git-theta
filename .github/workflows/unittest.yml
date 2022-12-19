@@ -27,7 +27,7 @@ jobs:
     - name: Install Dependencies and Package
       run: |
         python -m pip install --upgrade pip
-        python -m pip install .[test]
+        python -m pip install .[test,pytorch]
     - name: Run Unit Tests
       run: |
         pytest

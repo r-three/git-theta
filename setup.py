@@ -61,7 +61,6 @@ setup(
     license="MIT",
     install_requires=[
         "GitPython",
-        "torch",
         "tensorstore",
         "file-or-name",
         "importlib_metadata",
@@ -69,6 +68,10 @@ setup(
     ],
     extras_require={
         "test": ["pytest"],
+        "pytorch": ["torch"],
+        "tensorflow": ["tensorflow"],
+        # TODO: Add tensorflow to the all target once tf checkpoint support is added.
+        "all": ["torch"],
     },
     entry_points={
         "git_theta.plugins.checkpoints": [

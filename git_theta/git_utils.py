@@ -7,7 +7,6 @@ import json
 import logging
 import io
 import re
-import torch
 from typing import List, Union
 import subprocess
 import shutil
