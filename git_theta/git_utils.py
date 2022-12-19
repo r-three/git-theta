@@ -214,7 +214,7 @@ def get_head(repo):
         head = repo.commit("HEAD")
         return head.hexsha
     except git.BadName:
-        None
+        return None
 
 
 def git_lfs_clean(file):

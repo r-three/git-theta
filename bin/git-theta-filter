@@ -60,16 +60,16 @@ def clean(args):
 
     obj = git_utils.get_file_version(repo, args.file, "HEAD")
     if obj:
-        curr_metadata = metadata.Metadata.from_file(obj.data_stream).flatten()
+        prev_metadata = metadata.Metadata.from_file(obj.data_stream).flatten()
     else:
-        curr_metadata = metadata.Metadata()
+        prev_metadata = metadata.Metadata()
 
     new_metadata = metadata.Metadata()
     # Sort the keys so we don't get changing diffs based on serialization order.
     for param_keys, new_param in sorted(model_checkpoint.flatten().items()):
         logging.debug(f"Cleaning {'/'.join(param_keys)}")
 
-        param_metadata = curr_metadata.get(param_keys)
+        param_metadata = prev_metadata.get(param_keys)
         new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
         # If the parameter tensor has not changed, just keep the metadata the same
         #TODO: currently checks if rounded parameter hash has changed. Look into better parameter equality checks.
