@@ -72,11 +72,11 @@ def clean(args):
             new_param_metadata = param_metadata
         # If it's changed, update this parameter's metadata
         else:
-            update = updates.get_update()()
+            update_handler = updates.get_update_handler()()
             update_serializer = params.get_update_serializer()
 
-            new_theta_metadata = metadata.ThetaMetadata(update_type=update.name, last_commit=git_utils.get_head(repo))
-            param_update = update.calculate_update(repo, args.file, param_keys, param_metadata, new_param)
+            new_theta_metadata = metadata.ThetaMetadata(update_type=update_handler.name, last_commit=git_utils.get_head(repo))
+            param_update = update_handler.calculate_update(repo, args.file, param_keys, param_metadata, new_param)
             serialized_update = update_serializer.serialize(param_update)
             new_lfs_metadata = metadata.LfsMetadata.from_bytes(serialized_update)
             new_param_metadata = metadata.ParamMetadata(lfs_metadata=new_lfs_metadata,
@@ -99,8 +99,8 @@ def smudge(args):
     model_dict = {}
     for param_keys, param_metadata in curr_metadata.items():
         logging.debug(f"Smudging {'/'.join(param_keys)}")
-        update = updates.get_update(param_metadata.theta_metadata.update_type)()
-        model_dict[param_keys] = update.apply(repo, args.file, param_keys, param_metadata)
+        update_handler = updates.get_update_handler(param_metadata.theta_metadata.update_type)()
+        model_dict[param_keys] = update_handler.apply(repo, args.file, param_keys, param_metadata)
 
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler(model_dict).unflatten()

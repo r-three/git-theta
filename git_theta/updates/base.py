@@ -49,7 +49,7 @@ def get_update_name(update_type: Optional[str] = None) -> str:
     return update_type or os.environ.get(utils.EnvVarConstants.UPDATE_TYPE) or "dense"
 
 
-def get_update(update_type: Optional[str] = None) -> Update:
+def get_update_handler(update_type: Optional[str] = None) -> Update:
     """Get an Update class by name.
 
     Parameters

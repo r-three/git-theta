@@ -68,7 +68,7 @@ def post_commit(args):
     commit = repo.commit('HEAD')
     for path in commit.stats.files.keys():
         if any([fnmatch.fnmatchcase(path, pattern) for pattern in patterns]):
-            curr_metadata = metadata.Metadata.from_file(commit.tree[path].data_stream).flatten()
+            curr_metadata = metadata.Metadata.from_file(commit.tree[path].data_stream)
             prev_metadata = metadata.Metadata.from_commit(repo, path, 'HEAD~1')
 
             added, removed, modified = curr_metadata.diff(prev_metadata)
