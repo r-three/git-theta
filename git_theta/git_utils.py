@@ -237,5 +237,4 @@ def git_lfs_push_oids(remote_name, oids):
             ["git", "lfs", "push", "--object-id", re.escape(remote_name)] + list(oids)
         )
         return out.returncode
-    else:
-        return 0
+    return 0
