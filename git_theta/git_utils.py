@@ -14,6 +14,7 @@ from collections import OrderedDict
 import subprocess
 import shutil
 import importlib.resources
+import filecmp
 
 from file_or_name import file_or_name
 
@@ -32,11 +33,13 @@ def get_git_repo():
 
 def set_hooks():
     repo = get_git_repo()
-    hooks_dst = os.path.join(repo.git_dir, "hooks")
+    hooks_dir = os.path.join(repo.git_dir, "hooks")
     package = importlib.resources.files("git_theta")
     for hook in ["pre-push", "post-commit"]:
-        with importlib.resources.as_file(package.joinpath("hooks", hook)) as file:
-            shutil.copy(file, hooks_dst)
+        with importlib.resources.as_file(package.joinpath("hooks", hook)) as hook_src:
+            hook_dst = os.path.join(hooks_dir, hook)
+            if not (os.path.exists(hook_dst) and filecmp.cmp(hook_src, hook_dst)):
+                shutil.copy(hook_src, hook_dst)
 
 
 def get_relative_path_from_root(repo, path):
@@ -231,9 +234,9 @@ def git_lfs_smudge(pointer_file):
 
 
 def git_lfs_push_oids(remote_name, oids):
-    if len(oids):
+    if oids:
         out = subprocess.run(
-            ["git", "lfs", "push", "--object-id", remote_name] + list(oids)
+            ["git", "lfs", "push", "--object-id", re.escape(remote_name)] + list(oids)
         )
         return out.returncode
     else:
