@@ -113,6 +113,14 @@ class Metadata(OrderedDict):
         metadata_dict = json.load(file)
         return cls.from_metadata_dict(metadata_dict)
 
+    @classmethod
+    def from_commit(cls, repo, path, commit_hash):
+        obj = git_utils.get_file_version(repo, path, commit_hash)
+        if obj is None:
+            return cls()
+        else:
+            return cls.from_file(obj.data_stream)
+
     @file_or_name(file="w")
     def write(self, file):
         metadata_dict = self.serialize()

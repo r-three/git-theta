@@ -58,12 +58,7 @@ def clean(args):
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
 
-    obj = git_utils.get_file_version(repo, args.file, "HEAD")
-    if obj:
-        prev_metadata = metadata.Metadata.from_file(obj.data_stream).flatten()
-    else:
-        prev_metadata = metadata.Metadata()
-
+    prev_metadata = metadata.Metadata.from_commit(repo, args.file, "HEAD").flatten()
     new_metadata = metadata.Metadata()
     # Sort the keys so we don't get changing diffs based on serialization order.
     for param_keys, new_param in sorted(model_checkpoint.flatten().items()):
