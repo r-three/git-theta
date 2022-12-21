@@ -5,6 +5,7 @@ import json
 import io
 import sys
 from typing import Optional
+import numpy as np
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
@@ -61,6 +62,12 @@ class Checkpoint(dict):
             Path to write out the checkpoint file to
         """
         raise NotImplementedError
+
+    def flatten(self):
+        return utils.flatten(self, is_leaf=lambda v: isinstance(v, np.ndarray))
+
+    def unflatten(self):
+        return utils.unflatten(self)
 
 
 class PickledDictCheckpoint(Checkpoint):

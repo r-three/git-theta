@@ -1,63 +1,5 @@
-"""Base class for parameter update plugins.
+"""Base class for parameter update plugins."""
 
-Example directory structure of how updates are stored.
-
-.git_theta/my-model.pt/
-├── layers.0.bias
-│   └── params
-│       ├── metadata  # Pointer to the most recent update.
-│       └── updates
-│           │   # This is the hash of the parameter after the update, not the contents of the update.
-│           ├── 13f81e06d1a47a437541a26f86fd20c89ccf73ea
-│           │   ├── .zarray
-│           │   ├── 0
-│           │   └── metadata  # Update type and pointer to the last update.
-│           ├── 1f40b7caef2f961b4bde95f9a450c3a12eb6f249
-│           │   ├── .zarray
-│           │   ├── 0
-│           │   └── metadata
-│           └── 77db6ed78df01aecbb9e7990a87d50f7dc2d5579
-│               ├── .zarray
-│               ├── 0
-│               └── metadata
-├── ...
-└── layers.1.weight
-    └── params
-        ├── metadata
-        └── updates
-            ├── 2ceb7dac4dd0b012fd404e227c13cf66bd25cf3a
-            │   ├── .zarray
-            │   ├── 0.0
-            │   └── metadata
-            ├── aeefd921f332f102e3e77ca6ec3d46d707afe9a9
-            │   ├── .zarray
-            │   ├── 0.0
-            │   └── metadata
-            └── b16693be23b9146457c20752cdac2796de5a7290
-                ├── .zarray
-                ├── 0.0
-                └── metadata
-
-
-Example .../layers.0.bias/params/metadata
-[
-    ".git_theta/my-model.pt/layers.0.bias/params/updates/77db6ed78df01aecbb9e7990a87d50f7dc2d5579"
-]
-
-Example .../params/updates/${hash}/metadata
-{
-    "update": "sparse",
-    "previous": ".git_theta/my-model.pt/layers.0.bias/params/updates/13f81e06d1a47a437541a26f86fd20c89ccf73ea"
-}
-
-Another Example
-{
-    "update": "dense"
-}
-
-"""
-
-import logging
 import os
 import sys
 
@@ -66,162 +8,44 @@ if sys.version_info < (3, 10):
 else:
     from importlib.metadata import entry_points
 
+import logging
 from typing import Optional
 
-import numpy as np
-from git_theta import file_io
-from git_theta import git_utils
-from git_theta import utils
-
-
-class UpdateConstants:
-    """Scoped constants for consistent file name and key naming."""
-
-    UPDATE_KEY: str = "update"
-    UPDATES_DIR: str = "updates"
-    METADATA_FILE: str = "metadata"
-    PREVIOUS_KEY: str = "previous"
+from git_theta import git_utils, utils, params, metadata
 
 
 class Update:
     """Base class for parameter update plugins."""
 
+    def read(self, param_metadata):
+        lfs_pointer = param_metadata.lfs_metadata.lfs_pointer
+        serialized_param = git_utils.git_lfs_smudge(lfs_pointer)
+        param = params.get_update_serializer().deserialize(serialized_param)
+        return param
+
+    def get_last_version(self, repo, path, param_keys, param_metadata):
+        last_commit = param_metadata.theta_metadata.last_commit
+        logging.debug(f"Getting data from commit {last_commit}")
+        if last_commit:
+            last_metadata_obj = git_utils.get_file_version(repo, path, last_commit)
+            last_metadata = metadata.Metadata.from_file(last_metadata_obj.data_stream)
+            last_param_metadata = last_metadata.flatten()[param_keys]
+            return last_param_metadata
+        else:
+            raise ValueError("Cannot find previous version for parameters")
+
     @property
     def name(self):
-        """The name used to get this class as a plugin."""
         raise NotImplementedError
 
-    def read(self, path: str) -> np.ndarray:
-        """Read the parameter values in the path dir.
-
-        Parameters
-        ----------
-        path
-            The .../params/updates/${hash} directory path that contains parameter
-            update values.
-
-        Returns
-        -------
-        np.ndarray
-            The parameter values at path.
-        """
+    def apply(self, repo, path, param_keys, param_metadata):
         raise NotImplementedError
 
-    def write(self, path: str, parameter: np.ndarray):
-        """Write `parameter` values to path.
-
-        Parameters
-        ----------
-        path
-            The .../params/updates/${hash} directory path to write to.
-        parameter
-            The values to write.
-        """
+    def calculate_update(self, repo, path, param_keys, param_metadata, param):
         raise NotImplementedError
-
-    def apply(self, path: str) -> np.ndarray:
-        """Get the update parameter values after applying the update from `path`.
-
-        Parameters
-        ----------
-        path
-            The .../params/updates/${hash} directory path to the update we want
-            the result from.
-
-        Returns
-        -------
-        np.ndarray
-            The parameter after the update at `path` is applied.
-        """
-        raise NotImplementedError
-
-    def record_update(self, path: str, update_path: str):
-        """Update the most recent update metadata file to point to this update.
-
-        Parameters
-        ----------
-        path
-            The path to the .../params dir for a parameter, this should be absolute.
-        update_path
-            The path to the .../params/updates/${hash} dir for a parameter, can
-            be absolute or relative.
-        """
-        metadata_file = os.path.join(path, UpdateConstants.METADATA_FILE)
-        if not os.path.exists(metadata_file):
-            metadata = []
-        else:
-            metadata = file_io.load_staged_file(metadata_file)
-        update_path = git_utils.get_relative_path_from_root(
-            git_utils.get_git_repo(), update_path
-        )
-        logging.debug(
-            f"Recording recent update as '{update_path}' was '{metadata[-1] if metadata else None}'"
-        )
-        file_io.write_staged_file(metadata_file, [update_path])
-
-
-def most_recent_update(path: str) -> str:
-    """Get the most recent update applied to the parameter.
-
-    Note:
-        Path is expected to be a path to the params directory of a parameter.
-        It should be an absolute path.
-
-    Parameters
-    ----------
-    path
-        The path to the .../params dir for a parameter.
-
-    Returns
-    -------
-    str
-        The path to the previous update for the parameter, relative to the repo root.
-    """
-    metadata_file = os.path.join(path, UpdateConstants.METADATA_FILE)
-    metadata = file_io.load_staged_file(metadata_file)
-    return metadata[0] if metadata else None
-
-
-def read_update_type(path: str) -> str:
-    """Get the update type used for some update.
-
-    Notes:
-        Path is expected to be a .../params/updates/${hash} path for a parameter.
-        It should be an absolute path.
-
-    Parameters
-    ----------
-    path
-        The path to the .../params/updates/${hash} path for a parameter.
-
-    Returns
-    -------
-    str
-        The update type used to save this update.
-    """
-    metadata_file = os.path.join(path, UpdateConstants.METADATA_FILE)
-    metadata = file_io.load_staged_file(metadata_file)
-    return metadata[UpdateConstants.UPDATE_KEY]
 
 
 def get_update_handler_name(update_type: Optional[str] = None) -> str:
-    """Get the update type based on multiple overrides.
-
-    The order of precedence is:
-    1) User input via the update_type parameter
-    2) The GIT_THETA_UPDATE_TYPE environment variable
-    3) The default value ("dense")
-
-    Parameters
-    ----------
-    update_type
-        The update type name
-
-    Returns
-    -------
-    str
-        The update type based on overrides.
-    """
     return update_type or os.environ.get(utils.EnvVarConstants.UPDATE_TYPE) or "dense"
 
 
@@ -230,14 +54,15 @@ def get_update_handler(update_type: Optional[str] = None) -> Update:
 
     Parameters
     ----------
-    update_type
+    update_type:
         The name of the update type we want to use.
 
     Returns
     -------
     Update
-        The update class. Returned class my be defined in a user installed plugin.
+        The update class. Returned class may be defined in a user installed
+        plugin.
     """
-    update_type = get_update_handler_name(update_type)
+    update_name = get_update_handler_name(update_type)
     discovered_plugins = entry_points(group="git_theta.plugins.updates")
-    return discovered_plugins[update_type].load()
+    return discovered_plugins[update_name].load()

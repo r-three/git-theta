@@ -46,6 +46,7 @@ setup(
     author_email="craffel@gmail.com",
     url="https://github.com/r-three/checkpoint-vcs",
     packages=find_packages(),
+    package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
     scripts=["bin/git-theta", "bin/git-theta-filter"],
     long_description="Version control system for model checkpoints.",
     python_requires=">=3.6",
@@ -63,6 +64,8 @@ setup(
         "tensorstore",
         "file-or-name",
         "importlib_metadata",
+        'dataclasses; python_version < "3.7.0"',
+        'importlib_resources; python_version < "3.7.0"',
     ],
     extras_require={
         "test": ["pytest"],

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# git-theta pre-push hook that:
+# 1. Gets the commits being pushed to the remote
+# 2. Checks for git-theta tracked models in those commits
+# 3. Reads .git/theta/commits/<commit_hash> to get the parameter group object-ids modified in each commit
+# 4. Runs git lfs push --object-id <remote_name> <object_ids> to push the modified parameter groups to the LFS store
+
+git theta pre-push "$@"

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# git-theta post-commit hook that:
+# 1. Checks for git-theta tracked models in the last commit
+# 2. Finds the Git LFS object ids corresponding to the parameter groups modified in that commit
+# 3. Records the modified object ids in .git/theta/commits/<commit_hash>
+
+git theta post-commit "$@"

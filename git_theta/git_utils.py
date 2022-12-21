@@ -9,6 +9,14 @@ import io
 import re
 from typing import List, Union
 import subprocess
+import shutil
+import filecmp
+import sys
+
+if sys.version_info < (3, 7):
+    import importlib_resources
+else:
+    import importlib.resources as importlib_resources
 
 from file_or_name import file_or_name
 
@@ -25,58 +33,15 @@ def get_git_repo():
     return git.Repo(os.getcwd(), search_parent_directories=True)
 
 
-def get_git_theta(repo, create=False):
-    """
-    If create argument is true, create $git_root/.git_theta and return path
-    Otherwise return $git_root/.git_theta path
-
-    Parameters
-    ----------
-    git_root : str
-        path to git repository's root directory
-    create : bool
-        argument to create the directory
-
-    Returns
-    -------
-    str
-        path to $git_root/.git_theta directory
-    """
-    git_theta = os.path.join(repo.working_dir, ".git_theta")
-    if not os.path.exists(git_theta) and create:
-        logging.debug(f"Creating git theta directory {git_theta}")
-        os.makedirs(git_theta)
-    return git_theta
-
-
-def get_git_theta_model_dir(repo, model_path, create=False):
-    """
-    If create is true, create directory under $git_root/.git_theta/ to store a model and return path
-    Otherwise just return path that stores a model
-
-    Parameters
-    ----------
-    repo : git.Repo
-        Repo object for the current git repository
-
-    model_path : str
-        path to model file being saved
-
-    create : bool
-        argument to create the directory
-    Returns
-    -------
-    str
-        path to $git_root/.git_theta/$model_path directory
-    """
-    git_theta = get_git_theta(repo)
-    git_theta_model_dir = os.path.join(git_theta, model_path)
-
-    if not os.path.exists(git_theta_model_dir) and create:
-        logging.debug(f"Creating model directory {git_theta_model_dir}")
-        os.makedirs(git_theta_model_dir)
-
-    return git_theta_model_dir
+def set_hooks():
+    repo = get_git_repo()
+    hooks_dir = os.path.join(repo.git_dir, "hooks")
+    package = importlib_resources.files("git_theta")
+    for hook in ["pre-push", "post-commit"]:
+        with importlib_resources.as_file(package.joinpath("hooks", hook)) as hook_src:
+            hook_dst = os.path.join(hooks_dir, hook)
+            if not (os.path.exists(hook_dst) and filecmp.cmp(hook_src, hook_dst)):
+                shutil.copy(hook_src, hook_dst)
 
 
 def get_relative_path_from_root(repo, path):
@@ -177,77 +142,6 @@ def write_gitattributes(
     gitattributes_file.write("\n")
 
 
-def add_file(f, repo):
-    """
-    Add file to git staging area
-
-    Parameters
-    ----------
-    f : str
-        path to file
-    repo : git.Repo
-        Repo object for current git repository
-    """
-    logging.debug(f"Adding {f} to staging area")
-    repo.git.add(f)
-
-
-def remove_file(f, repo):
-    """
-    Remove file or directory and add change to staging area
-
-    Parameters
-    ----------
-    f : str
-        path to file or directory
-    repo : git.Repo
-        Repo object for current git repository
-    """
-    logging.debug(f"Removing {f}")
-    if os.path.isdir(f):
-        repo.git.rm("-r", f)
-    else:
-        repo.git.rm(f)
-
-
-def git_lfs_install():
-    """
-    Run the `git lfs install` command
-
-    Returns
-    -------
-    int
-        Return code of `git lfs install`
-    """
-    out = subprocess.run(["git", "lfs", "install"])
-    return out.returncode
-
-
-def git_lfs_track(repo, directory):
-    """
-    Run the `git lfs track` command to track the files under `directory`
-
-    Parameters
-    ----------
-    repo : git.Repo
-        Repo object for current git repository
-    directory : str
-        Track all files under this directory
-
-    Returns
-    -------
-    int
-        Return code of `git lfs track`
-    """
-    track_glob = os.path.relpath(
-        os.path.join(directory, "**", "params", "[0-9]*"), repo.working_dir
-    )
-    out = subprocess.run(
-        ["git", "lfs", "track", f'"{track_glob}"'], cwd=repo.working_dir
-    )
-    return out.returncode
-
-
 def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
     """Add a filter=theta that covers file_name.
 
@@ -281,3 +175,100 @@ def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> st
     if not pattern_found:
         new_gitattributes.append(f"{path} filter=theta")
     return new_gitattributes
+
+
+def get_gitattributes_tracked_patterns(gitattributes_file):
+    gitattributes = read_gitattributes(gitattributes_file)
+    theta_attributes = [
+        attribute for attribute in gitattributes if "filter=theta" in attribute
+    ]
+    # TODO: Correctly handle patterns with escaped spaces in them
+    patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
+    return patterns
+
+
+def add_file(f, repo):
+    """
+    Add file to git staging area
+
+    Parameters
+    ----------
+    f : str
+        path to file
+    repo : git.Repo
+        Repo object for current git repository
+    """
+    logging.debug(f"Adding {f} to staging area")
+    repo.git.add(f)
+
+
+def remove_file(f, repo):
+    """
+    Remove file or directory and add change to staging area
+
+    Parameters
+    ----------
+    f : str
+        path to file or directory
+    repo : git.Repo
+        Repo object for current git repository
+    """
+    logging.debug(f"Removing {f}")
+    if os.path.isdir(f):
+        repo.git.rm("-r", f)
+    else:
+        repo.git.rm(f)
+
+
+def get_file_version(repo, path, commit_hash):
+    path = get_relative_path_from_root(repo, path)
+    try:
+        tree = repo.commit(commit_hash).tree
+        if path in tree:
+            return tree[path]
+        else:
+            return None
+    except git.BadName:
+        return None
+
+
+def get_head(repo):
+    try:
+        head = repo.commit("HEAD")
+        return head.hexsha
+    except git.BadName:
+        return None
+
+
+def git_lfs_clean(file):
+    out = subprocess.run(
+        ["git", "lfs", "clean"], input=file, capture_output=True
+    ).stdout.decode("utf-8")
+    return out
+
+
+def git_lfs_smudge(pointer_file):
+    out = subprocess.run(
+        ["git", "lfs", "smudge"], input=pointer_file, capture_output=True
+    ).stdout
+    return out
+
+
+def git_lfs_push_oids(remote_name, oids):
+    if oids:
+        out = subprocess.run(
+            ["git", "lfs", "push", "--object-id", re.escape(remote_name)] + list(oids)
+        )
+        return out.returncode
+    return 0
+
+
+def parse_pre_push_args(lines):
+    lines_parsed = [
+        re.match(
+            "^(?P<local_ref>[^\s]+)\s+(?P<local_sha1>[a-f0-9]{40})\s+(?P<remote_ref>[^\s]+)\s+(?P<remote_sha1>[a-f0-9]{40})\s+$",
+            l,
+        )
+        for l in lines
+    ]
+    return lines_parsed

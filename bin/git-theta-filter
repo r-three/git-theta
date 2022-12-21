@@ -1,17 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
-import os
 import sys
-import subprocess
-import re
-import json
-import git
 import logging
-import hashlib
-from collections import defaultdict, OrderedDict
 
-from git_theta import git_utils, checkpoints, params, file_io, utils, updates
+from git_theta import git_utils, checkpoints, params, metadata, updates
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -62,30 +55,43 @@ def clean(args):
     }
     """
     logging.debug(f"Running clean filter on {args.file}")
-
     repo = git_utils.get_git_repo()
-    model_path = git_utils.get_relative_path_from_root(repo, args.file)
-    theta_model_dir = git_utils.get_relative_path_from_root(
-        repo, git_utils.get_git_theta_model_dir(repo, model_path)
-    )
-
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
 
-    # TODO(bdlester): If we use Python3.7 as the minimum version, we don't need
-    # to use an OrderedDict as the standard dict retains the insertion order.
-    staged_file_contents = OrderedDict({"model_dir": theta_model_dir})
+    prev_metadata = metadata.Metadata.from_commit(repo, args.file, "HEAD").flatten()
+    new_metadata = metadata.Metadata()
     # Sort the keys so we don't get changing diffs based on serialization order.
-    for keys, param in sorted(utils.flatten(model_checkpoint).items()):
-        param_name = "/".join(keys)
-        tensor_metadata = OrderedDict({"shape": params.get_shape_str(param)})
-        tensor_metadata["dtype"] = params.get_dtype_str(param)
-        tensor_metadata["hash"] = params.get_hash(param)
-        staged_file_contents[param_name] = OrderedDict(
-            {"tensor_metadata": tensor_metadata}
-        )
+    for param_keys, new_param in sorted(model_checkpoint.flatten().items()):
+        logging.debug(f"Cleaning {'/'.join(param_keys)}")
 
-    file_io.write_staged_file(sys.stdout, staged_file_contents)
+        param_metadata = prev_metadata.get(param_keys)
+        new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
+        # If the parameter tensor has not changed, just keep the metadata the same
+        # TODO: currently checks if rounded parameter hash has changed. Look into better parameter equality checks.
+        if param_metadata and param_metadata.tensor_metadata == new_tensor_metadata:
+            new_param_metadata = param_metadata
+        # If it's changed, update this parameter's metadata
+        else:
+            update_handler = updates.get_update_handler()()
+            update_serializer = params.get_update_serializer()
+
+            new_theta_metadata = metadata.ThetaMetadata(
+                update_type=update_handler.name, last_commit=git_utils.get_head(repo)
+            )
+            param_update = update_handler.calculate_update(
+                repo, args.file, param_keys, param_metadata, new_param
+            )
+            serialized_update = update_serializer.serialize(param_update)
+            new_lfs_metadata = metadata.LfsMetadata.from_bytes(serialized_update)
+            new_param_metadata = metadata.ParamMetadata(
+                lfs_metadata=new_lfs_metadata,
+                tensor_metadata=new_tensor_metadata,
+                theta_metadata=new_theta_metadata,
+            )
+
+        new_metadata[param_keys] = new_param_metadata
+    new_metadata.unflatten().write(sys.stdout)
 
 
 def smudge(args):
@@ -95,39 +101,24 @@ def smudge(args):
     logging.debug(f"Running smudge filter on {args.file}")
 
     repo = git_utils.get_git_repo()
-    staged_file = file_io.load_staged_file(sys.stdin)
+    curr_metadata = metadata.Metadata.from_file(sys.stdin).flatten()
 
     model_dict = {}
-    for keys, param_dir in utils.flatten(
-        utils.walk_parameter_dir(os.path.abspath(staged_file["model_dir"]))
-    ).items():
-        parameter_name = ".".join(keys)
-        logging.debug(f"Populating model parameter {parameter_name}")
-        param_file = os.path.join(param_dir, "params")
+    for param_keys, param_metadata in curr_metadata.items():
+        logging.debug(f"Smudging {'/'.join(param_keys)}")
+        update_handler = updates.get_update_handler(
+            param_metadata.theta_metadata.update_type
+        )()
+        model_dict[param_keys] = update_handler.apply(
+            repo, args.file, param_keys, param_metadata
+        )
 
-        # Look up the most recent update applied to the parameter in the
-        # .../params/metadata file.
-        update_location = updates.most_recent_update(param_file)
-        logging.debug(f"{parameter_name} as lasted updated with {update_location}.")
-        # Look up what type of update this most recent one is using the
-        # .../params/updates/${hash}/metadata file.
-        update_type = updates.read_update_type(update_location)
-        logging.debug(f"{parameter_name}'s last update was a {update_type} update.")
-        # Get the update type from the plugin registry.
-        update = updates.get_update_handler(update_type)()
-        # Apply the most recent update (which may get previous values recursively)
-        # to get the current value of the parameter.
-        model_dict[keys] = update.apply(update_location)
-
-    model_dict = utils.unflatten(model_dict)
     checkpoint_handler = checkpoints.get_checkpoint_handler()
-    model_checkpoint = checkpoint_handler(model_dict)
-    logging.debug(
-        f"git theta smudge filter: Using checkpoint type = {model_checkpoint.name}"
-    )
+    model_checkpoint = checkpoint_handler(model_dict).unflatten()
     model_checkpoint.save(sys.stdout.buffer)
 
 
 if __name__ == "__main__":
     args = parse_args()
+    git_utils.set_hooks()
     args.func(args)

@@ -1,3 +1,3 @@
 __version__ = "0.0.0"
 
-from . import checkpoints, git_utils, params, file_io
+from . import checkpoints, git_utils, utils, metadata, params, theta, updates

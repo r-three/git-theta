@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 
 import argparse
-import os
 import sys
 import git
 import logging
+import re
+import fnmatch
 
-from git_theta import git_utils, checkpoints, file_io, utils, updates
+from git_theta import git_utils, utils, theta, metadata
 
 logging.basicConfig(
-    level=logging.DEBUG, format="git-theta: [%(asctime)s] %(levelname)s - %(message)s"
+    level=logging.DEBUG,
+    format="git-theta: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s",
 )
 
 
@@ -18,15 +20,23 @@ def parse_args():
     subparsers = parser.add_subparsers(title="Commands", dest="command")
     subparsers.required = True
 
-    add_parser = subparsers.add_parser(
-        "add", help="add command used to stage a model file"
+    post_commit_parser = subparsers.add_parser(
+        "post-commit",
+        help="post-commit command that records parameter groups changed in a commit",
     )
-    add_parser.add_argument("file", help="file being staged")
-    add_parser.add_argument(
-        "--checkpoint-type", help="The type of checkpoint being added."
+    post_commit_parser.set_defaults(func=post_commit)
+
+    pre_push_parser = subparsers.add_parser(
+        "pre-push",
+        help="pre-push command used to send parameter groups to an LFS store. Should only be called internally by git push.",
     )
-    add_parser.add_argument("--update-type", help="The type of update being used.")
-    add_parser.set_defaults(func=add)
+    pre_push_parser.add_argument(
+        "remote_name", help="Name of the remote being pushed to"
+    )
+    pre_push_parser.add_argument(
+        "remote_location", help="Location of the remote being pushed to"
+    )
+    pre_push_parser.set_defaults(func=pre_push)
 
     install_parser = subparsers.add_parser(
         "install", help="install command used to setup global .gitconfig"
@@ -42,65 +52,69 @@ def parse_args():
     )
     track_parser.set_defaults(func=track)
 
-    args = parser.parse_args()
+    add_parser = subparsers.add_parser("add", help="add command used to stage files.")
+    add_parser.add_argument(
+        "--update-type",
+        choices=["dense", "sparse"],
+        help="Type of update being applied",
+    )
+    add_parser.set_defaults(func=add)
+
+    args = parser.parse_known_args()
     return args
 
 
-def paths_and_parameters(model_dict, root):
-    """Convert the keys of the model dict to parameters based starting at root."""
-    return {os.path.join(root, *k): v for k, v in utils.flatten(model_dict).items()}
-
-
-def add(args):
+def post_commit(args):
     """
-    Splits model parameters file into parameter groups on filesystem and stages files
+    Post-commit git hook that records the LFS objects that were created (equivalent to parameter groups that were modified) in this commit
     """
-    logging.debug(f"Running git theta add on {args.file}")
     repo = git_utils.get_git_repo()
-    model_path = git_utils.get_relative_path_from_root(repo, args.file)
-    theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path, create=True)
+    theta_commits = theta.ThetaCommits(repo)
 
-    checkpoint_handler = checkpoints.get_checkpoint_handler(args.checkpoint_type)
-    param_dict = checkpoint_handler.from_file(args.file)
-    logging.debug(f"git theta add using checkpoint type={param_dict.name}")
+    gitattributes_file = git_utils.get_gitattributes_file(repo)
+    patterns = git_utils.get_gitattributes_tracked_patterns(gitattributes_file)
 
-    update = updates.get_update_handler(args.update_type)()
-    logging.debug(f"Using update type={update.name}")
+    oids = set()
+    commit = repo.commit("HEAD")
+    for path in commit.stats.files.keys():
+        if any([fnmatch.fnmatchcase(path, pattern) for pattern in patterns]):
+            curr_metadata = metadata.Metadata.from_file(commit.tree[path].data_stream)
+            prev_metadata = metadata.Metadata.from_commit(repo, path, "HEAD~1")
 
-    # Iterate through the parameters in the /new/ checkpoint (after some training).
-    for param_dir, param in paths_and_parameters(param_dict, theta_model_dir).items():
-        param_file = os.path.join(param_dir, "params")
-        os.makedirs(param_file, exist_ok=True)
-        # Use the update plugins to add write this new parameter value. The plugin
-        # used controls if it is dense or sparse, if the whole param is written/partial, etc.
-        update.write(param_file, param)
-        # Call add on the .../params dir so that when many files are made under
-        # it they are all added.
-        git_utils.add_file(param_file, repo)
+            added, removed, modified = curr_metadata.diff(prev_metadata)
+            oids.update([param.lfs_metadata.oid for param in added.flatten().values()])
+            oids.update(
+                [param.lfs_metadata.oid for param in modified.flatten().values()]
+            )
 
-    for param_file in utils.removed_params(
-        param_dict, utils.walk_parameter_dir(theta_model_dir)
-    ):
-        git_utils.remove_file(param_file, repo)
+    commit_info = theta.CommitInfo(oids)
+    theta_commits.write_commit_info(commit.hexsha, commit_info)
 
-    repo.git.update_environment(
-        **{
-            utils.EnvVarConstants.CHECKPOINT_TYPE: param_dict.name,
-            utils.EnvVarConstants.UPDATE_TYPE: update.name,
-        }
-    )
-    git_utils.add_file(model_path, repo)
+
+def pre_push(args):
+    """
+    Pre-push git hook for sending objects to the LFS server
+    """
+    repo = git_utils.get_git_repo()
+    theta_commits = theta.ThetaCommits(repo)
+
+    # Read lines of the form <local ref> <local sha1> <remote ref> <remote sha1> LF
+    lines = sys.stdin.readlines()
+    lines_parsed = git_utils.parse_pre_push_args(lines)
+    commit_ranges = [
+        (l.group("remote_sha1"), l.group("local_sha1")) for l in lines_parsed
+    ]
+    oids = theta_commits.get_commit_oids_ranges(*commit_ranges)
+    git_utils.git_lfs_push_oids(args.remote_name, oids)
 
 
 def install(args):
     """
     Install git-lfs and initialize the git-theta filter driver
     """
-    git_utils.git_lfs_install()
     config_writer = git.GitConfigParser(
         git.config.get_config_path("global"), config_level="global", read_only=False
     )
-    config_writer.remove_option('filter "lfs"', "process")
     config_writer.set_value('filter "theta"', "clean", "git-theta-filter clean %f")
     config_writer.set_value('filter "theta"', "smudge", "git-theta-filter smudge %f")
     config_writer.set_value('filter "theta"', "required", "true")
@@ -114,10 +128,6 @@ def track(args):
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
 
-    # Initialize git lfs to track model files in .git_theta
-    theta_model_dir = git_utils.get_git_theta_model_dir(repo, model_path)
-    git_utils.git_lfs_track(repo, theta_model_dir)
-
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
@@ -129,6 +139,18 @@ def track(args):
     git_utils.add_file(gitattributes_file, repo)
 
 
+def add(args, unparsed_args):
+    repo = git_utils.get_git_repo()
+    env_vars = {utils.EnvVarConstants.UPDATE_TYPE: args.update_type}
+    with repo.git.custom_environment(**env_vars):
+        repo.git.add(*unparsed_args)
+
+
 if __name__ == "__main__":
-    args = parse_args()
-    args.func(args)
+    args, unparsed_args = parse_args()
+    if not args.func == install:
+        git_utils.set_hooks()
+    if args.func == add:
+        args.func(args, unparsed_args)
+    else:
+        args.func(args)
