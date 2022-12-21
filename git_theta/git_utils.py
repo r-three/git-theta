@@ -61,6 +61,24 @@ def get_relative_path_from_root(repo, path):
     return relative_path
 
 
+def get_absolute_path(repo: git.Repo, relative_path: str) -> str:
+    """Get the absolute path of a repo relative path.
+
+    Parameters
+    ----------
+    repo
+        Repo object for the current git repository.
+    path
+        The relative path to a file from the root of the git repo.
+
+    Returns
+    -------
+    str
+        The absolute path to the file.
+    """
+    return os.path.abspath(os.path.join(repo.working_dir, relative_path))
+
+
 def get_gitattributes_file(repo):
     """
     Get path to this repo's .gitattributes file

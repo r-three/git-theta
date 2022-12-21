@@ -8,7 +8,9 @@ from git_theta import git_utils, checkpoints, params, metadata, updates
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="git-theta-filter: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s",
+    # Log to a file for clean/smudge as they don't appear on the console when called via git.
+    filename="/tmp/git-theta.log",
+    format="git-theta-filter: [%(asctime)s] %(levelname)s - %(message)s",
 )
 
 
@@ -54,7 +56,6 @@ def clean(args):
     """
     logging.debug(f"Running clean filter on {args.file}")
     repo = git_utils.get_git_repo()
-
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
 
@@ -67,7 +68,7 @@ def clean(args):
         param_metadata = prev_metadata.get(param_keys)
         new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
         # If the parameter tensor has not changed, just keep the metadata the same
-        #TODO: currently checks if rounded parameter hash has changed. Look into better parameter equality checks.
+        # TODO: currently checks if rounded parameter hash has changed. Look into better parameter equality checks.
         if param_metadata and param_metadata.tensor_metadata == new_tensor_metadata:
             new_param_metadata = param_metadata
         # If it's changed, update this parameter's metadata
@@ -75,13 +76,19 @@ def clean(args):
             update_handler = updates.get_update_handler()()
             update_serializer = params.get_update_serializer()
 
-            new_theta_metadata = metadata.ThetaMetadata(update_type=update_handler.name, last_commit=git_utils.get_head(repo))
-            param_update = update_handler.calculate_update(repo, args.file, param_keys, param_metadata, new_param)
+            new_theta_metadata = metadata.ThetaMetadata(
+                update_type=update_handler.name, last_commit=git_utils.get_head(repo)
+            )
+            param_update = update_handler.calculate_update(
+                repo, args.file, param_keys, param_metadata, new_param
+            )
             serialized_update = update_serializer.serialize(param_update)
             new_lfs_metadata = metadata.LfsMetadata.from_bytes(serialized_update)
-            new_param_metadata = metadata.ParamMetadata(lfs_metadata=new_lfs_metadata,
-                                                      tensor_metadata=new_tensor_metadata,
-                                                      theta_metadata=new_theta_metadata)
+            new_param_metadata = metadata.ParamMetadata(
+                lfs_metadata=new_lfs_metadata,
+                tensor_metadata=new_tensor_metadata,
+                theta_metadata=new_theta_metadata,
+            )
 
         new_metadata[param_keys] = new_param_metadata
     new_metadata.unflatten().write(sys.stdout)
@@ -99,8 +106,12 @@ def smudge(args):
     model_dict = {}
     for param_keys, param_metadata in curr_metadata.items():
         logging.debug(f"Smudging {'/'.join(param_keys)}")
-        update_handler = updates.get_update_handler(param_metadata.theta_metadata.update_type)()
-        model_dict[param_keys] = update_handler.apply(repo, args.file, param_keys, param_metadata)
+        update_handler = updates.get_update_handler(
+            param_metadata.theta_metadata.update_type
+        )()
+        model_dict[param_keys] = update_handler.apply(
+            repo, args.file, param_keys, param_metadata
+        )
 
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler(model_dict).unflatten()

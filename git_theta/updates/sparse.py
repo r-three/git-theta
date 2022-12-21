@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""A class for handling sparse updates to parameters."""
 
 import logging
 from typing import Optional

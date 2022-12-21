@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Class managing dense parameter updates."""
 
 import logging
 from typing import Optional
