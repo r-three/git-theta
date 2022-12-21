@@ -65,6 +65,7 @@ setup(
         "file-or-name",
         "importlib_metadata",
         'dataclasses; python_version < "3.7.0"',
+        'importlib_resources; python_version < "3.7.0"',
     ],
     extras_require={
         "test": ["pytest"],

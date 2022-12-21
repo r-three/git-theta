@@ -10,8 +10,13 @@ import re
 from typing import List, Union
 import subprocess
 import shutil
-import importlib.resources
 import filecmp
+import sys
+
+if sys.version.info < (3, 7):
+    import importlib_resources
+else:
+    import importlib.resources as importlib_resources
 
 from file_or_name import file_or_name
 
@@ -31,9 +36,9 @@ def get_git_repo():
 def set_hooks():
     repo = get_git_repo()
     hooks_dir = os.path.join(repo.git_dir, "hooks")
-    package = importlib.resources.files("git_theta")
+    package = importlib_resources.files("git_theta")
     for hook in ["pre-push", "post-commit"]:
-        with importlib.resources.as_file(package.joinpath("hooks", hook)) as hook_src:
+        with importlib_resources.as_file(package.joinpath("hooks", hook)) as hook_src:
             hook_dst = os.path.join(hooks_dir, hook)
             if not (os.path.exists(hook_dst) and filecmp.cmp(hook_src, hook_dst)):
                 shutil.copy(hook_src, hook_dst)
