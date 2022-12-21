@@ -45,7 +45,7 @@ class Update:
         raise NotImplementedError
 
 
-def get_update_name(update_type: Optional[str] = None) -> str:
+def get_update_handler_name(update_type: Optional[str] = None) -> str:
     return update_type or os.environ.get(utils.EnvVarConstants.UPDATE_TYPE) or "dense"
 
 
@@ -63,6 +63,6 @@ def get_update_handler(update_type: Optional[str] = None) -> Update:
         The update class. Returned class may be defined in a user installed
         plugin.
     """
-    update_name = get_update_name(update_type)
+    update_name = get_update_handler_name(update_type)
     discovered_plugins = entry_points(group="git_theta.plugins.updates")
     return discovered_plugins[update_name].load()
