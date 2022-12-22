@@ -8,6 +8,7 @@ import random
 import string
 
 from git_theta import theta, git_utils
+from tests import testing_utils
 
 
 @pytest.fixture
@@ -28,16 +29,8 @@ def git_repo_with_commits():
         yield repo, commit_hashes, commit_infos
 
 
-def random_oid():
-    return "".join([random.choice(string.hexdigits.lower()) for _ in range(64)])
-
-
-def random_commit_hash():
-    return "".join([random.choice(string.hexdigits.lower()) for _ in range(40)])
-
-
 def random_commit_info():
-    oids = [random_oid() for _ in range(random.randint(5, 20))]
+    oids = [testing_utils.random_oid() for _ in range(random.randint(5, 20))]
     return theta.CommitInfo(oids)
 
 

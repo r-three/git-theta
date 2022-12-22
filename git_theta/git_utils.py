@@ -161,7 +161,7 @@ def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> st
     for line in gitattributes:
         # TODO(bdlester): Revisit this regex to see if it when the pattern
         # is escaped due to having spaces in it.
-        match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
+        match = re.match(r"^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
         if match:
             # If there is already a pattern that covers the file, add the filter
             # to that.
@@ -268,7 +268,7 @@ def git_lfs_push_oids(remote_name, oids):
 def parse_pre_push_args(lines):
     lines_parsed = [
         re.match(
-            "^(?P<local_ref>[^\s]+)\s+(?P<local_sha1>[a-f0-9]{40})\s+(?P<remote_ref>[^\s]+)\s+(?P<remote_sha1>[a-f0-9]{40})\s+$",
+            r"^(?P<local_ref>[^\s]+)\s+(?P<local_sha1>[a-f0-9]{40})\s+(?P<remote_ref>[^\s]+)\s+(?P<remote_sha1>[a-f0-9]{40})\s+$",
             l,
         )
         for l in lines

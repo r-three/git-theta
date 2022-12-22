@@ -7,6 +7,7 @@ import random
 import string
 
 from git_theta import utils
+from tests import testing_utils
 
 
 def make_nested_dict():
@@ -110,3 +111,15 @@ def test_flattened_dict_sorted_is_actually_sorted():
     string_keys = ["/".join(k) for k in keys]
     sorted_string_keys = sorted(string_keys)
     assert string_keys == sorted_string_keys
+
+
+def test_is_valid_oid():
+    oids = [testing_utils.random_oid() for _ in range(100)]
+    assert all([utils.is_valid_oid(oid) for oid in oids])
+
+
+def test_is_valid_commit_hash():
+    commit_hashes = [testing_utils.random_commit_hash() for _ in range(100)]
+    assert all(
+        [utils.is_valid_commit_hash(commit_hash) for commit_hash in commit_hashes]
+    )
