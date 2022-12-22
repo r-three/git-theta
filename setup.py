@@ -61,7 +61,7 @@ setup(
     license="MIT",
     install_requires=[
         "GitPython",
-        "tensorstore",
+        "tensorstore >= 0.1.14",
         "file-or-name",
         "importlib_metadata",
         'dataclasses; python_version < "3.7.0"',
