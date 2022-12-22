@@ -29,11 +29,7 @@ class LfsMetadata(MetadataField):
 
     @property
     def lfs_pointer(self):
-        return (
-            f"version {self.version}\noid sha256:{self.oid}\nsize {self.size}\n".encode(
-                "utf-8"
-            )
-        )
+        return f"version {self.version}\noid sha256:{self.oid}\nsize {self.size}\n"
 
     @classmethod
     def from_pointer(cls, pointer_contents):
@@ -108,7 +104,7 @@ class Metadata(OrderedDict):
         return cls(metadata)
 
     @classmethod
-    @file_or_name
+    @file_or_name(file="r")
     def from_file(cls, file):
         metadata_dict = json.load(file)
         return cls.from_metadata_dict(metadata_dict)

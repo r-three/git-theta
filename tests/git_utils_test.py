@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Tests for git_utils.py"""
 
 import os
 import pytest

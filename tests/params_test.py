@@ -1,4 +1,4 @@
-"""Test utilities that summarize parameters."""
+"""Tests for params.py"""
 
 import random
 import pytest

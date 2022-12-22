@@ -3,6 +3,7 @@
 
 import os
 from typing import Dict, Any, Tuple, Union, Callable
+import re
 
 
 class EnvVarConstants:
@@ -61,3 +62,33 @@ def unflatten(d: Dict[Tuple[str], Any]) -> Dict[str, Union[Dict[str, Any], Any]]
             curr = curr.setdefault(k, {})
         curr[ks[-1]] = v
     return nested
+
+
+def is_valid_oid(oid: str) -> bool:
+    """Check if an LFS object-id is valid
+
+    Parameters
+    ----------
+    oid:
+        LFS object-id
+
+    Returns
+    bool
+        Whether this object-id is valid
+    """
+    return re.match("^[0-9a-f]{64}$", oid) is not None
+
+
+def is_valid_commit_hash(commit_hash: str) -> bool:
+    """Check if a git commit hash is valid
+
+    Parameters
+    ----------
+    commit_hash
+        Git commit hash
+
+    Returns
+    bool
+        Whether this commit hash is valid
+    """
+    return re.match("^[0-9a-f]{40}$", commit_hash) is not None

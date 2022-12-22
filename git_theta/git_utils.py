@@ -249,7 +249,9 @@ def git_lfs_clean(file):
 
 def git_lfs_smudge(pointer_file):
     out = subprocess.run(
-        ["git", "lfs", "smudge"], input=pointer_file, capture_output=True
+        ["git", "lfs", "smudge"],
+        input=pointer_file.encode("utf-8"),
+        capture_output=True,
     ).stdout
     return out
 
