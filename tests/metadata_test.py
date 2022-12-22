@@ -4,7 +4,6 @@ import numpy as np
 import string
 import random
 import tempfile
-import pdb
 
 from git_theta import metadata
 

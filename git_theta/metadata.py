@@ -5,6 +5,7 @@ import dataclasses
 from collections import OrderedDict
 import re
 import json
+from typing import ClassVar
 
 from git_theta import git_utils, utils
 from file_or_name import file_or_name
@@ -21,11 +22,7 @@ class LfsMetadata(MetadataField):
     version: str
     oid: str
     size: str
-
-    @classmethod
-    @property
-    def name(cls):
-        return "lfs_metadata"
+    name: ClassVar[str] = "lfs_metadata"
 
     @property
     def lfs_pointer(self):
@@ -34,7 +31,7 @@ class LfsMetadata(MetadataField):
     @classmethod
     def from_pointer(cls, pointer_contents):
         match = re.match(
-            "^version (?P<version>[^\s]+)\noid sha256:(?P<oid>[0-9a-f]{64})\nsize (?P<size>[0-9]+)\n$",
+            r"^version (?P<version>[^\s]+)\noid sha256:(?P<oid>[0-9a-f]{64})\nsize (?P<size>[0-9]+)\n$",
             pointer_contents,
         )
         if match is None:
@@ -55,11 +52,7 @@ class TensorMetadata(MetadataField):
     shape: str
     dtype: str
     hash: str
-
-    @classmethod
-    @property
-    def name(cls):
-        return "tensor_metadata"
+    name: ClassVar[str] = "tensor_metadata"
 
     @classmethod
     def from_tensor(cls, tensor):
@@ -73,11 +66,7 @@ class TensorMetadata(MetadataField):
 class ThetaMetadata(MetadataField):
     update_type: str
     last_commit: str
-
-    @classmethod
-    @property
-    def name(cls):
-        return "theta_metadata"
+    name: ClassVar[str] = "theta_metadata"
 
 
 @dataclasses.dataclass(eq=True)
