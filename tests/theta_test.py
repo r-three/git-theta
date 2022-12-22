@@ -8,7 +8,7 @@ import random
 import string
 
 from git_theta import theta, git_utils
-from . import testing_utils
+from tests import testing_utils
 
 
 @pytest.fixture
