@@ -7,7 +7,7 @@ import random
 import string
 
 from git_theta import utils
-from tests import testing_utils
+from . import testing_utils
 
 
 def make_nested_dict():
