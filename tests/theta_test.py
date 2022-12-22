@@ -18,7 +18,14 @@ def git_repo_with_commits():
 
     with tempfile.TemporaryDirectory() as repo_dir:
         repo = git.Repo.init(repo_dir)
+
+        config_writer = repo.config_writer(config_level="repository")
+        config_writer.set_value("user", "name", "myusername")
+        config_writer.set_value("user", "email", "myemail")
+        config_writer.release()
+
         theta_commits = theta.ThetaCommits(repo)
+
         # Write a bunch of empty commits and random ThetaCommits entries
         for commit_info in commit_infos:
             repo.git.commit("--allow-empty", "-m", "empty commit")
