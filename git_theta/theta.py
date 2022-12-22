@@ -92,6 +92,8 @@ class ThetaCommits:
 
     def write_commit_info(self, commit_hash, commit_info):
         logging.debug(f"Writing commit_info to commit {commit_hash}")
+        if not utils.is_valid_commit_hash(commit_hash):
+            raise ValueError(f"Cannot write commit info for invalid hash {commit_hash}")
         path = self.get_commit_path(commit_hash)
         if os.path.exists(path):
             raise ValueError(
