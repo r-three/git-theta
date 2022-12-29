@@ -2,12 +2,12 @@
 
 import logging
 from typing import Optional, Any
-from git_theta.updates import TrueUpdate
+from git_theta.updates import IncrementalUpdate
 
 Parameter = Any
 
 
-class SparseUpdate(TrueUpdate):
+class SparseUpdate(IncrementalUpdate):
     """An update where only some parameters are touched."""
 
     @property

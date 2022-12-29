@@ -29,7 +29,7 @@ class Update(metaclass=ABCMeta):
     @property
     @abstractmethod
     def name(self) -> str:
-        raise NotImplementedError
+        """The name used to lookup the plug-in."""
 
     async def read(self, param_metadata: metadata.ParamMetadata) -> Parameter:
         """Read in and deserialize a single parameter value based metadata."""
@@ -51,7 +51,7 @@ class Update(metaclass=ABCMeta):
         """Get the final parameter value, including fetching previous values."""
 
 
-class TrueUpdate(Update):
+class IncrementalUpdate(Update):
     """Base class for parameter updates that depend on the previous value."""
 
     async def get_previous_metadata(

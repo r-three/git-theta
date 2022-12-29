@@ -262,7 +262,7 @@ async def git_lfs_smudge(pointer_file: bytes) -> bytes:
 async def git_lfs_push_oids(remote_name: str, oids: Sequence[str]) -> int:
     if oids:
         out = await async_utils.subprocess_run(
-            ["git", "lfs", "push", "--remote", remote_name] + list(oids),
+            ["git", "lfs", "push", "--object-id", re.escape(remote_name)] + list(oids),
         )
         return out.returncode
     return 0
