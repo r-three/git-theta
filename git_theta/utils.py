@@ -42,7 +42,7 @@ def flatten(
     return _flatten(d)
 
 
-def unflatten(d: Dict[Tuple[str], Any]) -> Dict[str, Union[Dict[str, Any], Any]]:
+def unflatten(d: Dict[Tuple[str, ...], Any]) -> Dict[str, Union[Dict[str, Any], Any]]:
     """Unflatten a dict into a nested one.
 
     Parameters

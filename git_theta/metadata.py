@@ -1,11 +1,15 @@
 """Classes representing checkpoint metadata files"""
 
+from __future__ import annotations
 import hashlib
 import dataclasses
 from collections import OrderedDict
 import re
 import json
 from typing import ClassVar
+import numpy as np
+import git
+from typing import Union, TextIO, Dict, Tuple, Any
 
 from git_theta import git_utils, utils
 from file_or_name import file_or_name
@@ -13,7 +17,7 @@ from file_or_name import file_or_name
 
 @dataclasses.dataclass(eq=True)
 class MetadataField:
-    def serialize(self):
+    def serialize(self) -> Dict[str, Any]:
         return dataclasses.asdict(self, dict_factory=OrderedDict)
 
 
@@ -25,11 +29,11 @@ class LfsMetadata(MetadataField):
     name: ClassVar[str] = "lfs_metadata"
 
     @property
-    def lfs_pointer(self):
+    def lfs_pointer(self) -> str:
         return f"version {self.version}\noid sha256:{self.oid}\nsize {self.size}\n"
 
     @classmethod
-    def from_pointer(cls, pointer_contents):
+    def from_pointer(cls, pointer_contents: str) -> LfsMetadata:
         match = re.match(
             r"^version (?P<version>[^\s]+)\noid sha256:(?P<oid>[0-9a-f]{64})\nsize (?P<size>[0-9]+)\n$",
             pointer_contents,
@@ -43,7 +47,7 @@ class LfsMetadata(MetadataField):
         )
 
     @classmethod
-    def from_bytes(cls, b):
+    def from_bytes(cls, b: bytes) -> LfsMetadata:
         return cls.from_pointer(git_utils.git_lfs_clean(b))
 
 
@@ -55,7 +59,7 @@ class TensorMetadata(MetadataField):
     name: ClassVar[str] = "tensor_metadata"
 
     @classmethod
-    def from_tensor(cls, tensor):
+    def from_tensor(cls, tensor: np.ndarray) -> TensorMetadata:
         shape = str(tensor.shape)
         dtype = str(tensor.dtype)
         hash = hashlib.sha256(tensor.round(4).tobytes()).hexdigest()
@@ -76,7 +80,7 @@ class ParamMetadata(MetadataField):
     theta_metadata: ThetaMetadata
 
     @classmethod
-    def from_metadata_dict(cls, d):
+    def from_metadata_dict(cls, d: Dict[str, Any]) -> ParamMetadata:
         tensor_metadata = TensorMetadata(**d[TensorMetadata.name])
         lfs_metadata = LfsMetadata(**d[LfsMetadata.name])
         theta_metadata = ThetaMetadata(**d[ThetaMetadata.name])
@@ -85,7 +89,7 @@ class ParamMetadata(MetadataField):
 
 class Metadata(OrderedDict):
     @classmethod
-    def from_metadata_dict(cls, d):
+    def from_metadata_dict(cls, d: Dict[str, Any]) -> Metadata:
         flattened = utils.flatten(d, is_leaf=lambda v: LfsMetadata.name in v)
         for param_keys, param_metadata in flattened.items():
             flattened[param_keys] = ParamMetadata.from_metadata_dict(param_metadata)
@@ -94,12 +98,12 @@ class Metadata(OrderedDict):
 
     @classmethod
     @file_or_name(file="r")
-    def from_file(cls, file):
+    def from_file(cls, file: TextIO) -> Metadata:
         metadata_dict = json.load(file)
         return cls.from_metadata_dict(metadata_dict)
 
     @classmethod
-    def from_commit(cls, repo, path, commit_hash):
+    def from_commit(cls, repo: git.Repo, path: str, commit_hash: str) -> Metadata:
         obj = git_utils.get_file_version(repo, path, commit_hash)
         if obj is None:
             return cls()
@@ -107,17 +111,17 @@ class Metadata(OrderedDict):
             return cls.from_file(obj.data_stream)
 
     @file_or_name(file="w")
-    def write(self, file):
+    def write(self, file: TextIO):
         metadata_dict = self.serialize()
         json.dump(metadata_dict, file, indent=4)
 
-    def flatten(self):
+    def flatten(self) -> Metadata:
         return utils.flatten(self, is_leaf=lambda v: isinstance(v, ParamMetadata))
 
-    def unflatten(self):
+    def unflatten(self) -> Metadata:
         return utils.unflatten(self)
 
-    def diff(self, other):
+    def diff(self, other: Metadata) -> Tuple[Metadata, Metadata, Metadata]:
         self_flattened = self.flatten()
         other_flattened = other.flatten()
         added = Metadata(
@@ -145,7 +149,7 @@ class Metadata(OrderedDict):
         modified = modified.unflatten()
         return added, removed, modified
 
-    def serialize(self):
+    def serialize(self) -> Dict[str, Any]:
         flattened = self.flatten()
         for param_keys, param_metadata in flattened.items():
             flattened[param_keys] = param_metadata.serialize()
