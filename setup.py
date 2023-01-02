@@ -47,7 +47,7 @@ setup(
     url="https://github.com/r-three/checkpoint-vcs",
     packages=find_packages(),
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
-    scripts=["bin/git-theta", "bin/git-theta-filter"],
+    scripts=["bin/git-theta", "bin/git-theta-filter", "bin/git-theta-diff"],
     long_description="Version control system for model checkpoints.",
     python_requires=">=3.6",
     classifiers=[
@@ -66,6 +66,7 @@ setup(
         'importlib_metadata; python_version < "3.9.0"',
         'dataclasses; python_version < "3.7.0"',
         'importlib_resources; python_version < "3.9.0"',
+        "colorama",
     ],
     extras_require={
         "test": ["pytest"],

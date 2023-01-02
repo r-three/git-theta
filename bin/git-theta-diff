@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+
+import argparse
+import numpy as np
+from colorama import Fore
+
+from git_theta import checkpoints, utils, params
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="git-theta diff program")
+    parser.add_argument("path", help="path to file being diff-ed")
+
+    parser.add_argument(
+        "old_checkpoint", help="file that old version of checkpoint can be read from"
+    )
+    parser.add_argument("old_hex", help="SHA-1 hash of old version of checkpoint")
+    parser.add_argument("old_mode", help="file mode for old version of checkpoint")
+
+    parser.add_argument(
+        "new_checkpoint", help="file that new version of checkpoint can be read from"
+    )
+    parser.add_argument("new_hex", help="SHA-1 hash of new version of checkpoint")
+    parser.add_argument("new_mode", help="file mode for new version of checkpoint")
+
+    args = parser.parse_args()
+    return args
+
+
+def print_header(header, prefix=""):
+    print(f"{prefix}{header}")
+    print(f'{prefix}{"-" * len(header)}')
+
+
+def print_param(name, value, prefix=""):
+    print(
+        f'{prefix}{"/".join(name)} {params.get_shape_str(value)} {params.get_dtype_str(value)}'
+    )
+
+
+def print_dtype_change(old_param, new_param, prefix=""):
+    if old_param.dtype != new_param.dtype:
+        print(
+            f"{prefix}dtype: {params.get_dtype_str(old_param)} --> {params.get_dtype_str(new_param)}"
+        )
+
+
+def print_shape_change(old_param, new_param, prefix=""):
+    if old_param.shape != new_param.shape:
+        print(
+            f"{prefix}shape: {params.get_shape_str(old_param)} --> {params.get_shape_str(new_param)}"
+        )
+
+
+def print_l0(old_param, new_param, prefix=""):
+    if old_param.shape == new_param.shape:
+        nelements_changed = int(
+            np.linalg.norm(old_param.ravel() - new_param.ravel(), ord=0)
+        )
+        nelements_unchanged = old_param.size - nelements_changed
+        if nelements_changed > 0:
+            print(
+                f"{prefix}{nelements_changed} parameters modified, {nelements_unchanged} parameters unmodified"
+            )
+
+
+def print_l2(old_param, new_param, prefix=""):
+    if old_param.shape == new_param.shape:
+        if not np.allclose(old_param, new_param):
+            print(
+                f"{prefix}|old - new| = {np.linalg.norm(old_param.ravel() - new_param.ravel(), ord=2):.4f}"
+            )
+
+
+def print_param_modifications(old_param, new_param, prefix=""):
+    print_dtype_change(old_param, new_param, prefix=prefix)
+    print_shape_change(old_param, new_param, prefix=prefix)
+    print_l0(old_param, new_param, prefix=prefix)
+    print_l2(old_param, new_param, prefix=prefix)
+
+
+def print_added_params_summary(old_model, new_model, prefix=""):
+    added_params = new_model.keys() - old_model.keys()
+    if len(added_params) > 0:
+        print_header("ADDED PARAMETER GROUPS", prefix=prefix)
+    for p in added_params:
+        print_param(p, new_model[p], prefix=prefix)
+    print()
+
+
+def print_removed_params_summary(old_model, new_model, prefix=""):
+    removed_params = old_model.keys() - new_model.keys()
+    if len(removed_params) > 0:
+        print_header("REMOVED PARAMETER GROUPS", prefix=prefix)
+    for p in removed_params:
+        print_param(p, old_model[p], prefix=prefix)
+    print()
+
+
+def print_modified_params_summary(old_model, new_model, prefix=""):
+    modified_params = [
+        p
+        for p in old_model.keys() & new_model.keys()
+        if not np.allclose(old_model[p], new_model[p])
+    ]
+    if len(modified_params) > 0:
+        print_header("MODIFIED PARAMETER GROUPS", prefix=prefix)
+    for p in modified_params:
+        print_param(p, new_model[p], prefix=Fore.YELLOW)
+        print_param_modifications(old_model[p], new_model[p], prefix=prefix + "\t")
+    print()
+
+
+def main(args):
+    old_model = utils.flatten(
+        checkpoints.PickledDictCheckpoint.from_file(args.old_checkpoint)
+    )
+    new_model = utils.flatten(
+        checkpoints.PickledDictCheckpoint.from_file(args.new_checkpoint)
+    )
+    print_added_params_summary(old_model, new_model, prefix=Fore.GREEN)
+    print_removed_params_summary(old_model, new_model, prefix=Fore.RED)
+    print_modified_params_summary(old_model, new_model, prefix=Fore.YELLOW)
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    main(args)
