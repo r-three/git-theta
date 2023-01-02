@@ -2,47 +2,39 @@
 
 A Git extension for collaborative, continual, and communal development of machine learning models.
 
-# Example Usage
 <!--We should motivate this better...-->
 Large distributed teams are able to efficiently work on shared codebases due to version control systems like Git. In an effort to [build ML models like we build open-source software](https://colinraffel.com/blog/a-call-to-build-models-like-we-build-open-source-software.html), Git-Theta is a Git extension that allows you to *efficiently* and *meaningfully* track a model's version history natively through Git.
 
-Say you have a codebase for training an ML model along with a model checkpoint that is continually updated as new training methods are developed and new data is collected:
+# Example Usage
+Say you have a codebase for training an ML model along with a model checkpoint. Both the model and code are iteratively updated as new data is collected and new training methods are developed:
 ```bash
 my_codebase
 ├── model.pt
 └── train.py
 ```
-Git-Theta allows you to track the version history of your continually updated model alongside the code through Git.
+Git-Theta allows you to use Git to track the version history of your code ***and*** model as you iteratively update them.
 
-If you haven't already, first initialize your codebase as a Git repository.
-```bash
-git init
-```
-In order to track the model checkpoint using Git-Theta, run the command
+In order to track the model checkpoint with Git-Theta, run the command
 ```bash
 git theta track model.pt
 ```
 
-This command adds the line `model.pt filter=theta` to the `.gitattributes` files in the top-level directory of the repository. This signals to Git that when running certain operations on `model.pt`, it should delegate to Git-Theta.
+This command signals to Git (by adding to `.gitattributes`) that when running certain operations on `model.pt`, it should delegate to Git-Theta.
 
-With the model tracked by Git-Theta, you can treat the model checkpoint exactly like you would any other file in a Git repository. All of the regular Git commands like `add`, `checkout`, `status`, `commit`, `push`, and `pull` will work out of the box.
+With the model tracked by Git-Theta, you can treat the model checkpoint exactly like you would any other file in a Git repository. All of the regular Git commands like `add`, `commit`, `push`, `pull`, `checkout`, `status`, `diff`, etc. will work on your model the way they would on any other file.
 
-
-## Under Construction
-`git diff` for a meaningful summary of how two models are different (e.g., added/removed/modified parameter groups, were parameter group modifications dense/sparse/low-rank, etc.)
-
-`git merge` to perform various possible automated merging strategies (e.g., parameter averaging, mix and match parameter groups, etc.) that can be evaluated.
+Additionally, when staging a change to a model, you can provide Git-Theta with additional information about ***what type*** of change is being staged (e.g., a sparse update, a low-rank update, etc.) by running `git theta add model.pt --update-type <update type>`. This allows Git-Theta to store the model update more efficiently, saving disk space and bandwidth when `push`-ing or `pull`-ing.
 
 # Why is this better than using Git or Git LFS?
 Git on its own can certainly be used for versioning non-text files like model checkpoints. However, the main limiting factors are that
 1. Git remotes like Github and Bitbucket have a maximum file size (~50MB)
 2. Git is not designed to handle very large repositories
 
-There are a number of existing solutions for storing large files with Git that circumvent the maximum file and repository size, such as Git LFS. The main issue with these solutions for versioning ML models is that they are unaware of the fact that they are tracking ML models. 
+There are a number of existing solutions for storing large files with Git that circumvent the maximum file and repository size, such as Git LFS. These work by pushing large files to an external LFS endpoint rather than the Git remote. The main issue with using Git LFS-like systems for versioning ML models is that they are unaware of the structure of ML models. 
 
-Imagine you have a checkpoint that you are fine-tuning by [training only a small percentage of the parameters](https://arxiv.org/abs/2111.09839), [training only a few of the layers](https://arxiv.org/abs/2106.10199), or by [adding new trainable modules](https://arxiv.org/abs/1902.00751). In these cases, most of the model remains the same and only a small fraction of the model gets modified. However, tools like Git LFS just see that the checkpoint file has changed, and will store the new version of the checkpoint file in its entirety. 
+Imagine you have a checkpoint that you are updating by [training only a small percentage of the parameters](https://arxiv.org/abs/2111.09839), [training only a few of the layers](https://arxiv.org/abs/2106.10199), or by [adding new trainable modules](https://arxiv.org/abs/1902.00751). In these cases, most of the model remains the same and only a small fraction of the model gets modified. However, tools like Git LFS just see that the checkpoint file has changed, and will store the new version of the checkpoint file in its entirety. 
 
-Git-Theta is aware of the structure of ML models and is designed for efficiently storing only the parts of a model that have changed from its previous version.
+Git-Theta is aware of the structure of ML models and is designed to store only the parts of a model that have changed from its previous version as efficiently as possible.
 
 # Getting Started
 ## Git LFS installation
