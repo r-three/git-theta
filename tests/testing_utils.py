@@ -46,16 +46,16 @@ def random_param_metadata():
     )
 
 
-def random_metadata():
-    result = metadata.Metadata()
-    keys = list(string.ascii_letters)
-    values = [random_param_metadata() for _ in range(100)]
-
+def random_nested_dict(
+    allowed_keys=list(string.ascii_letters), allowed_values=list(range(100))
+):
+    """Generate random nested dicts for testing."""
+    result = {}
     prev = [result]
     curr = result
     for _ in range(random.randint(20, 50)):
         # Pick a key
-        key = random.choice(keys)
+        key = random.choice(allowed_keys)
         # 50/50, do we make a new nest level?
         if random.choice([True, False]):
             curr[key] = {}
@@ -63,7 +63,7 @@ def random_metadata():
             curr = curr[key]
             continue
         # Otherwise, add a leaf value
-        value = random.choice(values)
+        value = random.choice(allowed_values)
         curr[key] = value
         # 50/50 are we done adding values to this node?
         if random.choice([True, False]):
@@ -72,3 +72,9 @@ def random_metadata():
         if not prev:
             break
     return result
+
+
+def random_metadata():
+    values = [random_param_metadata() for _ in range(100)]
+    random_metadata_dict = random_nested_dict(allowed_values=values)
+    return metadata.Metadata(random_metadata_dict)

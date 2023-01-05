@@ -10,35 +10,6 @@ from git_theta import utils
 from tests import testing_utils
 
 
-def make_nested_dict():
-    """Generate random nested dicts for testing."""
-    result = {}
-    keys = list(string.ascii_letters)
-    values = list(range(100))
-
-    prev = [result]
-    curr = result
-    for _ in range(random.randint(20, 50)):
-        # Pick a key
-        key = random.choice(keys)
-        # 50/50, do we make a new nest level?
-        if random.choice([True, False]):
-            curr[key] = {}
-            prev.append(curr)
-            curr = curr[key]
-            continue
-        # Otherwise, add a leaf value
-        value = random.choice(values)
-        curr[key] = value
-        # 50/50 are we done adding values to this node?
-        if random.choice([True, False]):
-            curr = prev.pop()
-        # If we have tried to to up the tree from the root, stop generating.
-        if not prev:
-            break
-    return result
-
-
 def test_flatten_dict_empty_leaf():
     """Test that empty leaves are ignored."""
     nested = {
@@ -96,7 +67,7 @@ def test_sorted_flatten_dict_insertion_order():
 
 def test_flattened_dict_keys_are_correct():
     """Test that indexing the nested dict with the keys yields the value."""
-    nested = make_nested_dict()
+    nested = testing_utils.random_nested_dict()
     for flat_key, flat_value in utils.flatten(nested).items():
         curr = nested
         for key in flat_key:
@@ -106,7 +77,7 @@ def test_flattened_dict_keys_are_correct():
 
 def test_flattened_dict_sorted_is_actually_sorted():
     """Test to ensure the leaves are actually sorted."""
-    nested = make_nested_dict()
+    nested = testing_utils.random_nested_dict()
     keys = tuple(map(op.itemgetter(0), sorted(utils.flatten(nested).items())))
     string_keys = ["/".join(k) for k in keys]
     sorted_string_keys = sorted(string_keys)

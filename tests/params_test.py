@@ -16,7 +16,7 @@ def test_tensorstore_serializer_roundtrip():
         t = np.random.rand(*shape)
         serialized_t = serializer.serialize(t)
         deserialized_t = serializer.deserialize(serialized_t)
-        assert np.all(t == deserialized_t)
+        np.testing.assert_array_equal(t, deserialized_t)
 
 
 def test_tensorstore_serializer_roundtrip_chunked():
@@ -27,7 +27,7 @@ def test_tensorstore_serializer_roundtrip_chunked():
     t = np.random.rand(5000, 5000)
     serialized_t = serializer.serialize(t)
     deserialized_t = serializer.deserialize(serialized_t)
-    assert np.all(t == deserialized_t)
+    np.testing.assert_array_equal(t, deserialized_t)
 
 
 def test_tar_combiner_roundtrip():
@@ -62,6 +62,6 @@ def test_update_serializer_roundtrip():
     assert update_params.keys() == deserialized_update_params.keys()
 
     for param_name in update_params.keys():
-        assert np.all(
-            update_params[param_name] == deserialized_update_params[param_name]
+        np.testing.assert_array_equal(
+            update_params[param_name], deserialized_update_params[param_name]
         )

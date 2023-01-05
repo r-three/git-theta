@@ -21,8 +21,8 @@ def metadata_equal(m1, m2):
     m2_flat = m2.flatten()
     if m1_flat.keys() != m2_flat.keys():
         return False
-    for k in m1_flat.keys():
-        if m1_flat[k] != m2_flat[k]:
+    for k, m1_v in m1_flat.items():
+        if m1_v != m2_flat[k]:
             return False
     return True
 
@@ -31,9 +31,6 @@ def test_lfs_pointer():
     """
     Test LfsMetadata creates and reads LFS pointers correctly
     """
-    version = "my_version"
-    oid = "".join([random.choice(string.hexdigits.lower()) for _ in range(64)])
-    size = "12345"
     lfs_metadata1 = random_lfs_metadata()
     pointer_contents = lfs_metadata1.lfs_pointer
     lfs_metadata2 = metadata.LfsMetadata.from_pointer(pointer_contents)
@@ -74,10 +71,6 @@ def test_metadata_dict_roundtrip():
     metadata_obj = random_metadata()
     metadata_dict = metadata_obj.serialize()
     metadata_roundtrip = metadata.Metadata.from_metadata_dict(metadata_dict)
-    if metadata_obj != metadata_roundtrip:
-        for k in metadata_obj.flatten().keys():
-            if metadata_obj.flatten()[k] != metadata_roundtrip.flatten()[k]:
-                print(metadata_obj.flatten()[k], metadata_roundtrip.flatten()[k])
     assert metadata_equal(metadata_obj, metadata_roundtrip)
 
 
