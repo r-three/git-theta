@@ -1,51 +1,16 @@
 """Tests for theta.py"""
 
-import pytest
-import os
 import tempfile
-import git
 import random
-import string
 
 from git_theta import theta, git_utils
-from tests import testing_utils
 
 
-@pytest.fixture
-def git_repo_with_commits():
-    commit_infos = [random_commit_info() for _ in range(random.randint(5, 20))]
-    commit_hashes = []
-
-    with tempfile.TemporaryDirectory() as repo_dir:
-        repo = git.Repo.init(repo_dir)
-
-        config_writer = repo.config_writer(config_level="repository")
-        config_writer.set_value("user", "name", "myusername")
-        config_writer.set_value("user", "email", "myemail")
-        config_writer.release()
-
-        theta_commits = theta.ThetaCommits(repo)
-
-        # Write a bunch of empty commits and random ThetaCommits entries
-        for commit_info in commit_infos:
-            repo.git.commit("--allow-empty", "-m", "empty commit")
-            commit_hash = repo.commit("HEAD").hexsha
-            theta_commits.write_commit_info(commit_hash, commit_info)
-            commit_hashes.append(commit_hash)
-
-        yield repo, commit_hashes, commit_infos
-
-
-def random_commit_info():
-    oids = [testing_utils.random_oid() for _ in range(random.randint(5, 20))]
-    return theta.CommitInfo(oids)
-
-
-def test_commit_info_serialization():
+def test_commit_info_serialization(data_generator):
     """
     Test that CommitInfo objects serialize/deserialize to/from files correctly
     """
-    commit_info = random_commit_info()
+    commit_info = data_generator.random_commit_info()
     with tempfile.NamedTemporaryFile(mode="w") as tmpfile:
         commit_info.write(tmpfile)
         tmpfile.flush()

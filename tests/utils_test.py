@@ -1,13 +1,8 @@
 """Tests for utils.py"""
 
-import collections
-import os
 import operator as op
-import random
-import string
 
 from git_theta import utils
-from tests import testing_utils
 
 
 def test_flatten_dict_empty_leaf():
@@ -65,9 +60,9 @@ def test_sorted_flatten_dict_insertion_order():
         assert one[1] == two[1]
 
 
-def test_flattened_dict_keys_are_correct():
+def test_flattened_dict_keys_are_correct(data_generator):
     """Test that indexing the nested dict with the keys yields the value."""
-    nested = testing_utils.random_nested_dict()
+    nested = data_generator.random_nested_dict()
     for flat_key, flat_value in utils.flatten(nested).items():
         curr = nested
         for key in flat_key:
@@ -75,22 +70,22 @@ def test_flattened_dict_keys_are_correct():
         assert curr == flat_value
 
 
-def test_flattened_dict_sorted_is_actually_sorted():
+def test_flattened_dict_sorted_is_actually_sorted(data_generator):
     """Test to ensure the leaves are actually sorted."""
-    nested = testing_utils.random_nested_dict()
+    nested = data_generator.random_nested_dict()
     keys = tuple(map(op.itemgetter(0), sorted(utils.flatten(nested).items())))
     string_keys = ["/".join(k) for k in keys]
     sorted_string_keys = sorted(string_keys)
     assert string_keys == sorted_string_keys
 
 
-def test_is_valid_oid():
-    oids = [testing_utils.random_oid() for _ in range(100)]
+def test_is_valid_oid(data_generator):
+    oids = [data_generator.random_oid() for _ in range(100)]
     assert all([utils.is_valid_oid(oid) for oid in oids])
 
 
-def test_is_valid_commit_hash():
-    commit_hashes = [testing_utils.random_commit_hash() for _ in range(100)]
+def test_is_valid_commit_hash(data_generator):
+    commit_hashes = [data_generator.random_commit_hash() for _ in range(100)]
     assert all(
         [utils.is_valid_commit_hash(commit_hash) for commit_hash in commit_hashes]
     )

@@ -1,19 +1,10 @@
 """Tests for metadata.py"""
 
-import string
-import random
 import tempfile
 import numpy as np
 import pytest
 
 from git_theta import metadata
-from tests.testing_utils import (
-    random_lfs_metadata,
-    random_tensor_metadata,
-    random_theta_metadata,
-    random_param_metadata,
-    random_metadata,
-)
 
 
 def metadata_equal(m1, m2):
@@ -27,11 +18,11 @@ def metadata_equal(m1, m2):
     return True
 
 
-def test_lfs_pointer():
+def test_lfs_pointer(data_generator):
     """
     Test LfsMetadata creates and reads LFS pointers correctly
     """
-    lfs_metadata1 = random_lfs_metadata()
+    lfs_metadata1 = data_generator.random_lfs_metadata()
     pointer_contents = lfs_metadata1.lfs_pointer
     lfs_metadata2 = metadata.LfsMetadata.from_pointer(pointer_contents)
     assert lfs_metadata1 == lfs_metadata2
@@ -53,32 +44,32 @@ def test_tensor_metadata_machine_epsilon():
     assert tensor_metadata1 == tensor_metadata2
 
 
-def test_param_metadata_roundtrip():
+def test_param_metadata_roundtrip(data_generator):
     """
     Test that ParamMetadata serializes to dict and can be generated from dict correctly
     """
-    param_metadata = random_param_metadata()
+    param_metadata = data_generator.random_param_metadata()
     metadata_dict = param_metadata.serialize()
     param_metadata_roundtrip = metadata.ParamMetadata.from_metadata_dict(metadata_dict)
 
     assert param_metadata == param_metadata_roundtrip
 
 
-def test_metadata_dict_roundtrip():
+def test_metadata_dict_roundtrip(data_generator):
     """
     Test that Metadata serializes to dict and can be generated from dict correctly
     """
-    metadata_obj = random_metadata()
+    metadata_obj = data_generator.random_metadata()
     metadata_dict = metadata_obj.serialize()
     metadata_roundtrip = metadata.Metadata.from_metadata_dict(metadata_dict)
     assert metadata_equal(metadata_obj, metadata_roundtrip)
 
 
-def test_metadata_file_roundtrip():
+def test_metadata_file_roundtrip(data_generator):
     """
     Test that Metadata serializes to file and can be generated from file correctly
     """
-    metadata_obj = random_metadata()
+    metadata_obj = data_generator.random_metadata()
     with tempfile.NamedTemporaryFile(mode="w") as tmp:
         metadata_obj.write(tmp)
         tmp.flush()
@@ -86,11 +77,11 @@ def test_metadata_file_roundtrip():
     assert metadata_equal(metadata_obj, metadata_roundtrip)
 
 
-def test_metadata_flatten():
+def test_metadata_flatten(data_generator):
     """
     Test that Metadata flattens and unflattens correctly
     """
-    metadata_obj = random_metadata()
+    metadata_obj = data_generator.random_metadata()
     metadata_obj_flat = metadata_obj.flatten()
     metadata_obj_unflat = metadata_obj_flat.unflatten()
     assert metadata_equal(metadata_obj, metadata_obj_unflat)
