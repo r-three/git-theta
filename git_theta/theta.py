@@ -7,10 +7,18 @@ import logging
 import functools
 from file_or_name import file_or_name
 
+from git_theta import utils
+
 
 class CommitInfo:
     def __init__(self, oids):
         self.oids = set(oids) if oids else set()
+        if not all(map(utils.is_valid_oid, self.oids)):
+            invalid_oids = filter(lambda x: not utils.is_valid_oid(x), self.oids)
+            raise ValueError(f"Invalid LFS object-ids {list(invalid_oids)}")
+
+    def __eq__(self, other):
+        return self.oids == other.oids
 
     @classmethod
     @file_or_name(f="r")
@@ -35,6 +43,8 @@ class ThetaCommits:
         return functools.reduce(lambda a, b: a.union(b), oid_sets, set())
 
     def get_commit_path(self, commit_hash):
+        if not utils.is_valid_commit_hash(commit_hash):
+            raise ValueError(f"Invalid commit hash {commit_hash}")
         return os.path.join(self.path, commit_hash)
 
     def get_commit_info(self, commit_hash):
@@ -82,6 +92,8 @@ class ThetaCommits:
 
     def write_commit_info(self, commit_hash, commit_info):
         logging.debug(f"Writing commit_info to commit {commit_hash}")
+        if not utils.is_valid_commit_hash(commit_hash):
+            raise ValueError(f"Cannot write commit info for invalid hash {commit_hash}")
         path = self.get_commit_path(commit_hash)
         if os.path.exists(path):
             raise ValueError(

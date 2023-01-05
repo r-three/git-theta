@@ -49,7 +49,7 @@ setup(
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
     scripts=["bin/git-theta", "bin/git-theta-filter"],
     long_description="Version control system for model checkpoints.",
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
@@ -61,11 +61,10 @@ setup(
     license="MIT",
     install_requires=[
         "GitPython",
-        "tensorstore",
+        "tensorstore >= 0.1.14",
         "file-or-name",
-        "importlib_metadata",
-        'dataclasses; python_version < "3.7.0"',
-        'importlib_resources; python_version < "3.7.0"',
+        'importlib_resources; python_version < "3.9.0"',
+        'importlib_metadata; python_version < "3.10.0"',
     ],
     extras_require={
         "test": ["pytest"],
