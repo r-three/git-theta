@@ -19,22 +19,22 @@ In order to track the model checkpoint with Git-Theta, run the command
 git theta track model.pt
 ```
 
-This command signals to Git (by adding to `.gitattributes`) that when running certain operations on `model.pt`, it should delegate to Git-Theta.
+This command configures Git to delegate to Git-Theta when performing certain operations on `model.pt`. This configuration can be seen in the `.gitattributes` file.
 
-With the model tracked by Git-Theta, you can treat the model checkpoint exactly like you would any other file in a Git repository. All of the regular Git commands like `add`, `commit`, `push`, `pull`, `checkout`, `status`, `diff`, etc. will work on your model the way they would on any other file.
+With the model tracked by Git-Theta, you can treat the model checkpoint exactly like you would any other file in a Git repository. All of the regular Git commands (`add`, `commit`, `push`, `pull`, `checkout`, `status`, `diff`, etc.) will work on your model the way they would on any other file.
 
 Additionally, when staging a change to a model, you can provide Git-Theta with additional information about ***what type*** of change is being staged (e.g., a sparse update, a low-rank update, etc.) by running `git theta add model.pt --update-type <update type>`. This allows Git-Theta to store the model update more efficiently, saving disk space and bandwidth when `push`-ing or `pull`-ing.
 
 # Why is this better than using Git or Git LFS?
-Git on its own can certainly be used for versioning non-text files like model checkpoints. However, the main limiting factors are that
+Git on its own can certainly be used for versioning non-text files such as model checkpoints. However, the main limiting factors are that
 1. Git remotes like Github and Bitbucket have a maximum file size (~50MB)
 2. Git is not designed to handle very large repositories
 
-There are a number of existing solutions for storing large files with Git that circumvent the maximum file and repository size, such as Git LFS. These work by pushing large files to an external LFS endpoint rather than the Git remote. The main issue with using Git LFS-like systems for versioning ML models is that they are unaware of the structure of ML models. 
+There are a number of existing solutions for storing large files with Git that circumvent the maximum file and repository size, such as Git LFS. These work by pushing large files to an external LFS endpoint rather than to the Git remote. The main issue with using Git LFS-like systems for versioning ML models is that they are unaware of the structure of ML models. 
 
-Imagine you have a checkpoint that you are updating by [training only a small percentage of the parameters](https://arxiv.org/abs/2111.09839), [training only a few of the layers](https://arxiv.org/abs/2106.10199), or by [adding new trainable modules](https://arxiv.org/abs/1902.00751). In these cases, most of the model remains the same and only a small fraction of the model gets modified. However, tools like Git LFS just see that the checkpoint file has changed, and will store the new version of the checkpoint file in its entirety. 
+Imagine you have a checkpoint that you are updating by training only a sparse subset of the parameters [^1][^2], training only a few of the layers [^3], or by adding new trainable modules [^4][^5][^6]. In these cases, most of the model remains the same and only a small fraction of the model gets modified. However, tools like Git LFS just see that the checkpoint file has changed, and will store the new version of the checkpoint file in its entirety. 
 
-Git-Theta is aware of the structure of ML models and is designed to store only the parts of a model that have changed from its previous version as efficiently as possible.
+Git-Theta understands that ML models are logically partitioned into parameter groups (weight matrices, bias vectors, etc.) and is designed to store only the parts of a model that have changed from its previous version as efficiently as possible.
 
 # Getting Started
 ## Git LFS installation
@@ -105,3 +105,11 @@ type.
 Alternatively, plug-ins can be added directly to the `git-theta` package by
 adding the checkpoint handler to `checkpoints.py` and adding it to the
 `entry_points` dict of `setup.py`.
+
+# References
+[^1]: Yi-Lin Sung, Varun Nair and Colin Raffel. [“Training Neural Networks with Fixed Sparse Masks.”](https://arxiv.org/abs/2111.09839) NeurIPS 2021.
+[^2]: Demi Guo, Alexander M. Rush and Yoon Kim. [“Parameter-Efficient Transfer Learning with Diff Pruning.”](https://arxiv.org/abs/2012.07463) ACL 2020.
+[^3]: Elad Ben-Zaken, Shauli Ravfogel and Yoav Goldberg. [“BitFit: Simple Parameter-efficient Fine-tuning for Transformer-based Masked Language-models.”](https://arxiv.org/abs/2106.10199) ACL 2022.
+[^4]: Haokun Liu, Derek Tam, Mohammed Muqeeth, Jay Mohta, Tenghao Huang, Mohit Bansal and Colin Raffel. [“Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning.”](https://arxiv.org/abs/2205.05638) NeurIPS 2022.
+[^5]: Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang and Weizhu Chen. [“LoRA: Low-Rank Adaptation of Large Language Models.”](https://arxiv.org/abs/2106.09685) ICLR 2022.
+[^6]: Neil Houlsby, Andrei Giurgiu, Stanislaw Jastrzebski, Bruna Morrone, Quentin de Laroussilhe, Andrea Gesmundo, Mona Attariyan and Sylvain Gelly. [“Parameter-Efficient Transfer Learning for NLP.”](https://arxiv.org/abs/1902.00751) ICML 2019.
