@@ -7,18 +7,23 @@ import json
 import logging
 import io
 import re
-from typing import List, Union
+from typing import List, Union, Sequence
 import subprocess
 import shutil
 import filecmp
 import sys
 
+# TODO(bdlester): importlib.resources doesn't have the `.files` API until python
+# version `3.9` so use the backport even if using a python version that has
+# `importlib.resources`.
 if sys.version_info < (3, 9):
     import importlib_resources
 else:
     import importlib.resources as importlib_resources
 
 from file_or_name import file_or_name
+
+from git_theta import async_utils
 
 
 def get_git_repo():
@@ -240,26 +245,26 @@ def get_head(repo):
         return None
 
 
-def git_lfs_clean(file):
-    out = subprocess.run(
-        ["git", "lfs", "clean"], input=file, capture_output=True
-    ).stdout.decode("utf-8")
-    return out
+async def git_lfs_clean(file_contents: bytes) -> str:
+    out = await async_utils.subprocess_run(
+        ["git", "lfs", "clean"], input=file_contents, capture_output=True
+    )
+    return out.stdout.decode("utf-8")
 
 
-def git_lfs_smudge(pointer_file):
-    out = subprocess.run(
+async def git_lfs_smudge(pointer_file: str) -> bytes:
+    out = await async_utils.subprocess_run(
         ["git", "lfs", "smudge"],
         input=pointer_file.encode("utf-8"),
         capture_output=True,
-    ).stdout
-    return out
+    )
+    return out.stdout
 
 
-def git_lfs_push_oids(remote_name, oids):
+async def git_lfs_push_oids(remote_name: str, oids: Sequence[str]) -> int:
     if oids:
-        out = subprocess.run(
-            ["git", "lfs", "push", "--object-id", re.escape(remote_name)] + list(oids)
+        out = await async_utils.subprocess_run(
+            ["git", "lfs", "push", "--object-id", re.escape(remote_name)] + list(oids),
         )
         return out.returncode
     return 0

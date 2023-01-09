@@ -7,7 +7,7 @@ import logging
 import re
 import fnmatch
 
-from git_theta import git_utils, utils, theta, metadata
+from git_theta import git_utils, utils, theta, metadata, async_utils
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -105,7 +105,7 @@ def pre_push(args):
         (l.group("remote_sha1"), l.group("local_sha1")) for l in lines_parsed
     ]
     oids = theta_commits.get_commit_oids_ranges(*commit_ranges)
-    git_utils.git_lfs_push_oids(args.remote_name, oids)
+    async_utils.run(git_utils.git_lfs_push_oids(args.remote_name, oids))
 
 
 def install(args):

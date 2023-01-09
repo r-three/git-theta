@@ -1,5 +1,6 @@
 """Classes for serializing model updates."""
 
+from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 import tensorstore as ts
 import io
@@ -7,57 +8,63 @@ import tarfile
 import posixpath
 
 
-class TensorSerializer:
-    def serialize(self, tensor):
-        raise NotImplementedError
+class TensorSerializer(metaclass=ABCMeta):
+    """Serialize/Deserialize tensors."""
 
-    def deserialize(self, serialized_tensor):
-        raise NotImplementedError
+    @abstractmethod
+    async def serialize(self, tensor):
+        """Convert a tensor to bytes."""
+
+    @abstractmethod
+    async def deserialize(self, serialized_tensor):
+        """Convert bytes to a tensor object."""
 
 
 class TensorStoreSerializer(TensorSerializer):
-    def serialize(self, param):
-        store = ts.open(
+    async def serialize(self, tensor):
+        store = await ts.open(
             {
                 "driver": "zarr",
                 "kvstore": {"driver": "memory"},
-                "metadata": {"shape": param.shape, "dtype": param.dtype.str},
+                "metadata": {"shape": tensor.shape, "dtype": tensor.dtype.str},
                 "create": True,
             },
-        ).result()
-        store.write(param).result()
+        )
+        await store.write(tensor)
         serialized_param = {
-            k.decode("utf-8"): store.kvstore[k] for k in store.kvstore.list().result()
+            k.decode("utf-8"): store.kvstore[k] for k in await store.kvstore.list()
         }
         return serialized_param
 
-    def deserialize(self, serialized_param):
+    async def deserialize(self, serialized_tensor):
         ctx = ts.Context()
-        kvs = ts.KvStore.open("memory://", context=ctx).result()
-        for name, contents in serialized_param.items():
+        kvs = await ts.KvStore.open("memory://", context=ctx)
+        for name, contents in serialized_tensor.items():
             kvs[name] = contents
 
-        store = ts.open(
-            {"driver": "zarr", "kvstore": "memory://"}, context=ctx
-        ).result()
-        param = store.read().result()
+        store = await ts.open({"driver": "zarr", "kvstore": "memory://"}, context=ctx)
+        param = await store.read()
         return param
 
 
-class FileCombiner:
-    def combine(self, files):
-        raise NotImplementedError
+class FileCombiner(metaclass=ABCMeta):
+    """Combine and Split serialized tensors, enables single blob processing for multiple tensors."""
 
+    @abstractmethod
+    def combine(self, files):
+        """Combine multiple byte steams into one."""
+
+    @abstractmethod
     def split(self, file):
-        raise NotImplementedError
+        """Split a combined byte stream into original bytes."""
 
 
 class TarCombiner(FileCombiner):
-    def combine(self, param_files):
+    def combine(self, files):
         tarred_file = io.BytesIO()
         with tarfile.open(fileobj=tarred_file, mode="w") as archive:
-            for param_name, param_files in param_files.items():
-                for filename, file_bytes in param_files.items():
+            for param_name, param_file in files.items():
+                for filename, file_bytes in param_file.items():
                     # N.b. posixpath is used to create the "virtual path" in the tar file to each underlying parameter file
                     # Ensures consistent reading/writing of virtual paths across platforms
                     tarinfo = tarfile.TarInfo(posixpath.join(param_name, filename))
@@ -67,8 +74,8 @@ class TarCombiner(FileCombiner):
         tarred_file.seek(0)
         return tarred_file.read()
 
-    def split(self, tarred_file):
-        file = io.BytesIO(tarred_file)
+    def split(self, file):
+        file = io.BytesIO(file)
         param_files = defaultdict(dict)
         with tarfile.open(fileobj=file, mode="r") as archive:
             for file_in_archive in archive.getnames():
@@ -76,27 +83,37 @@ class TarCombiner(FileCombiner):
                 param_files[param_name][filename] = archive.extractfile(
                     file_in_archive
                 ).read()
-
         return param_files
 
 
-class UpdateSerializer:
+class Serializer(metaclass=ABCMeta):
+    """Serialize/Deserialize parameters, even when represented with multiple tensors."""
+
+    @abstractmethod
+    async def serialize(self, params):
+        """Serialize parameter."""
+
+    @abstractmethod
+    async def deserialize(self, serialized):
+        """Deserialize parameter."""
+
+
+class UpdateSerializer(Serializer):
     def __init__(self, tensor_serializer, file_combiner):
         self.serializer = tensor_serializer
         self.combiner = file_combiner
 
-    def serialize(self, update_params):
+    async def serialize(self, params):
         serialized_params = {
-            name: self.serializer.serialize(param)
-            for name, param in update_params.items()
+            name: await self.serializer.serialize(param)
+            for name, param in params.items()
         }
-        serialized_object = self.combiner.combine(serialized_params)
-        return serialized_object
+        return self.combiner.combine(serialized_params)
 
-    def deserialize(self, serialized_object):
-        serialized_params = self.combiner.split(serialized_object)
+    async def deserialize(self, serialized):
+        serialized_params = self.combiner.split(serialized)
         update_params = {
-            name: self.serializer.deserialize(serialized_param)
+            name: await self.serializer.deserialize(serialized_param)
             for name, serialized_param in serialized_params.items()
         }
         return update_params

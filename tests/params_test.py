@@ -1,5 +1,6 @@
 """Tests for params.py"""
 
+import asyncio
 import random
 import pytest
 import numpy as np
@@ -14,8 +15,8 @@ def test_tensorstore_serializer_roundtrip():
     for num_dims in range(1, 6):
         shape = tuple(np.random.randint(1, 20, size=num_dims).tolist())
         t = np.random.rand(*shape)
-        serialized_t = serializer.serialize(t)
-        deserialized_t = serializer.deserialize(serialized_t)
+        serialized_t = asyncio.run(serializer.serialize(t))
+        deserialized_t = asyncio.run(serializer.deserialize(serialized_t))
         np.testing.assert_array_equal(t, deserialized_t)
 
 
@@ -25,8 +26,8 @@ def test_tensorstore_serializer_roundtrip_chunked():
     """
     serializer = params.TensorStoreSerializer()
     t = np.random.rand(5000, 5000)
-    serialized_t = serializer.serialize(t)
-    deserialized_t = serializer.deserialize(serialized_t)
+    serialized_t = asyncio.run(serializer.serialize(t))
+    deserialized_t = asyncio.run(serializer.deserialize(serialized_t))
     np.testing.assert_array_equal(t, deserialized_t)
 
 
@@ -56,8 +57,10 @@ def test_update_serializer_roundtrip():
         "param2": np.random.rand(50, 10, 2),
         "param3": np.random.rand(1000),
     }
-    serialized_update_params = serializer.serialize(update_params)
-    deserialized_update_params = serializer.deserialize(serialized_update_params)
+    serialized_update_params = asyncio.run(serializer.serialize(update_params))
+    deserialized_update_params = asyncio.run(
+        serializer.deserialize(serialized_update_params)
+    )
 
     assert update_params.keys() == deserialized_update_params.keys()
 
