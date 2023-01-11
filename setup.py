@@ -47,7 +47,7 @@ setup(
     url="https://github.com/r-three/checkpoint-vcs",
     packages=find_packages(),
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
-    scripts=["bin/git-theta", "bin/git-theta-filter"],
+    scripts=["bin/git-theta", "bin/git-theta-filter", "bin/git-theta-merge"],
     long_description="Version control system for model checkpoints.",
     python_requires=">=3.7",
     classifiers=[
@@ -92,6 +92,15 @@ setup(
             "dense = git_theta.updates.dense:DenseUpdate",
             "sparse = git_theta.updates.sparse:SparseUpdate",
             "low-rank = git_theta.updates.low_rank:LowRankUpdate",
+        ],
+        "git_theta.plugins.merges": [
+            "take_us = git_theta.merges.take:TakeUs",
+            "take_them = git_theta.merges.take:TakeThem",
+            "take_original = git_theta.merges.take:TakeOriginal",
+            "average-ours-theirs = git_theta.merges.average:Average",
+            "average-all = git_theta.merges.average:AverageAll",
+            "average-ours-original = git_theta.merges.average:AverageOursOriginal",
+            "average-theirs-original = git_theta.merges.average:AverageTheirsOriginal",
         ],
     },
 )
