@@ -91,6 +91,7 @@ setup(
         "git_theta.plugins.updates": [
             "dense = git_theta.updates.dense:DenseUpdate",
             "sparse = git_theta.updates.sparse:SparseUpdate",
+            "low-rank = git_theta.updates.low_rank:LowRankUpdate",
         ],
     },
 )
