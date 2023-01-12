@@ -18,7 +18,7 @@ def updater():
     return sparse.SparseUpdate(params.get_update_serializer())
 
 
-def test_sparse_update_application(updater):
+def test_sparse_round_trip_application(updater):
 
     for _ in range(TRIALS):
         parameter = np.random.randn(SHAPE, SHAPE, SHAPE)
