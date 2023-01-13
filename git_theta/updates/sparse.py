@@ -3,6 +3,7 @@
 import logging
 from typing import Optional, Any
 from git_theta.updates import IncrementalUpdate
+from git_theta import params
 import scipy.sparse
 import numpy as np
 
@@ -12,6 +13,13 @@ Parameter = Any
 class SparseUpdate(IncrementalUpdate):
     """An update where only some parameters are touched."""
 
+    def __init__(
+        self, serializer: params.Serializer, threshold: Optional[float] = 1e-12
+    ):
+        # TODO: Make threshold configurable
+        super().__init__(serializer)
+        self.threshold = threshold
+
     @property
     def name(self):
         return "sparse"
@@ -20,6 +28,7 @@ class SparseUpdate(IncrementalUpdate):
         self, parameter: Parameter, previous_parameter: Parameter
     ) -> Parameter:
         diff = parameter - previous_parameter
+        diff[np.abs(diff) < self.threshold] = 0
         # csr_matrix looks for actual zeros in diff tensor. We can consider adding threshold option on diff tensor in future
         update = scipy.sparse.csr_matrix(np.reshape(diff, (1, -1)))
         return {
