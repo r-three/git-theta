@@ -29,7 +29,7 @@ class SparseUpdate(IncrementalUpdate):
     ) -> Parameter:
         diff = parameter - previous_parameter
         diff[np.abs(diff) < self.threshold] = 0
-        # csr_matrix looks for actual zeros in diff tensor. We can consider adding threshold option on diff tensor in future
+        # csr_matrix looks for actual zeros in diff tensor. We added a configurable threshold to have the diff tensor (the update) be really sparse
         update = scipy.sparse.csr_matrix(np.reshape(diff, (1, -1)))
         return {
             "data": update.data,
