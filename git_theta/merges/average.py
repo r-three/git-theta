@@ -1,7 +1,7 @@
 """Merge parameters by averaging them."""
 
 from typing import Dict, Any
-from git_theta import metadata
+from git_theta.models import Metadata, ParamMetadata, TensorMetadata, ThetaMetadata
 from git_theta.merges import Merge
 from git_theta.utils import DiffState
 from git_theta.types import ParamName
@@ -37,7 +37,7 @@ class Average(Merge):
         return a + b / 2
 
     def read_parameter(
-        self, param: metadata.ParamMetadata, param_name: ParamName, path: str
+        self, param: ParamMetadata, param_name: ParamName, path: str
     ) -> Parameter:
         update_handler = updates.get_update_handler(param.theta_metadata.update_type)(
             params.get_update_serializer()
@@ -49,31 +49,31 @@ class Average(Merge):
     def merge(
         self,
         param_name: ParamName,
-        paramA: metadata.ParamMetadata,
-        paramB: metadata.ParamMetadata,
-        paramO: metadata.ParamMetadata,
-        metadataA: metadata.Metadata,
-        metadataB: metadata.Metadata,
-        metadataO: metadata.Metadata,
+        paramA: ParamMetadata,
+        paramB: ParamMetadata,
+        paramO: ParamMetadata,
+        metadataA: Metadata,
+        metadataB: Metadata,
+        metadataO: Metadata,
         modelA: PartialModel,
         modelB: PartialModel,
         modelO: PartialModel,
         path: str,
-    ) -> metadata.ParamMetadata:
+    ) -> ParamMetadata:
         # Load the current parameter
         paramA = self.read_parameter(paramA, param_name, path)
         # Load the other parameter
         paramB = self.read_parameter(paramB, param_name, path)
         result = self.average(paramA, paramB)
 
-        tensor_metadata = metadata.TensorMetadata.from_tensor(result)
+        tensor_metadata = TensorMetadata.from_tensor(result)
         update_handler = updates.get_update_handler("dense")(
             params.get_update_serializer()
         )
-        theta_metadata = metadata.ThetaMetadata("dense", None)
+        theta_metadata = ThetaMetadata("dense", None)
         # Dense only needs these two...
         lfs_metadata = async_utils.run(update_handler.write(result, param_name))
-        return metadata.ParamMetadata(
+        return ParamMetadata(
             lfs_metadata=lfs_metadata,
             tensor_metadata=tensor_metadata,
             theta_metadata=theta_metadata,

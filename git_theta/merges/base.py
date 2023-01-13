@@ -16,7 +16,7 @@ if sys.version_info < (3, 10):
 else:
     from importlib.metadata import entry_points
 
-from git_theta import metadata
+from git_theta.models import metadata
 from git_theta import utils
 
 

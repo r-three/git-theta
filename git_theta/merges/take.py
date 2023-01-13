@@ -1,6 +1,6 @@
 """Merge operations that select one version or another."""
 
-from git_theta import metadata
+from git_theta.models import ParamMetadata
 from git_theta.merges import Merge
 from git_theta.utils import DiffState, TEXT_STYLE
 from git_theta.types import ParamName
@@ -18,12 +18,12 @@ class TakeUs(Merge):
     def merge(
         self,
         param_name: ParamName,
-        paramA: metadata.ParamMetadata,
-        paramB: metadata.ParamMetadata,
-        paramO: metadata.ParamMetadata,
+        paramA: ParamMetadata,
+        paramB: ParamMetadata,
+        paramO: ParamMetadata,
         *args,
         **kwargs,
-    ) -> metadata.ParamMetadata:
+    ) -> ParamMetadata:
         """Grab the changes from branch A (current)."""
         return paramA
 
@@ -44,12 +44,12 @@ class TakeThem(Merge):
     def merge(
         self,
         param_name: ParamName,
-        paramA: metadata.ParamMetadata,
-        paramB: metadata.ParamMetadata,
-        paramO: metadata.ParamMetadata,
+        paramA: ParamMetadata,
+        paramB: ParamMetadata,
+        paramO: ParamMetadata,
         *args,
         **kwargs,
-    ) -> metadata.ParamMetadata:
+    ) -> ParamMetadata:
         """Grab the changes from branch B (other)."""
         return paramB
 
@@ -63,11 +63,11 @@ class TakeOriginal(Merge):
     def merge(
         self,
         param_name: ParamName,
-        paramA: metadata.ParamMetadata,
-        paramB: metadata.ParamMetadata,
-        paramO: metadata.ParamMetadata,
+        paramA: ParamMetadata,
+        paramB: ParamMetadata,
+        paramO: ParamMetadata,
         *args,
         **kwargs,
-    ) -> metadata.ParamMetadata:
+    ) -> ParamMetadata:
         """Grab the changes from the ancestor."""
         return paramO
