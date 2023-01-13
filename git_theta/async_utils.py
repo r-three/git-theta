@@ -11,10 +11,14 @@ from typing import (
     Awaitable,
     Union,
     Optional,
-    Protocol,
     Sequence,
 )
 import six
+
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+else:
+    from typing_extensions import Protocol
 
 
 def run(*args, **kwargs):

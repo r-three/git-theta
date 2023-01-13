@@ -47,9 +47,14 @@ setup(
     url="https://github.com/r-three/checkpoint-vcs",
     packages=find_packages(),
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
-    scripts=["bin/git-theta", "bin/git-theta-filter", "bin/git-theta-diff"],
+    scripts=[
+        "bin/git-theta",
+        "bin/git-theta-filter",
+        "bin/git-theta-diff",
+        "bin/git-theta-merge",
+    ],
     long_description="Version control system for model checkpoints.",
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
@@ -61,12 +66,15 @@ setup(
     license="MIT",
     install_requires=[
         "GitPython",
-        "tensorstore",
+        "tensorstore >= 0.1.14",
         "file-or-name",
         'importlib_metadata; python_version < "3.9.0"',
         'dataclasses; python_version < "3.7.0"',
         'importlib_resources; python_version < "3.9.0"',
+        'typing_extensions; python_version < "3.8.0"',
         "colorama",
+        "prompt-toolkit",
+        "six",
     ],
     extras_require={
         "test": ["pytest"],
@@ -83,6 +91,12 @@ setup(
         "git_theta.plugins.updates": [
             "dense = git_theta.updates.dense:DenseUpdate",
             "sparse = git_theta.updates.sparse:SparseUpdate",
+        ],
+        "git_theta.plugins.merges": [
+            "take_us = git_theta.merges.take:TakeUs",
+            "take_them = git_theta.merges.take:TakeThem",
+            "take_original = git_theta.merges.take:TakeOriginal",
+            "average = git_theta.merges.average:Average",
         ],
     },
 )

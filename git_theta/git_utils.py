@@ -166,7 +166,7 @@ def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> st
     for line in gitattributes:
         # TODO(bdlester): Revisit this regex to see if it when the pattern
         # is escaped due to having spaces in it.
-        match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
+        match = re.match(r"^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
         if match:
             # If there is already a pattern that covers the file, add the filter
             # to that.
@@ -174,11 +174,13 @@ def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> st
                 pattern_found = True
                 if not "filter=theta" in match.group("attributes"):
                     line = f"{line.rstrip()} filter=theta"
+                if not "merge=theta" in match.group("attributes"):
+                    line = f"{line.rstrip()} merge=theta"
         new_gitattributes.append(line)
     # If we don't find a matching pattern, add a new line that covers just this
     # specific file.
     if not pattern_found:
-        new_gitattributes.append(f"{path} filter=theta")
+        new_gitattributes.append(f"{path} filter=theta merge=theta")
     return new_gitattributes
 
 
@@ -285,9 +287,11 @@ async def git_lfs_clean(file_contents: bytes) -> str:
     return out.stdout.decode("utf-8")
 
 
-async def git_lfs_smudge(pointer_file: bytes) -> bytes:
+async def git_lfs_smudge(pointer_file: str) -> bytes:
     out = await async_utils.subprocess_run(
-        ["git", "lfs", "smudge"], input=pointer_file, capture_output=True
+        ["git", "lfs", "smudge"],
+        input=pointer_file.encode("utf-8"),
+        capture_output=True,
     )
     return out.stdout
 
@@ -304,7 +308,7 @@ async def git_lfs_push_oids(remote_name: str, oids: Sequence[str]) -> int:
 def parse_pre_push_args(lines):
     lines_parsed = [
         re.match(
-            "^(?P<local_ref>[^\s]+)\s+(?P<local_sha1>[a-f0-9]{40})\s+(?P<remote_ref>[^\s]+)\s+(?P<remote_sha1>[a-f0-9]{40})\s+$",
+            r"^(?P<local_ref>[^\s]+)\s+(?P<local_sha1>[a-f0-9]{40})\s+(?P<remote_ref>[^\s]+)\s+(?P<remote_sha1>[a-f0-9]{40})\s+$",
             l,
         )
         for l in lines
