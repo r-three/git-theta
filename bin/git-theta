@@ -60,6 +60,32 @@ def parse_args():
     )
     add_parser.set_defaults(func=add)
 
+    diff_driver_parser = subparsers.add_parser(
+        "diff-driver", help="model diff-ing command called by `git diff`"
+    )
+    diff_driver_parser.add_argument("path", help="path to file being diff-ed")
+    diff_driver_parser.add_argument(
+        "old_checkpoint",
+        help="file that old version of the checkpoint can be read from",
+    )
+    diff_driver_parser.add_argument(
+        "old_hex", help="SHA-1 hash of the old version of the checkpoint"
+    )
+    diff_driver_parser.add_argument(
+        "old_mode", help="file mode for old version of the checkpoint"
+    )
+    diff_driver_parser.add_argument(
+        "new_checkpoint",
+        help="file that new version of the checkpoint can be read from",
+    )
+    diff_driver_parser.add_argument(
+        "new_hex", help="SHA-1 hash of the new version of the checkpoint"
+    )
+    diff_driver_parser.add_argument(
+        "new_mode", help="file mode for new version of the checkpoint"
+    )
+    diff_driver_parser.set_defaults(func=diff_driver)
+
     args = parser.parse_known_args()
     return args
 
@@ -81,7 +107,9 @@ def post_commit(args):
             curr_metadata = metadata.Metadata.from_file(commit.tree[path].data_stream)
             prev_metadata = metadata.Metadata.from_commit(repo, path, "HEAD~1")
 
-            added, removed, modified = curr_metadata.diff(prev_metadata)
+            added, removed, modified = metadata.Metadata.diff(
+                curr_metadata, prev_metadata
+            )
             oids.update([param.lfs_metadata.oid for param in added.flatten().values()])
             oids.update(
                 [param.lfs_metadata.oid for param in modified.flatten().values()]
@@ -118,7 +146,7 @@ def install(args):
     config_writer.set_value('filter "theta"', "clean", "git-theta-filter clean %f")
     config_writer.set_value('filter "theta"', "smudge", "git-theta-filter smudge %f")
     config_writer.set_value('filter "theta"', "required", "true")
-    config_writer.set_value('diff "theta"', "command", "git-theta-diff")
+    config_writer.set_value('diff "theta"', "command", "git theta-diff")
     config_writer.release()
 
 
@@ -135,7 +163,9 @@ def track(args):
     new_gitattributes = git_utils.add_filter_theta_to_gitattributes(
         gitattributes, model_path
     )
-    new_gitattributes = git_utils.add_diff_theta_to_gitattributes(new_gitattributes, model_path)
+    new_gitattributes = git_utils.add_diff_theta_to_gitattributes(
+        new_gitattributes, model_path
+    )
 
     git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
     git_utils.add_file(gitattributes_file, repo)

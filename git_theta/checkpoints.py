@@ -14,10 +14,10 @@ else:
 
 from file_or_name import file_or_name
 
-from . import utils
+from git_theta import utils
 
 
-class Checkpoint(dict):
+class Checkpoint(utils.ModelRepresentation):
     """Abstract base class for wrapping checkpoint formats."""
 
     @property
@@ -63,11 +63,13 @@ class Checkpoint(dict):
         """
         raise NotImplementedError
 
-    def flatten(self):
-        return utils.flatten(self, is_leaf=lambda v: isinstance(v, np.ndarray))
+    @staticmethod
+    def is_leaf(l):
+        return isinstance(l, np.ndarray)
 
-    def unflatten(self):
-        return utils.unflatten(self)
+    @staticmethod
+    def leaves_equal(l1, l2):
+        return np.allclose(l1, l2)
 
 
 class PickledDictCheckpoint(Checkpoint):

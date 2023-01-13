@@ -2,6 +2,8 @@
 
 
 import os
+from collections import OrderedDict
+from abc import ABCMeta, abstractmethod
 from typing import Dict, Any, Tuple, Union, Callable
 
 
@@ -61,3 +63,49 @@ def unflatten(d: Dict[Tuple[str], Any]) -> Dict[str, Union[Dict[str, Any], Any]]
             curr = curr.setdefault(k, {})
         curr[ks[-1]] = v
     return nested
+
+
+class ModelRepresentation(OrderedDict, metaclass=ABCMeta):
+    @staticmethod
+    @abstractmethod
+    def is_leaf(l) -> bool:
+        """
+        Return whether the passed value is a leaf node in the model representation
+        """
+
+    @staticmethod
+    @abstractmethod
+    def leaves_equal(l1, l2) -> bool:
+        """
+        Return whether the two passed leaves in the model representation are equal (for the purposes of diff-ing)
+        """
+
+    def flatten(self):
+        """
+        Flatten a nested dictionary representing a model
+        """
+        return flatten(self, is_leaf=self.is_leaf)
+
+    def unflatten(self):
+        """
+        Unflatten a flattened model representation
+        """
+        return unflatten(self)
+
+    @classmethod
+    def diff(cls, m1, m2):
+        m1_flat = m1.flatten()
+        m2_flat = m2.flatten()
+        added = cls(
+            {k: m1_flat[k] for k in m1_flat.keys() - m2_flat.keys()}
+        ).unflatten()
+        removed = cls(
+            {k: m2_flat[k] for k in m2_flat.keys() - m1_flat.keys()}
+        ).unflatten()
+        modified = cls()
+        for param_keys in set(m1_flat.keys()).intersection(m2_flat.keys()):
+            if not cls.leaves_equal(m1_flat[param_keys], m2_flat[param_keys]):
+                modified[param_keys] = m1_flat[param_keys]
+
+        modified = modified.unflatten()
+        return added, removed, modified

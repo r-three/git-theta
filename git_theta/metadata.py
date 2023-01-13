@@ -87,7 +87,7 @@ class ParamMetadata(MetadataField):
         return cls(tensor_metadata, lfs_metadata, theta_metadata)
 
 
-class Metadata(OrderedDict):
+class Metadata(utils.ModelRepresentation):
     @classmethod
     def from_metadata_dict(cls, d):
         flattened = utils.flatten(d, is_leaf=lambda v: LfsMetadata.name in v)
@@ -110,44 +110,18 @@ class Metadata(OrderedDict):
         else:
             return cls.from_file(obj.data_stream)
 
+    @staticmethod
+    def is_leaf(l):
+        return isinstance(l, ParamMetadata)
+
+    @staticmethod
+    def leaves_equal(l1, l2):
+        return l1.tensor_metadata != l2.tensor_metadata
+
     @file_or_name(file="w")
     def write(self, file):
         metadata_dict = self.serialize()
         json.dump(metadata_dict, file, indent=4)
-
-    def flatten(self):
-        return utils.flatten(self, is_leaf=lambda v: isinstance(v, ParamMetadata))
-
-    def unflatten(self):
-        return utils.unflatten(self)
-
-    def diff(self, other):
-        self_flattened = self.flatten()
-        other_flattened = other.flatten()
-        added = Metadata(
-            {
-                k: self_flattened[k]
-                for k in self_flattened.keys() - other_flattened.keys()
-            }
-        ).unflatten()
-        removed = Metadata(
-            {
-                k: other_flattened[k]
-                for k in other_flattened.keys() - self_flattened.keys()
-            }
-        ).unflatten()
-        modified = Metadata()
-        for param_keys in set(self_flattened.keys()).intersection(
-            other_flattened.keys()
-        ):
-            if (
-                self_flattened[param_keys].tensor_metadata
-                != other_flattened[param_keys].tensor_metadata
-            ):
-                modified[param_keys] = self_flattened[param_keys]
-
-        modified = modified.unflatten()
-        return added, removed, modified
 
     def serialize(self):
         flattened = self.flatten()
