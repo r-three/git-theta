@@ -4,9 +4,8 @@ import numpy as np
 from typing import Union
 
 from git_theta import utils
-from git_theta.models.metadata import ParamMetadata
 
-Leaf = Union[ParamMetadata, np.ndarray]
+Leaf = Union["ParamMetadata", np.ndarray]
 
 
 class Model(OrderedDict, metaclass=ABCMeta):

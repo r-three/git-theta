@@ -2,8 +2,9 @@
 
 import logging
 from typing import Optional, Any
-from git_theta import git_utils, metadata
+from git_theta import git_utils
 from git_theta.updates import Update
+from git_theta.models import metadata
 
 
 Parameter = Any

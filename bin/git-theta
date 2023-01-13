@@ -7,7 +7,8 @@ import logging
 import re
 import fnmatch
 
-from git_theta import git_utils, utils, theta, metadata, async_utils
+from git_theta import git_utils, utils, theta, async_utils
+from git_theta.models import metadata
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -59,32 +60,6 @@ def parse_args():
         help="Type of update being applied",
     )
     add_parser.set_defaults(func=add)
-
-    diff_driver_parser = subparsers.add_parser(
-        "diff-driver", help="model diff-ing command called by `git diff`"
-    )
-    diff_driver_parser.add_argument("path", help="path to file being diff-ed")
-    diff_driver_parser.add_argument(
-        "old_checkpoint",
-        help="file that old version of the checkpoint can be read from",
-    )
-    diff_driver_parser.add_argument(
-        "old_hex", help="SHA-1 hash of the old version of the checkpoint"
-    )
-    diff_driver_parser.add_argument(
-        "old_mode", help="file mode for old version of the checkpoint"
-    )
-    diff_driver_parser.add_argument(
-        "new_checkpoint",
-        help="file that new version of the checkpoint can be read from",
-    )
-    diff_driver_parser.add_argument(
-        "new_hex", help="SHA-1 hash of the new version of the checkpoint"
-    )
-    diff_driver_parser.add_argument(
-        "new_mode", help="file mode for new version of the checkpoint"
-    )
-    diff_driver_parser.set_defaults(func=diff_driver)
 
     args = parser.parse_known_args()
     return args

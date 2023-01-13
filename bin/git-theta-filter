@@ -4,7 +4,8 @@ import argparse
 import sys
 import logging
 
-from git_theta import git_utils, checkpoints, params, metadata, updates, async_utils
+from git_theta import git_utils, params, updates, async_utils
+from git_theta.models import checkpoints, metadata
 
 logging.basicConfig(
     level=logging.DEBUG,

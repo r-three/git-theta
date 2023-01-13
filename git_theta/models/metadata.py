@@ -12,6 +12,7 @@ import git
 from typing import Union, TextIO, Dict, Tuple, Any
 
 from git_theta import git_utils, utils
+from git_theta.models import Model
 from file_or_name import file_or_name
 
 
@@ -87,7 +88,7 @@ class ParamMetadata(MetadataField):
         return cls(tensor_metadata, lfs_metadata, theta_metadata)
 
 
-class Metadata(utils.ModelRepresentation):
+class Metadata(Model):
     @classmethod
     def from_metadata_dict(cls, d: Dict[str, Any]) -> Metadata:
         flattened = utils.flatten(d, is_leaf=lambda v: LfsMetadata.name in v)

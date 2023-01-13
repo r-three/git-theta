@@ -14,7 +14,8 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from git_theta import git_utils, utils, params, metadata
+from git_theta import git_utils, utils, params
+from git_theta.models import ParamMetadata, LfsMetadata, Metadata
 
 
 Parameter = np.ndarray
@@ -31,7 +32,7 @@ class Update(metaclass=ABCMeta):
     def name(self) -> str:
         """The name used to lookup the plug-in."""
 
-    async def read(self, param_metadata: metadata.ParamMetadata) -> Parameter:
+    async def read(self, param_metadata: ParamMetadata) -> Parameter:
         """Read in and deserialize a single parameter value based metadata."""
         lfs_pointer = param_metadata.lfs_metadata.lfs_pointer
         serialized_param = await git_utils.git_lfs_smudge(lfs_pointer)
@@ -41,12 +42,12 @@ class Update(metaclass=ABCMeta):
     @abstractmethod
     async def write(
         self, param: Parameter, param_keys: Tuple[str], **kwargs
-    ) -> metadata.LfsMetadata:
+    ) -> LfsMetadata:
         """Serialize and save a parameter with git-lfs."""
 
     @abstractmethod
     async def apply(
-        self, param_metadata: metadata.ParamMetadata, param_keys: Tuple[str], **kwargs
+        self, param_metadata: ParamMetadata, param_keys: Tuple[str], **kwargs
     ) -> Parameter:
         """Get the final parameter value, including fetching previous values."""
 
@@ -56,11 +57,11 @@ class IncrementalUpdate(Update):
 
     async def get_previous_metadata(
         self,
-        param_metadata: metadata.ParamMetadata,
+        param_metadata: ParamMetadata,
         param_keys: Tuple[str],
         repo,
         path: str,
-    ) -> metadata.ParamMetadata:
+    ) -> ParamMetadata:
         """Get the metadata from the last time this parameter was updated via git."""
         logging.debug(f"Getting previous metadata for {'/'.join(param_keys)}")
         logging.debug(f"Current Metadata for {'/'.join(param_keys)}: {param_metadata}")
@@ -75,7 +76,7 @@ class IncrementalUpdate(Update):
             f"Getting metadata for {'/'.join(param_keys)} from commit {last_commit}"
         )
         last_metadata_obj = git_utils.get_file_version(repo, path, last_commit)
-        last_metadata = metadata.Metadata.from_file(last_metadata_obj.data_stream)
+        last_metadata = Metadata.from_file(last_metadata_obj.data_stream)
         last_param_metadata = last_metadata.flatten()[param_keys]
         logging.debug(
             f"Previous Metadata for {'/'.join(param_keys)}: {last_param_metadata}"
@@ -84,7 +85,7 @@ class IncrementalUpdate(Update):
 
     async def get_previous_value(
         self,
-        param_metadata: metadata.ParamMetadata,
+        param_metadata: ParamMetadata,
         param_keys: Tuple[str],
         repo,
         path: str,
@@ -112,22 +113,22 @@ class IncrementalUpdate(Update):
     async def apply_update(self, update: Parameter, previous: Parameter) -> Parameter:
         """Apply the update to the previous value to get the new value."""
 
-    async def write_update(self, update: Parameter) -> metadata.LfsMetadata:
+    async def write_update(self, update: Parameter) -> LfsMetadata:
         """Save and serialize (just) the update weights."""
         serialized_update = await self.serializer.serialize({"parameter": update})
         lfs_pointer = await git_utils.git_lfs_clean(serialized_update)
-        return metadata.LfsMetadata.from_pointer(lfs_pointer)
+        return LfsMetadata.from_pointer(lfs_pointer)
 
     async def write(
         self,
         param: Parameter,
         param_keys,
         *,
-        param_metadata: metadata.ParamMetadata,
+        param_metadata: ParamMetadata,
         repo,
         path: str,
         **kwargs,
-    ) -> metadata.LfsMetadata:
+    ) -> LfsMetadata:
         """Serialize and save a parameter with git-lfs as a delta from the previous value."""
         logging.debug(f"Writing {self.name} update for {'/'.join(param_keys)}")
         previous_value = await self.get_previous_value(
@@ -138,7 +139,7 @@ class IncrementalUpdate(Update):
 
     async def apply(
         self,
-        param_metadata: metadata.ParamMetadata,
+        param_metadata: ParamMetadata,
         param_keys: Tuple[str],
         *,
         repo,

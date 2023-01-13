@@ -6,6 +6,7 @@ import io
 import sys
 from typing import Optional
 import numpy as np
+from abc import ABCMeta, abstractmethod
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
@@ -15,15 +16,16 @@ else:
 from file_or_name import file_or_name
 
 from git_theta import utils
+from git_theta.models import Model
 
 
-class Checkpoint(utils.ModelRepresentation):
+class Checkpoint(Model):
     """Abstract base class for wrapping checkpoint formats."""
 
     @property
+    @abstractmethod
     def name(self):
         """The name of this checkpoint handler, can be used to lookup the plugin."""
-        raise NotImplementedError
 
     @classmethod
     def from_file(cls, checkpoint_path):
@@ -37,6 +39,7 @@ class Checkpoint(utils.ModelRepresentation):
         return cls(cls.load(checkpoint_path))
 
     @classmethod
+    @abstractmethod
     def load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
 
@@ -51,8 +54,8 @@ class Checkpoint(utils.ModelRepresentation):
             Dictionary mapping parameter names to parameter values. Parameters
             should be numpy arrays.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def save(self, checkpoint_path):
         """Load a checkpoint into a dict format.
 
@@ -61,7 +64,6 @@ class Checkpoint(utils.ModelRepresentation):
         checkpoint_path : str or file-like object
             Path to write out the checkpoint file to
         """
-        raise NotImplementedError
 
     @staticmethod
     def is_leaf(l):

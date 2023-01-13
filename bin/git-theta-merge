@@ -12,7 +12,8 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.validation import Validator, ValidationError
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
-from git_theta import metadata
+
+from git_theta.models import metadata
 from git_theta import merges
 from git_theta.utils import DiffState, Trie, TEXT_STYLE
 

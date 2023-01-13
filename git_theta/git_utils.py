@@ -196,6 +196,20 @@ def get_gitattributes_tracked_patterns(gitattributes_file):
     return patterns
 
 
+def add_file(f, repo):
+    """
+    Add file to git staging area
+    Parameters
+    ----------
+    f : str
+        path to file
+    repo : git.Repo
+        Repo object for current git repository
+    """
+    logging.debug(f"Adding {f} to staging area")
+    repo.git.add(f)
+
+
 def get_file_version(repo, path, commit_hash):
     path = get_relative_path_from_root(repo, path)
     try:

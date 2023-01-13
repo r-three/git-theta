@@ -2,9 +2,12 @@
 
 import argparse
 import numpy as np
-from colorama import Fore
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
 
-from git_theta import checkpoints, utils, params
+from git_theta import utils, params
+from git_theta.models import checkpoints
+from git_theta.models import TensorMetadata
 
 
 def parse_args():
@@ -27,44 +30,77 @@ def parse_args():
     return args
 
 
-def print_header(header, prefix=""):
-    print(f"{prefix}{header}")
-    print(f'{prefix}{"-" * len(header)}')
+def color_string(s, color):
+    return f"<{color}>{s}</{color}>" if color else s
 
 
-def print_added_params_summary(added, prefix=""):
-    print_header("ADDED PARAMETER GROUPS", prefix=prefix)
-    for flattened_group in added.flatten().keys():
-        group = '/'.join(flattened_group)
-        print(f'{prefix}{group}')
-    print()
+def bold_string(s):
+    return f"<b>{s}</b>"
 
 
-def print_removed_params_summary(removed, prefix=""):
-    print_header("REMOVED PARAMETER GROUPS", prefix=prefix)
-    for flattened_group in removed.flatten().keys():
-        group = '/'.join(flattened_group)
-        print(f'{prefix}{group}')
-    print()
+def indent_string(s, levels):
+    return '\t'*levels + s
 
 
-def print_modified_params_summary(modified, prefix=""):
-    print_header("MODIFIED PARAMETER GROUPS", prefix=prefix)
-    for flattened_group in modified.flatten().keys():
-        group = '/'.join(flattened_group)
-        print(f'{prefix}{group}')
-    print()
+def print_html(s, level=0, color=None, bold=False):
+    if level:
+        s = indent_string(s, level)
+    if color:
+        s = color_string(s, color)
+    if bold:
+        s = bold_string(s)
+    print_formatted_text(HTML(s))
+
+
+def print_header(header, level=0, color=None):
+    print_html(header, level=level, color=color, bold=True)
+    print_html("-" * len(header), level=level, color=color, bold=True)
+
+
+def print_metadata(param, level=0, color=None):
+    tensor_metadata = TensorMetadata.from_tensor(param)
+    print_html(f'shape = {tensor_metadata.shape}', level=level, color=color)
+    print_html(f'dtype = {tensor_metadata.dtype}', level=level, color=color)
+
+
+def print_added_params_summary(added, level=0, color=None):
+    if len(added):
+        print_header("ADDED PARAMETER GROUPS", level=level, color=color)
+        for flattened_group, param in added.flatten().items():
+            group = '/'.join(flattened_group)
+            print_html(group, level=level, color=color)
+            print_metadata(param, level=level+1, color=color)
+        print_formatted_text()
+
+def print_removed_params_summary(removed, level=0, color=None):
+    if len(removed):
+        print_header("REMOVED PARAMETER GROUPS", level=level, color=color)
+        for flattened_group, param in removed.flatten().items():
+            group = '/'.join(flattened_group)
+            print_html(group, level=level, color=color)
+            print_metadata(param, level=level+1, color=color)
+        print_formatted_text()
+
+
+def print_modified_params_summary(modified, level=0, color=None):
+    if len(modified):
+        print_header("MODIFIED PARAMETER GROUPS", level=level, color=color)
+        for flattened_group, param in modified.flatten().items():
+            group = '/'.join(flattened_group)
+            print_html(group, level=level, color=color)
+            print_metadata(param, level=level+1, color=color)
+        print_formatted_text()
 
 
 def main(args):
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     old_checkpoint = checkpoint_handler.from_file(args.old_checkpoint)
     new_checkpoint = checkpoint_handler.from_file(args.new_checkpoint)
-    added, removed, modified = checkpoint_handler.diff(old_checkpoint, new_checkpoint)
+    added, removed, modified = checkpoint_handler.diff(new_checkpoint, old_checkpoint)
 
-    print_added_params_summary(old_model, new_model, prefix=Fore.GREEN)
-    print_removed_params_summary(old_model, new_model, prefix=Fore.RED)
-    print_modified_params_summary(old_model, new_model, prefix=Fore.YELLOW)
+    print_added_params_summary(added, level=0, color='green')
+    print_removed_params_summary(removed, level=0, color='red')
+    print_modified_params_summary(modified, level=0, color='yellow')
 
 
 if __name__ == "__main__":

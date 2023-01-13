@@ -72,7 +72,6 @@ setup(
         'dataclasses; python_version < "3.7.0"',
         'importlib_resources; python_version < "3.9.0"',
         'typing_extensions; python_version < "3.8.0"',
-        "colorama",
         "prompt-toolkit",
         "six",
     ],
@@ -85,8 +84,8 @@ setup(
     },
     entry_points={
         "git_theta.plugins.checkpoints": [
-            "pytorch = git_theta.checkpoints:PickledDictCheckpoint",
-            "pickled-dict = git_theta.checkpoints:PickledDictCheckpoint",
+            "pytorch = git_theta.models.checkpoints:PickledDictCheckpoint",
+            "pickled-dict = git_theta.models.checkpoints:PickledDictCheckpoint",
         ],
         "git_theta.plugins.updates": [
             "dense = git_theta.updates.dense:DenseUpdate",
