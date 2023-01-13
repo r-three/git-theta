@@ -35,8 +35,8 @@ class Update(metaclass=ABCMeta):
         """Read in and deserialize a single parameter value based metadata."""
         lfs_pointer = param_metadata.lfs_metadata.lfs_pointer
         serialized_param = await git_utils.git_lfs_smudge(lfs_pointer)
-        param = (await self.serializer.deserialize(serialized_param))["parameter"]
-        return param
+        param = await self.serializer.deserialize(serialized_param)
+        return param.get("parameter", param)
 
     @abstractmethod
     async def write(
@@ -114,7 +114,9 @@ class IncrementalUpdate(Update):
 
     async def write_update(self, update: Parameter) -> metadata.LfsMetadata:
         """Save and serialize (just) the update weights."""
-        serialized_update = await self.serializer.serialize({"parameter": update})
+        if not isinstance(update, dict):
+            update = {"parameter": update}
+        serialized_update = await self.serializer.serialize(update)
         lfs_pointer = await git_utils.git_lfs_clean(serialized_update)
         return metadata.LfsMetadata.from_pointer(lfs_pointer)
 

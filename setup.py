@@ -64,6 +64,7 @@ setup(
         "tensorstore >= 0.1.14",
         "file-or-name",
         "six",
+        "scipy",
         'importlib_resources; python_version < "3.9.0"',
         'importlib_metadata; python_version < "3.10.0"',
         'typing_extensions; python_version < "3.8.0"',
