@@ -147,7 +147,7 @@ def write_gitattributes(
     gitattributes_file.write("\n")
 
 
-def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
+def add_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
     """Add a filter=theta that covers file_name.
 
     Parameters
@@ -176,44 +176,13 @@ def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> st
                     line = f"{line.rstrip()} filter=theta"
                 if not "merge=theta" in match.group("attributes"):
                     line = f"{line.rstrip()} merge=theta"
-        new_gitattributes.append(line)
-    # If we don't find a matching pattern, add a new line that covers just this
-    # specific file.
-    if not pattern_found:
-        new_gitattributes.append(f"{path} filter=theta merge=theta")
-    return new_gitattributes
-
-
-def add_diff_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
-    """Add a diff=theta that covers file_name.
-
-    Parameters
-    ----------
-        gitattributes: A list of the lines from the gitattribute files.
-        path: The path to the model we are adding a filter to.
-
-    Returns
-    -------
-    List[str]
-        The lines to write to the new gitattribute file with a (possibly) new
-        diff=theta added that covers the given file.
-    """
-    pattern_found = False
-    new_gitattributes = []
-    for line in gitattributes:
-        match = re.match("^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
-        if match:
-            # If there is already a pattern that covers the file, add the filter
-            # to that.
-            if fnmatch.fnmatchcase(path, match.group("pattern")):
-                pattern_found = True
                 if not "diff=theta" in match.group("attributes"):
                     line = f"{line.rstrip()} diff=theta"
         new_gitattributes.append(line)
     # If we don't find a matching pattern, add a new line that covers just this
     # specific file.
     if not pattern_found:
-        new_gitattributes.append(f"{path} diff=theta")
+        new_gitattributes.append(f"{path} filter=theta merge=theta diff=theta")
     return new_gitattributes
 
 
@@ -225,39 +194,6 @@ def get_gitattributes_tracked_patterns(gitattributes_file):
     # TODO: Correctly handle patterns with escaped spaces in them
     patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
     return patterns
-
-
-def add_file(f, repo):
-    """
-    Add file to git staging area
-
-    Parameters
-    ----------
-    f : str
-        path to file
-    repo : git.Repo
-        Repo object for current git repository
-    """
-    logging.debug(f"Adding {f} to staging area")
-    repo.git.add(f)
-
-
-def remove_file(f, repo):
-    """
-    Remove file or directory and add change to staging area
-
-    Parameters
-    ----------
-    f : str
-        path to file or directory
-    repo : git.Repo
-        Repo object for current git repository
-    """
-    logging.debug(f"Removing {f}")
-    if os.path.isdir(f):
-        repo.git.rm("-r", f)
-    else:
-        repo.git.rm(f)
 
 
 def get_file_version(repo, path, commit_hash):
