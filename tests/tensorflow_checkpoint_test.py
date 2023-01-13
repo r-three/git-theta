@@ -67,7 +67,7 @@ def test_round_trip(fake_model):
             loaded_model = make_fake_model()
             loaded_model.load_weights(f2.name)
     for og, new in zip(fake_model.variables, loaded_model.variables):
-        np.testing.assert_allclose(og.numpy(), new.numpy())
+        np.testing.assert_array_equal(og.numpy(), new.numpy())
 
 
 def test_round_trip_with_modifications(fake_model):

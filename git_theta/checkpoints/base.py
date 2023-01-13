@@ -1,4 +1,4 @@
-"""Base class and utilities for different checkout format backends."""
+"""Base class and utilities for different checkpoint format backends."""
 
 from abc import ABCMeta, abstractmethod
 import os
