@@ -13,9 +13,7 @@ Parameter = Any
 class SparseUpdate(IncrementalUpdate):
     """An update where only some parameters are touched."""
 
-    def __init__(
-        self, serializer: params.Serializer, threshold: Optional[float] = 1e-12
-    ):
+    def __init__(self, serializer: params.Serializer, threshold: float = 1e-12):
         # TODO: Make threshold configurable
         super().__init__(serializer)
         self.threshold = threshold
