@@ -33,7 +33,7 @@ class SparseUpdate(IncrementalUpdate):
             "data": update.data,
             "indices": update.indices,
             "indptr": update.indptr,
-            "shape": parameter.shape,
+            "shape": np.array(parameter.shape),
         }
 
     async def apply_update(self, update: Parameter, previous: Parameter) -> Parameter:
