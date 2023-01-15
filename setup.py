@@ -46,7 +46,14 @@ setup(
     author_email="craffel@gmail.com",
     url="https://github.com/r-three/checkpoint-vcs",
     packages=find_packages(),
-    package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
+    package_data={
+        "git_theta": [
+            "hooks/post-commit",
+            "hooks/pre-push",
+            "lsh/data/pool.npy",
+            "lsh/data/index_hashes.npy",
+        ]
+    },
     scripts=["bin/git-theta", "bin/git-theta-filter"],
     long_description="Version control system for model checkpoints.",
     python_requires=">=3.7",
