@@ -14,6 +14,9 @@ else:
     import importlib.resources as importlib_resources
 
 
+# RandomnessPool is a singleton class so we don't read pool data off disk multiple times per git-theta command
+SINGLETON = None
+
 spec = [("pool", nb.float64[:]), ("index_hashes", nb.int64[:])]
 
 
@@ -39,19 +42,23 @@ class RandomnessPool:
 
 
 def get_randomness_pool(signature_size):
-    package = importlib_resources.files("git_theta")
-    with importlib_resources.as_file(
-        package.joinpath("lsh", "data", "pool.npy")
-    ) as pool_file:
-        pool = np.load(pool_file)
-    with importlib_resources.as_file(
-        package.joinpath("lsh", "data", "index_hashes.npy")
-    ) as index_hashes_file:
-        index_hashes = np.load(index_hashes_file)
-        if signature_size > index_hashes.size:
-            raise ValueError(
-                f"Cannot produce LSH signatures of size larger than {index_hashes.size}"
-            )
-        index_hashes = index_hashes[:signature_size]
+    global SINGLETON
 
-    return RandomnessPool(pool, index_hashes)
+    if not SINGLETON:
+        package = importlib_resources.files("git_theta")
+        with importlib_resources.as_file(
+            package.joinpath("lsh", "data", "pool.npy")
+        ) as pool_file:
+            pool = np.load(pool_file)
+        with importlib_resources.as_file(
+            package.joinpath("lsh", "data", "index_hashes.npy")
+        ) as index_hashes_file:
+            index_hashes = np.load(index_hashes_file)
+            if signature_size > index_hashes.size:
+                raise ValueError(
+                    f"Cannot produce LSH signatures of size larger than {index_hashes.size}"
+                )
+            index_hashes = index_hashes[:signature_size]
+        SINGLETON = RandomnessPool(pool, index_hashes)
+
+    return SINGLETON

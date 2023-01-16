@@ -9,6 +9,8 @@ import re
 class EnvVarConstants:
     CHECKPOINT_TYPE: str = "GIT_THETA_CHECKPOINT_TYPE"
     UPDATE_TYPE: str = "GIT_THETA_UPDATE_TYPE"
+    LSH_SIGNATURE_SIZE: str = "LSH_SIGNATURE_SIZE"
+    LSH_BUCKET_WIDTH: str = "LSH_BUCKET_WIDTH"
 
 
 def flatten(

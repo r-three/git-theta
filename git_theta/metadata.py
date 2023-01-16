@@ -11,7 +11,7 @@ import numpy as np
 import git
 from typing import Union, TextIO, Dict, Tuple, Any
 
-from git_theta import git_utils, utils
+from git_theta import git_utils, utils, lsh
 from file_or_name import file_or_name
 
 
@@ -62,7 +62,7 @@ class TensorMetadata(MetadataField):
     def from_tensor(cls, tensor: np.ndarray) -> TensorMetadata:
         shape = str(tensor.shape)
         dtype = str(tensor.dtype)
-        hash = hashlib.sha256(tensor.round(4).tobytes()).hexdigest()
+        hash = lsh.get_lsh().hash(tensor)
         return cls(shape=shape, dtype=dtype, hash=hash)
 
 

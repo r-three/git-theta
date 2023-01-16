@@ -125,15 +125,19 @@ class IncrementalUpdate(Update):
         param: Parameter,
         param_keys,
         *,
-        param_metadata: metadata.ParamMetadata,
+        prev_param_metadata: metadata.ParamMetadata,
         repo,
         path: str,
         **kwargs,
     ) -> metadata.LfsMetadata:
         """Serialize and save a parameter with git-lfs as a delta from the previous value."""
         logging.debug(f"Writing {self.name} update for {'/'.join(param_keys)}")
-        previous_value = await self.get_previous_value(
-            param_metadata, param_keys, repo=repo, path=path
+        prev_update_type = prev_param_metadata.theta_metadata.update_type
+        update_handler = get_update_handler(prev_update_type)(
+            params.get_update_serializer()
+        )
+        previous_value = await update_handler.apply(
+            prev_param_metadata, param_keys, repo=repo, path=path
         )
         update_value = await self.calculate_update(param, previous_value)
         return await self.write_update(update_value)
