@@ -72,6 +72,7 @@ setup(
         "file-or-name",
         "six",
         "scipy",
+        "numba",
         'importlib_resources; python_version < "3.9.0"',
         'importlib_metadata; python_version < "3.10.0"',
         'typing_extensions; python_version < "3.8.0"',
