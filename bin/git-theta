@@ -55,7 +55,7 @@ def parse_args():
     add_parser = subparsers.add_parser("add", help="add command used to stage files.")
     add_parser.add_argument(
         "--update-type",
-        choices=["dense", "sparse"],
+        choices=["dense", "sparse", "low-rank"],
         help="Type of update being applied",
     )
     add_parser.set_defaults(func=add)
