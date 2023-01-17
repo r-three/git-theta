@@ -73,13 +73,20 @@ setup(
         "test": ["pytest"],
         "pytorch": ["torch"],
         "tensorflow": ["tensorflow"],
-        # TODO: Add tensorflow to the all target once tf checkpoint support is added.
-        "all": ["torch"],
+        # TODO: Is there a way for all to be the concat of the list of others
+        # instead of making a new list? In case some framework needs multiple
+        # libraries installed?
+        "all": ["torch", "tensorflow"],
     },
     entry_points={
         "git_theta.plugins.checkpoints": [
             "pytorch = git_theta.checkpoints:PickledDictCheckpoint",
             "pickled-dict = git_theta.checkpoints:PickledDictCheckpoint",
+            "tf = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowCheckpoint",
+            "tensorflow = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowCheckpoint",
+            "tensorflow-checkpoint = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowCheckpoint",
+            "tf-savedmodel = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowSavedModel",
+            "tensorflow-savedmodel = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowSavedModel",
         ],
         "git_theta.plugins.updates": [
             "dense = git_theta.updates.dense:DenseUpdate",

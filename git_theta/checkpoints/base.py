@@ -1,8 +1,7 @@
-"""Backends for different checkpoint formats."""
+"""Base class and utilities for different checkpoint format backends."""
 
+from abc import ABCMeta, abstractmethod
 import os
-import json
-import io
 import sys
 from typing import Optional
 import numpy as np
@@ -12,18 +11,16 @@ if sys.version_info < (3, 10):
 else:
     from importlib.metadata import entry_points
 
-from file_or_name import file_or_name
-
-from . import utils
+from git_theta import utils
 
 
-class Checkpoint(dict):
+class Checkpoint(dict, metaclass=ABCMeta):
     """Abstract base class for wrapping checkpoint formats."""
 
     @property
+    @abstractmethod
     def name(self):
         """The name of this checkpoint handler, can be used to lookup the plugin."""
-        raise NotImplementedError
 
     @classmethod
     def from_file(cls, checkpoint_path):
@@ -37,6 +34,7 @@ class Checkpoint(dict):
         return cls(cls.load(checkpoint_path))
 
     @classmethod
+    @abstractmethod
     def load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
 
@@ -48,11 +46,11 @@ class Checkpoint(dict):
         Returns
         -------
         model_dict : dict
-            Dictionary mapping parameter names to parameter values. Parameters
+            Dictionary mapping parameter names to parameter values.  Parameters
             should be numpy arrays.
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def save(self, checkpoint_path):
         """Load a checkpoint into a dict format.
 
@@ -61,69 +59,12 @@ class Checkpoint(dict):
         checkpoint_path : str or file-like object
             Path to write out the checkpoint file to
         """
-        raise NotImplementedError
 
     def flatten(self):
         return utils.flatten(self, is_leaf=lambda v: isinstance(v, np.ndarray))
 
     def unflatten(self):
         return utils.unflatten(self)
-
-
-class PickledDictCheckpoint(Checkpoint):
-    """Class for wrapping picked dict checkpoints, commonly used with PyTorch."""
-
-    @property
-    def name(self):
-        return "pickled-dict"
-
-    @classmethod
-    @file_or_name(checkpoint_path="rb")
-    def load(cls, checkpoint_path):
-        """Load a checkpoint into a dict format.
-
-        Parameters
-        ----------
-        checkpoint_path : str or file-like object
-            Path to a checkpoint file
-
-        Returns
-        -------
-        model_dict : dict
-            Dictionary mapping parameter names to parameter values. Parameters
-            should be numpy arrays.
-        """
-        # TODO(bdlester): Once multiple checkpoint types are supported and
-        # this checkpoint object is moved to its own module, move this import
-        # back to toplevel. Currently it is inside the object methods to allow
-        # for optional framework installs.
-        import torch
-
-        model_dict = torch.load(io.BytesIO(checkpoint_path.read()))
-        if not isinstance(model_dict, dict):
-            raise ValueError("Supplied PyTorch checkpoint must be a dict.")
-        if not all(isinstance(k, str) for k in model_dict.keys()):
-            raise ValueError("All PyTorch checkpoint keys must be strings.")
-        if not all(isinstance(v, torch.Tensor) for v in model_dict.values()):
-            raise ValueError("All PyTorch checkpoint values must be tensors.")
-        return {k: v.cpu().numpy() for k, v in model_dict.items()}
-
-    def save(self, checkpoint_path):
-        """Load a checkpoint into a dict format.
-
-        Parameters
-        ----------
-        checkpoint_path : str or file-like object
-            Path to write out the checkpoint file to
-        """
-        # TODO(bdlester): Once multiple checkpoint types are supported and
-        # this checkpoint object is moved to its own module, move this import
-        # back to toplevel. Currently it is inside the object methods to allow
-        # for optional framework installs.
-        import torch
-
-        checkpoint_dict = {k: torch.as_tensor(v) for k, v in self.items()}
-        torch.save(checkpoint_dict, checkpoint_path)
 
 
 def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
@@ -157,7 +98,9 @@ def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
 def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
     """Get the checkpoint handler either by name or from an environment variable.
 
-    Gets the checkpoint handler either for the `checkpoint_type` argument or `$GIT_THETA_CHECKPOINT_TYPE` environment variable.
+    Gets the checkpoint handler either for the `checkpoint_type` argument or
+    `$GIT_THETA_CHECKPOINT_TYPE` environment variable.
+
     Defaults to pytorch when neither are defined.
 
     Parameters
@@ -168,8 +111,8 @@ def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
     Returns
     -------
     Checkpoint
-        The checkpoint handler (usually an instance of `git_theta.checkpoints.Checkpoint`). Returned handler may be defined in a user installed
-        plugin.
+        The checkpoint handler (usually an instance of `git_theta.checkpoints.Checkpoint`).
+        Returned handler may be defined in a user installed plugin.
     """
     checkpoint_type = get_checkpoint_handler_name(checkpoint_type)
     discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
