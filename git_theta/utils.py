@@ -94,10 +94,9 @@ def is_valid_commit_hash(commit_hash: str) -> bool:
     return re.match("^[0-9a-f]{40}$", commit_hash) is not None
 
 
-
 def is_git_lfs_installed():
     """
-    Helper function that checks if git-lfs is installed to prevent future erros with git-theta
+    Helper function that checks if git-lfs is installed to prevent future errors with git-theta
     """
     try:
         results = subprocess.run(["git", "lfs", "version"])
@@ -108,9 +107,9 @@ def is_git_lfs_installed():
     except:
         return False
 
+
 def remove_suffix(s: str, suffix: str) -> str:
     """Remove suffix matching copy semantics of methods in later pythons."""
     if suffix and s.endswith(suffix):
         return s[: -len(suffix)]
     return s[:]
-
