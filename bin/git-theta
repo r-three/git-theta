@@ -112,6 +112,11 @@ def install(args):
     """
     Install git-lfs and initialize the git-theta filter driver
     """
+    # check if git-lfs is installed and abort if not
+    if not git_utils.is_git_lfs_installed():
+        print("Please install git-lfs before proceeding")
+        sys.exit(1)
+
     config_writer = git.GitConfigParser(
         git.config.get_config_path("global"), config_level="global", read_only=False
     )

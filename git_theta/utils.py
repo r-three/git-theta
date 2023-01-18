@@ -4,6 +4,7 @@
 import os
 from typing import Dict, Any, Tuple, Union, Callable
 import re
+import subprocess
 
 
 class EnvVarConstants:
@@ -92,3 +93,17 @@ def is_valid_commit_hash(commit_hash: str) -> bool:
         Whether this commit hash is valid
     """
     return re.match("^[0-9a-f]{40}$", commit_hash) is not None
+
+
+def is_git_lfs_installed():
+    """
+    Helper function that checks if git-lfs is installed to prevent future erros with git-theta
+    """
+    try:
+        results = subprocess.run(["git", "lfs", "version"])
+        if results.returncode == 0:
+            return True
+        else:
+            return False
+    except:
+        return False
