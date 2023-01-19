@@ -114,7 +114,9 @@ def install(args):
     """
     # check if git-lfs is installed and abort if not
     if not git_utils.is_git_lfs_installed():
-        print("Please install git-lfs before proceeding")
+        print(
+            f"git-theta depends on git-lfs and it does not appear to be installed. See installation directions at https://github.com/r-three/git-theta/blob/main/README.md#git-lfs-installation"
+        )
         sys.exit(1)
 
     config_writer = git.GitConfigParser(
