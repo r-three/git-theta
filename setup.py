@@ -80,8 +80,8 @@ setup(
     },
     entry_points={
         "git_theta.plugins.checkpoints": [
-            "pytorch = git_theta.checkpoints:PickledDictCheckpoint",
-            "pickled-dict = git_theta.checkpoints:PickledDictCheckpoint",
+            "pytorch = git_theta.checkpoints.pickled_dict_checkpoint:PickledDictCheckpoint",
+            "pickled-dict = git_theta.checkpoints.pickled_dict_checkpoint:PickledDictCheckpoint",
             "tf = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowCheckpoint",
             "tensorflow = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowCheckpoint",
             "tensorflow-checkpoint = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowCheckpoint",
