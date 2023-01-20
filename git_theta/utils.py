@@ -4,13 +4,27 @@
 import os
 from typing import Dict, Any, Tuple, Union, Callable
 import re
+from dataclasses import dataclass
+
+
+@dataclass
+class EnvVar:
+    name: str
+    default: Any
+
+    def __get__(self, obj, objtype=None):
+        value = os.environ.get(self.name)
+        return type(self.default)(value) if value else self.default
 
 
 class EnvVarConstants:
-    CHECKPOINT_TYPE: str = "GIT_THETA_CHECKPOINT_TYPE"
-    UPDATE_TYPE: str = "GIT_THETA_UPDATE_TYPE"
-    LSH_SIGNATURE_SIZE: str = "LSH_SIGNATURE_SIZE"
-    LSH_BUCKET_WIDTH: str = "LSH_BUCKET_WIDTH"
+    CHECKPOINT_TYPE = EnvVar(name="GIT_THETA_CHECKPOINT_TYPE", default="pytorch")
+    UPDATE_TYPE = EnvVar(name="GIT_THETA_UPDATE_TYPE", default="dense")
+    PARAMETER_ATOL = EnvVar(name="GIT_THETA_PARAMETER_ATOL", default=1e-8)
+    PARAMETER_RTOL = EnvVar(name="GIT_THETA_PARAMETER_RTOL", default=1e-5)
+    LSH_SIGNATURE_SIZE = EnvVar(name="GIT_THETA_LSH_SIGNATURE_SIZE", default=16)
+    LSH_THRESHOLD = EnvVar(name="GIT_THETA_LSH_THRESHOLD", default=1e-6)
+    LSH_POOL_SIZE = EnvVar(name="GIT_THETA_LSH_POOL_SIZE", default=10_000)
 
 
 def flatten(

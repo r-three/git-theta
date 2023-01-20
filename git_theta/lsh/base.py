@@ -1,14 +1,14 @@
 """Base class for computing locality-sensitive hashes"""
 
 import abc
-from git_theta.lsh import get_randomness_pool
+from git_theta.lsh import RandomnessPool
 from git_theta.lsh.types import Signature, Parameter
 
 
 class HashFamily(metaclass=abc.ABCMeta):
     def __init__(self, signature_size: int):
         self._signature_size = signature_size
-        self.pool = get_randomness_pool(signature_size)
+        self.pool = RandomnessPool(signature_size)
 
     @property
     @abc.abstractmethod
