@@ -50,8 +50,6 @@ setup(
         "git_theta": [
             "hooks/post-commit",
             "hooks/pre-push",
-            "lsh/data/pool.npy",
-            "lsh/data/index_hashes.npy",
         ]
     },
     scripts=["bin/git-theta", "bin/git-theta-filter"],
