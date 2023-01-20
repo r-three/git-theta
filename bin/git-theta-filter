@@ -80,7 +80,11 @@ def clean(args):
         new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
 
         # If the parameter tensor has not changed, just keep the metadata the same
-        if param_metadata:
+        if (
+            param_metadata
+            and param_metadata.tensor_metadata.shape == new_tensor_metadata.shape
+            and param_metadata.tensor_metadata.dtype == new_tensor_metadata.dtype
+        ):
             hasher = lsh.get_lsh()
             hash_distance = hasher.distance(
                 param_metadata.tensor_metadata.hash, new_tensor_metadata.hash
