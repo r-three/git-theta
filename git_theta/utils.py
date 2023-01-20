@@ -3,6 +3,7 @@
 import os
 from typing import Dict, Any, Tuple, Union, Callable
 import re
+import subprocess
 
 
 class EnvVarConstants:
