@@ -115,7 +115,7 @@ def clean(args):
         lfs_metadata = await update_handler.write(
             new_param,
             param_keys,
-            prev_param_metadata=param_metadata,
+            prev_metadata=param_metadata,
             repo=repo,
             path=args.file,
         )

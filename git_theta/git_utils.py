@@ -147,7 +147,7 @@ def write_gitattributes(
     gitattributes_file.write("\n")
 
 
-def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
+def add_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
     """Add a filter=theta that covers file_name.
 
     Parameters
@@ -174,11 +174,13 @@ def add_filter_theta_to_gitattributes(gitattributes: List[str], path: str) -> st
                 pattern_found = True
                 if not "filter=theta" in match.group("attributes"):
                     line = f"{line.rstrip()} filter=theta"
+                if not "merge=theta" in match.group("attributes"):
+                    line = f"{line.rstrip()} merge=theta"
         new_gitattributes.append(line)
     # If we don't find a matching pattern, add a new line that covers just this
     # specific file.
     if not pattern_found:
-        new_gitattributes.append(f"{path} filter=theta")
+        new_gitattributes.append(f"{path} filter=theta merge=theta")
     return new_gitattributes
 
 
@@ -279,3 +281,16 @@ def parse_pre_push_args(lines):
         for l in lines
     ]
     return lines_parsed
+
+
+def is_git_lfs_installed():
+    """
+    Helper function that checks if git-lfs is installed to prevent future errors with git-theta
+    """
+    try:
+        results = subprocess.run(
+            ["git", "lfs", "version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        return results.returncode == 0
+    except:
+        return False

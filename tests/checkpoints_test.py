@@ -8,6 +8,8 @@ from git_theta import checkpoints
 
 ENV_CHECKPOINT_TYPE = "GIT_THETA_CHECKPOINT_TYPE"
 
+pytest.importorskip("pytorch")
+
 
 @pytest.fixture
 def env_var():
@@ -68,8 +70,10 @@ def test_get_checkpoint_handler_name_default2(empty_env_var):
     assert name == "pytorch"
 
 
+# TODO: Move this (and other pytorch checkpoint tests) to new file. Remove the
+# importorskip too.
 def test_get_checkpoint_handler_pytorch(no_env_var):
     """Check that checkpoint_handler type is correct for when checkpoint_handler name resolves to pytorch"""
 
     out = checkpoints.get_checkpoint_handler("pytorch")
-    assert out == checkpoints.PickledDictCheckpoint
+    assert out == checkpoints.pickled_dict_checkpoint.PickledDictCheckpoint
