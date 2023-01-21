@@ -11,7 +11,7 @@ import numpy as np
 import git
 from typing import Union, TextIO, Dict, Tuple, Any
 
-from git_theta import git_utils, utils
+from git_theta import git_utils, utils, lsh
 from file_or_name import file_or_name
 
 
@@ -55,14 +55,24 @@ class LfsMetadata(MetadataField):
 class TensorMetadata(MetadataField):
     shape: str
     dtype: str
-    hash: str
+    hash: np.ndarray
     name: ClassVar[str] = "tensor_metadata"
+
+    def __post_init__(self):
+        self.hash = np.array(self.hash)
+
+    def __eq__(self, other):
+        return (
+            self.shape == other.shape
+            and self.dtype == other.dtype
+            and np.array_equal(self.hash, other.hash)
+        )
 
     @classmethod
     def from_tensor(cls, tensor: np.ndarray) -> TensorMetadata:
         shape = str(tensor.shape)
         dtype = str(tensor.dtype)
-        hash = hashlib.sha256(tensor.round(4).tobytes()).hexdigest()
+        hash = lsh.get_lsh().hash(tensor)
         return cls(shape=shape, dtype=dtype, hash=hash)
 
 
@@ -113,7 +123,7 @@ class Metadata(OrderedDict):
     @file_or_name(file="w")
     def write(self, file: TextIO):
         metadata_dict = self.serialize()
-        json.dump(metadata_dict, file, indent=4)
+        json.dump(metadata_dict, file, indent=4, cls=MetadataEncoder)
 
     def flatten(self) -> Metadata:
         return utils.flatten(self, is_leaf=lambda v: isinstance(v, ParamMetadata))
@@ -141,8 +151,8 @@ class Metadata(OrderedDict):
             other_flattened.keys()
         ):
             if (
-                self_flattened[param_keys].tensor_metadata
-                != other_flattened[param_keys].tensor_metadata
+                self_flattened[param_keys].lfs_metadata
+                != other_flattened[param_keys].lfs_metadata
             ):
                 modified[param_keys] = self_flattened[param_keys]
 
@@ -154,3 +164,11 @@ class Metadata(OrderedDict):
         for param_keys, param_metadata in flattened.items():
             flattened[param_keys] = param_metadata.serialize()
         return flattened.unflatten()
+
+
+class MetadataEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return json.JSONEncoder.default(self, obj)

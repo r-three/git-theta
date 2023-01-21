@@ -3,7 +3,10 @@
 import os
 import pytest
 
-from git_theta import checkpoints, utils
+from git_theta import checkpoints
+
+
+ENV_CHECKPOINT_TYPE = "GIT_THETA_CHECKPOINT_TYPE"
 
 pytest.importorskip("pytorch")
 
@@ -11,7 +14,7 @@ pytest.importorskip("pytorch")
 @pytest.fixture
 def env_var():
     current_env = dict(os.environ)
-    os.environ[utils.EnvVarConstants.CHECKPOINT_TYPE] = "env_variable_handler"
+    os.environ[ENV_CHECKPOINT_TYPE] = "env_variable_handler"
 
     yield
     os.environ.clear()
@@ -21,7 +24,7 @@ def env_var():
 @pytest.fixture
 def no_env_var():
     current_env = dict(os.environ)
-    os.environ.pop(utils.EnvVarConstants.CHECKPOINT_TYPE, None)
+    os.environ.pop(ENV_CHECKPOINT_TYPE, None)
 
     yield
     os.environ.clear()
@@ -31,7 +34,7 @@ def no_env_var():
 @pytest.fixture
 def empty_env_var():
     current_env = dict(os.environ)
-    os.environ[utils.EnvVarConstants.CHECKPOINT_TYPE] = ""
+    os.environ[ENV_CHECKPOINT_TYPE] = ""
 
     yield
     os.environ.clear()

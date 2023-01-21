@@ -3,14 +3,25 @@
 import argparse
 import sys
 import logging
+import numpy as np
 
-from git_theta import git_utils, checkpoints, params, metadata, updates, async_utils
+from git_theta import (
+    git_utils,
+    checkpoints,
+    params,
+    metadata,
+    updates,
+    async_utils,
+    lsh,
+)
+from git_theta.utils import EnvVarConstants
+
 
 logging.basicConfig(
     level=logging.DEBUG,
     # Log to a file for clean/smudge as they don't appear on the console when called via git.
     filename="/tmp/git-theta.log",
-    format="git-theta-filter: [%(asctime)s] %(levelname)s - %(message)s",
+    format="git-theta-filter: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s",
 )
 
 
@@ -59,18 +70,44 @@ def clean(args):
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
 
+    # Note: If the update serializer is configurable per-parameter, it will need to be created inside _clean
+    update_serializer = params.get_update_serializer()
     prev_metadata = metadata.Metadata.from_commit(repo, args.file, "HEAD").flatten()
 
     async def _clean(param_keys, new_param):
         logging.debug(f"Cleaning {'/'.join(param_keys)}")
         param_metadata = prev_metadata.get(param_keys)
         new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
-        # If the parameter tensor has not changed, just keep the metadata the same
-        # TODO: currently checks if rounded parameter hash has changed. Look into better parameter equality checks.
-        if param_metadata and param_metadata.tensor_metadata == new_tensor_metadata:
-            return param_keys, param_metadata
 
-        update_serializer = params.get_update_serializer()
+        # If the parameter tensor has not changed, just keep the metadata the same
+        if (
+            param_metadata
+            and param_metadata.tensor_metadata.shape == new_tensor_metadata.shape
+            and param_metadata.tensor_metadata.dtype == new_tensor_metadata.dtype
+        ):
+            hasher = lsh.get_lsh()
+            hash_distance = hasher.distance(
+                param_metadata.tensor_metadata.hash, new_tensor_metadata.hash
+            )
+            # If hash_distance < PARAMETER_ATOL, assume the tensors pass np.allclose and parameter hasn't changed
+            if hash_distance < EnvVarConstants.PARAMETER_ATOL:
+                return param_keys, param_metadata
+            # If PARAMETER_ATOL < hash_distance < LSH_THRESHOLD, load parameters and check if parameter has changed with np.allclose
+            elif hash_distance < EnvVarConstants.LSH_THRESHOLD:
+                update_handler = updates.get_update_handler(
+                    param_metadata.theta_metadata.update_type
+                )(update_serializer)
+                param = await update_handler.apply(
+                    param_metadata, param_keys, repo=repo, path=args.file
+                )
+                if np.allclose(
+                    param,
+                    new_param,
+                    rtol=EnvVarConstants.PARAMETER_RTOL,
+                    atol=EnvVarConstants.PARAMETER_ATOL,
+                ):
+                    return param_keys, param_metadata
+
         update_handler = updates.get_update_handler()(update_serializer)
         new_theta_metadata = metadata.ThetaMetadata(
             update_type=update_handler.name, last_commit=git_utils.get_head(repo)

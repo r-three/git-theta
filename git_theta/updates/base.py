@@ -164,7 +164,7 @@ class IncrementalUpdate(Update):
 
 
 def get_update_handler_name(update_type: Optional[str] = None) -> str:
-    return update_type or os.environ.get(utils.EnvVarConstants.UPDATE_TYPE) or "dense"
+    return update_type or utils.EnvVarConstants.UPDATE_TYPE
 
 
 def get_update_handler(update_type: Optional[str] = None) -> Update:

@@ -140,9 +140,7 @@ def track(args):
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
-    new_gitattributes = git_utils.add_filter_theta_to_gitattributes(
-        gitattributes, model_path
-    )
+    new_gitattributes = git_utils.add_theta_to_gitattributes(gitattributes, model_path)
 
     git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
     git_utils.add_file(gitattributes_file, repo)
