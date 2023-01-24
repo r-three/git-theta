@@ -1,6 +1,7 @@
 """Install the git-theta package."""
 
 import ast
+import itertools
 from setuptools import setup, find_packages
 
 
@@ -38,6 +39,14 @@ def get_version(file_name: str, version_variable: str = "__version__") -> str:
     )
 
 
+# Packages to install for using different deep learning frameworks.
+frameworks_require = {
+    "pytorch": ["torch"],
+    "tensorflow": ["tensorflow"],
+    "flax": ["flax"],
+}
+
+
 setup(
     name="git_theta",
     version=get_version("git_theta/__init__.py"),
@@ -71,14 +80,12 @@ setup(
         'typing_extensions; python_version < "3.8.0"',
     ],
     extras_require={
+        **frameworks_require,
+        # Install all framework deps with the all target.
         "test": ["pytest"],
-        "pytorch": ["torch"],
-        "tensorflow": ["tensorflow"],
-        # TODO: Is there a way for all to be the concat of the list of others
-        # instead of making a new list? In case some framework needs multiple
-        # libraries installed?
-        "all": ["torch", "tensorflow"],
+        "all": list(set(itertools.chain(*frameworks_require.values()))),
     },
+    # TODO: Can we auto register these?
     entry_points={
         "git_theta.plugins.checkpoints": [
             "pytorch = git_theta.checkpoints.pickled_dict_checkpoint:PickledDictCheckpoint",
@@ -88,6 +95,7 @@ setup(
             "tensorflow-checkpoint = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowCheckpoint",
             "tf-savedmodel = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowSavedModel",
             "tensorflow-savedmodel = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowSavedModel",
+            "flax = git_theta.checkpoints.flax_checkpoint:FlaxCheckpoint",
         ],
         "git_theta.plugins.updates": [
             "dense = git_theta.updates.dense:DenseUpdate",
