@@ -1,0 +1,25 @@
+name: Publish to PyPI
+
+on:
+    push:
+        tags:
+        - '*'
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v2
+        - name: Setup Python
+          uses: actions/setup-python@v2
+          with:
+              python-version: "3.7"
+        - name: Build Package
+          run: |
+              python -m build
+        - name: Publish Package
+          if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+          uses: pypa/gh-action-pypi-publish@release/v1
+          with:
+              user: __token__
+              password: ${{ secrets.PYPI_PASSWORD }}
