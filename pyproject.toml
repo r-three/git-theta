@@ -1,2 +1,6 @@
 [tool.black]
 include = '((\.pyi?|\.ipynb)$|bin/)'
+
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools", "wheel"]  # PEP 508 specifications.
