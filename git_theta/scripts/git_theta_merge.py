@@ -380,9 +380,13 @@ def merge(args):
     return 0
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     if EnvVarConstants.MANUAL_MERGE:
         manual_merge(args)
     else:
         merge(args)
+
+
+if __name__ == "__main__":
+    main()

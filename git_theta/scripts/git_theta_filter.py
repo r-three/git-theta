@@ -172,7 +172,11 @@ def smudge(args):
     model_checkpoint.save(sys.stdout.buffer)
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     git_utils.set_hooks()
     args.func(args)
+
+
+if __name__ == "__main__":
+    main()
