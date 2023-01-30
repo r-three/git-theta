@@ -4,11 +4,6 @@ import argparse
 import sys
 import numpy as np
 from colorama import Fore, Style
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.output import create_output
-from prompt_toolkit.formatted_text import HTML, ANSI
-from prompt_toolkit.formatted_text import FormattedText
-from colorama import Fore
 
 from git_theta import utils, params
 from git_theta.models import checkpoints
