@@ -5,7 +5,6 @@ import sys
 import numpy as np
 from colorama import Fore, Style
 
-from git_theta import utils, params
 from git_theta.models import checkpoints
 from git_theta.models import TensorMetadata
 
