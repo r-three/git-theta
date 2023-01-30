@@ -2,6 +2,7 @@
 
 import asyncio
 import dataclasses
+import functools
 import sys
 from typing import (
     Any,
@@ -41,11 +42,21 @@ class MapTask(Protocol):
         """An async function that runs on each key, value pair in a map."""
 
 
+async def limited_concurrency(*args, f: MapTask, sem: asyncio.Semaphore, **kwargs):
+    """Run f but limit the number of processes that can run at once."""
+    async with sem:
+        return await f(*args, **kwargs)
+
+
 async def run_map(
     mapping: Dict[K, V],
     func: MapTask,
+    max_concurrency: int = -1,
 ) -> Dict[K, Any]:
     """Run async function on K, V pairs, return map with result as new value."""
+    if max_concurrency > 0:
+        sem = asyncio.Semaphore(max_concurrency)
+        func = functools.partial(limited_concurrency, f=func, sem=sem)
     return dict(await asyncio.gather(*(func(k, v) for k, v in mapping.items())))
 
 

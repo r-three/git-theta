@@ -130,7 +130,13 @@ def clean(args):
     # Sort the keys so we don't get changing diffs based on serialization order.
     sorted_checkpoint = dict(sorted(model_checkpoint.flatten().items()))
     new_metadata = metadata.Metadata(
-        **async_utils.run(async_utils.run_map(sorted_checkpoint, _clean))
+        **async_utils.run(
+            async_utils.run_map(
+                sorted_checkpoint,
+                _clean,
+                max_concurrency=EnvVarConstants.MAX_CONCURRENCY,
+            )
+        )
     )
 
     new_metadata.unflatten().write(sys.stdout)
@@ -155,7 +161,11 @@ def smudge(args):
         )
         return param_keys, param_value
 
-    model_dict = async_utils.run(async_utils.run_map(curr_metadata, _smudge))
+    model_dict = async_utils.run(
+        async_utils.run_map(
+            curr_metadata, _smudge, max_concurrency=EnvVarConstants.MAX_CONCURRENCY
+        )
+    )
 
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler(model_dict).unflatten()
