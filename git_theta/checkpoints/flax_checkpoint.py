@@ -6,6 +6,9 @@ from file_or_name import file_or_name
 
 
 class FlaxCheckpoint(Checkpoint):
+
+    name: str = "flax"
+
     @classmethod
     @file_or_name(checkpoint_path="rb")
     def load(cls, checkpoint_path, **kwargs):

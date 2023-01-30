@@ -12,6 +12,8 @@ Parameter = Any
 class LowRankUpdate(IncrementalUpdate):
     """An update make for 2 low rank matrices."""
 
+    name: str = "low-rank"
+
     # TODO: Make these configuration options easy set.
     def __init__(
         self, *args, K: Optional[int] = None, threshold: float = 1e-11, **kwargs
@@ -19,10 +21,6 @@ class LowRankUpdate(IncrementalUpdate):
         super().__init__(*args, **kwargs)
         self.K = K
         self.threshold = threshold
-
-    @property
-    def name(self):
-        return "low-rank"
 
     async def calculate_update(
         self, parameter: Parameter, previous_parameter: Parameter

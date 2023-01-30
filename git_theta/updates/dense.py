@@ -12,9 +12,7 @@ Parameter = Any
 class DenseUpdate(Update):
     """An update where all parameters are changed."""
 
-    @property
-    def name(self):
-        return "dense"
+    name: str = "dense"
 
     async def apply(self, param_metadata, param_keys, *args, **kwargs) -> Parameter:
         logging.debug(f"Reading Dense update for {'/'.join(param_keys)}")

@@ -26,11 +26,8 @@ class DynamicNetwork(tf.keras.Model):
 class TensorFlowCheckpoint(Checkpoint):
     """Process a TensorFlow checkpoint via `tf.keras.Model.save_weights`. (no computation graph included)."""
 
+    name: str = "tensorflow-checkpoint"
     VALUE_STRING = ".ATTRIBUTES/VARIABLE_VALUE"
-
-    @property
-    def name(self):
-        return "tensorflow-checkpoint"
 
     @staticmethod
     def is_parameter(param_name: str) -> bool:
@@ -62,9 +59,7 @@ class TensorFlowCheckpoint(Checkpoint):
 class TensorFlowSavedModel(Checkpoint):
     """Process a TensorFlow SavedModel (computation graph included)."""
 
-    @property
-    def name(self):
-        return "tensorflow-savedmodel"
+    name: str = "tensorflow-savedmodel"
 
     @classmethod
     def load(cls, checkpoint_path: str):

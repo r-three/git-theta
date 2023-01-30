@@ -14,13 +14,11 @@ else:
 from git_theta import utils
 
 
+@utils.abstract_classattributes("name")
 class Checkpoint(dict, metaclass=ABCMeta):
     """Abstract base class for wrapping checkpoint formats."""
 
-    @property
-    @abstractmethod
-    def name(self):
-        """The name of this checkpoint handler, can be used to lookup the plugin."""
+    name: str = NotImplemented  # The name of this checkpoint handler, can be used to lookup the plugin.
 
     @classmethod
     def from_file(cls, checkpoint_path):
