@@ -6,65 +6,65 @@ import pytest
 from git_theta import git_utils
 
 
-def test_add_filter_gitattributes_empty_file():
-    assert git_utils.add_filter_theta_to_gitattributes([], "example") == [
-        "example filter=theta"
+def test_add_theta_gitattributes_empty_file():
+    assert git_utils.add_theta_to_gitattributes([], "example") == [
+        "example filter=theta merge=theta"
     ]
 
 
-def test_add_filter_gitattributes_no_match():
+def test_add_theta_gitattributes_no_match():
     atts = [
         "Some-other-path filter=lfs",
-        "*-cool-models.pt filter=theta",
+        "*-cool-models.pt filter=theta merge=theta",
     ]
     model_path = "path/to/my/model.pt"
     assert (
-        git_utils.add_filter_theta_to_gitattributes(atts, model_path)[-1]
-        == f"{model_path} filter=theta"
+        git_utils.add_theta_to_gitattributes(atts, model_path)[-1]
+        == f"{model_path} filter=theta merge=theta"
     )
 
 
-def test_add_filter_gitattributes_exact_match():
+def test_add_theta_gitattributes_exact_match():
     model_path = "really/cool/model/yall.ckpt"
     atts = [f"{model_path} filter=lfs"]
     assert (
-        git_utils.add_filter_theta_to_gitattributes(atts, model_path)[-1]
-        == f"{model_path} filter=lfs filter=theta"
+        git_utils.add_theta_to_gitattributes(atts, model_path)[-1]
+        == f"{model_path} filter=lfs filter=theta merge=theta"
     )
 
 
-def test_add_filter_gitattributes_pattern_match():
+def test_add_theta_gitattributes_pattern_match():
     model_path = "literal-the-best-checkpoint.pt"
     atts = ["*.pt thing"]
     assert (
-        git_utils.add_filter_theta_to_gitattributes(atts, model_path)[-1]
-        == f"*.pt thing filter=theta"
+        git_utils.add_theta_to_gitattributes(atts, model_path)[-1]
+        == f"*.pt thing filter=theta merge=theta"
     )
 
 
-def test_add_filter_gitattributes_multiple_matches():
+def test_add_theta_gitattributes_multiple_matches():
     model_path = "100-on-mnist.npy"
     atts = ["*.npy other-filter", f"{model_path} other-filter"]
-    assert git_utils.add_filter_theta_to_gitattributes(atts, model_path) == [
-        f"{attr} filter=theta" for attr in atts
+    assert git_utils.add_theta_to_gitattributes(atts, model_path) == [
+        f"{attr} filter=theta merge=theta" for attr in atts
     ]
 
 
-def test_add_filter_gitattributes_match_with_theta_already():
+def test_add_theta_gitattributes_match_with_theta_already():
     model_path = "my-bad-model.chkp"
-    atts = ["my-*-model.chkp filter=theta"]
-    assert git_utils.add_filter_theta_to_gitattributes(atts, model_path) == atts
+    atts = ["my-*-model.chkp filter=theta merge=theta"]
+    assert git_utils.add_theta_to_gitattributes(atts, model_path) == atts
 
 
-def test_add_filter_gitattributes_rest_unchanged():
+def test_add_theta_gitattributes_rest_unchanged():
     model_path = "model-v3.pt"
     atts = [
-        "some-other-path filter=theta",
+        "some-other-path filter=theta merge=theta",
         "really-reaaaally-big-files filter=lfs",
         r"model-v\d.pt filter",
-        "another filter=theta",
+        "another filter=theta merge=theta",
     ]
-    results = git_utils.add_filter_theta_to_gitattributes(atts, model_path)
+    results = git_utils.add_theta_to_gitattributes(atts, model_path)
     for i, (a, r) in enumerate(zip(atts, results)):
         if i == 2:
             continue
@@ -74,7 +74,7 @@ def test_add_filter_gitattributes_rest_unchanged():
 @pytest.fixture
 def gitattributes():
     return [
-        "*.pt filter=theta",
+        "*.pt filter=theta merge=theta",
         "*.png filter=lfs",
         "really-big-file filter=lfs",
         "something else, who knows how cool it could be",

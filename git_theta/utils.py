@@ -5,7 +5,10 @@ from enum import Enum
 from types import MethodType
 from typing import Dict, Any, Tuple, Union, Callable, Iterable, Optional
 import re
+import subprocess
 import functools
+from dataclasses import dataclass
+import os
 
 
 def _format(self, value, tag):
@@ -50,9 +53,24 @@ class DiffState(Enum):
     ADDED_BOTH = f"{TEXT_STYLE.format_who('Both')} them and us <b>{TEXT_STYLE.format_added('added')}</b> this parameter."
 
 
+@dataclass
+class EnvVar:
+    name: str
+    default: Any
+
+    def __get__(self, obj, objtype=None):
+        value = os.environ.get(self.name)
+        return type(self.default)(value) if value else self.default
+
+
 class EnvVarConstants:
-    CHECKPOINT_TYPE: str = "GIT_THETA_CHECKPOINT_TYPE"
-    UPDATE_TYPE: str = "GIT_THETA_UPDATE_TYPE"
+    CHECKPOINT_TYPE = EnvVar(name="GIT_THETA_CHECKPOINT_TYPE", default="pytorch")
+    UPDATE_TYPE = EnvVar(name="GIT_THETA_UPDATE_TYPE", default="dense")
+    PARAMETER_ATOL = EnvVar(name="GIT_THETA_PARAMETER_ATOL", default=1e-8)
+    PARAMETER_RTOL = EnvVar(name="GIT_THETA_PARAMETER_RTOL", default=1e-5)
+    LSH_SIGNATURE_SIZE = EnvVar(name="GIT_THETA_LSH_SIGNATURE_SIZE", default=16)
+    LSH_THRESHOLD = EnvVar(name="GIT_THETA_LSH_THRESHOLD", default=1e-6)
+    LSH_POOL_SIZE = EnvVar(name="GIT_THETA_LSH_POOL_SIZE", default=10_000)
 
 
 def flatten(
@@ -136,6 +154,13 @@ def is_valid_commit_hash(commit_hash: str) -> bool:
         Whether this commit hash is valid
     """
     return re.match("^[0-9a-f]{40}$", commit_hash) is not None
+
+
+def remove_suffix(s: str, suffix: str) -> str:
+    """Remove suffix matching copy semantics of methods in later pythons."""
+    if suffix and s.endswith(suffix):
+        return s[: -len(suffix)]
+    return s[:]
 
 
 class Trie:

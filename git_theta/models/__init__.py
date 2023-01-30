@@ -6,4 +6,9 @@ from git_theta.models.metadata import (
     LfsMetadata,
     ThetaMetadata,
 )
-from git_theta.models.checkpoints import Checkpoint, PickledDictCheckpoint
+
+from git_theta.models.checkpoints import (
+    Checkpoint,
+    get_checkpoint_handler,
+    get_checkpoint_handler_name,
+)

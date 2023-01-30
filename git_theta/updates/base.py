@@ -36,8 +36,8 @@ class Update(metaclass=ABCMeta):
         """Read in and deserialize a single parameter value based metadata."""
         lfs_pointer = param_metadata.lfs_metadata.lfs_pointer
         serialized_param = await git_utils.git_lfs_smudge(lfs_pointer)
-        param = (await self.serializer.deserialize(serialized_param))["parameter"]
-        return param
+        param = await self.serializer.deserialize(serialized_param)
+        return param.get("parameter", param)
 
     @abstractmethod
     async def write(
@@ -92,16 +92,13 @@ class IncrementalUpdate(Update):
     ) -> Parameter:
         """Get the last value for this parameter via git."""
         logging.debug(f"Getting previous value for {'/'.join(param_keys)}")
-        prev_metadata = await self.get_previous_metadata(
-            param_metadata, param_keys, repo=repo, path=path
-        )
         # TODO: get_update_serializer returns instantiated objects while the other
         # getters return classes to be instantiated.
         prev_serializer = params.get_update_serializer()
-        prev_update = get_update_handler(prev_metadata.theta_metadata.update_type)(
+        prev_update = get_update_handler(param_metadata.theta_metadata.update_type)(
             prev_serializer
         )
-        return await prev_update.apply(prev_metadata, param_keys, repo=repo, path=path)
+        return await prev_update.apply(param_metadata, param_keys, repo=repo, path=path)
 
     @abstractmethod
     async def calculate_update(
@@ -115,16 +112,23 @@ class IncrementalUpdate(Update):
 
     async def write_update(self, update: Parameter) -> LfsMetadata:
         """Save and serialize (just) the update weights."""
-        serialized_update = await self.serializer.serialize({"parameter": update})
+        if not isinstance(update, dict):
+            update = {"parameter": update}
+        serialized_update = await self.serializer.serialize(update)
         lfs_pointer = await git_utils.git_lfs_clean(serialized_update)
         return LfsMetadata.from_pointer(lfs_pointer)
 
+    # TODO: Revisit what the metadata a write takes, right now it gets the full
+    # metadata of the previous parameter value but only uses the update type. If
+    # we do call get_previous_metadata on it, like we do in apply, the result is
+    # that a parameter value is skipped and we calculate the incremental update
+    # from 2 steps back, which can be a foot-gun.
     async def write(
         self,
         param: Parameter,
         param_keys,
         *,
-        param_metadata: ParamMetadata,
+        prev_metadata: ParamMetadata,
         repo,
         path: str,
         **kwargs,
@@ -132,7 +136,7 @@ class IncrementalUpdate(Update):
         """Serialize and save a parameter with git-lfs as a delta from the previous value."""
         logging.debug(f"Writing {self.name} update for {'/'.join(param_keys)}")
         previous_value = await self.get_previous_value(
-            param_metadata, param_keys, repo=repo, path=path
+            prev_metadata, param_keys, repo=repo, path=path
         )
         update_value = await self.calculate_update(param, previous_value)
         return await self.write_update(update_value)
@@ -149,14 +153,19 @@ class IncrementalUpdate(Update):
         """Get the final parameter value, including fetching previous values."""
         logging.debug(f"Applying {self.name} update for {'/'.join(param_keys)}")
         update_value = await self.read(param_metadata)
-        prev_value = await self.get_previous_value(
+        # param_metadata is the metadata for the parameter as it is *at this
+        # commit*.
+        prev_metadata = await self.get_previous_metadata(
             param_metadata, param_keys, repo=repo, path=path
+        )
+        prev_value = await self.get_previous_value(
+            prev_metadata, param_keys, repo=repo, path=path
         )
         return await self.apply_update(update_value, prev_value)
 
 
 def get_update_handler_name(update_type: Optional[str] = None) -> str:
-    return update_type or os.environ.get(utils.EnvVarConstants.UPDATE_TYPE) or "dense"
+    return update_type or utils.EnvVarConstants.UPDATE_TYPE
 
 
 def get_update_handler(update_type: Optional[str] = None) -> Update:

@@ -264,3 +264,16 @@ def parse_pre_push_args(lines):
         for l in lines
     ]
     return lines_parsed
+
+
+def is_git_lfs_installed():
+    """
+    Helper function that checks if git-lfs is installed to prevent future errors with git-theta
+    """
+    try:
+        results = subprocess.run(
+            ["git", "lfs", "version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        return results.returncode == 0
+    except:
+        return False

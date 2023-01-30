@@ -8,6 +8,7 @@ Note:
 
 
 from abc import ABCMeta, abstractmethod
+import logging
 import sys
 from typing import FrozenSet, Dict, Tuple, Any
 
@@ -46,8 +47,9 @@ class Merge(metaclass=PrintableABCMeta):
     # States where this action will not appear in the menu.
     INACTIVE_STATES: FrozenSet[utils.DiffState] = frozenset()
 
-    def __call__(self, *args, **kwargs):
-        return self.merge(*args, **kwargs)
+    def __call__(self, param_name, *args, **kwargs):
+        logging.info(f"Running {self.NAME} merge on parameter {'/'.join(param_name,)}")
+        return self.merge(param_name, *args, **kwargs)
 
     @abstractmethod
     def merge(
