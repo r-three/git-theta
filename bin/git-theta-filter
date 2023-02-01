@@ -77,39 +77,15 @@ def clean(args):
     async def _clean(param_keys, new_param):
         logging.debug(f"Cleaning {'/'.join(param_keys)}")
         param_metadata = prev_metadata.get(param_keys)
-        new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
 
-        # If the parameter tensor has not changed, just keep the metadata the same
-        if (
-            param_metadata
-            and param_metadata.tensor_metadata.shape == new_tensor_metadata.shape
-            and param_metadata.tensor_metadata.dtype == new_tensor_metadata.dtype
-        ):
-            hasher = lsh.get_lsh()
-            hash_distance = hasher.distance(
-                param_metadata.tensor_metadata.hash, new_tensor_metadata.hash
-            )
-            # If hash_distance < PARAMETER_ATOL, assume the tensors pass np.allclose and parameter hasn't changed
-            if hash_distance < EnvVarConstants.PARAMETER_ATOL:
-                return param_keys, param_metadata
-            # If PARAMETER_ATOL < hash_distance < LSH_THRESHOLD, load parameters and check if parameter has changed with np.allclose
-            elif hash_distance < EnvVarConstants.LSH_THRESHOLD:
-                update_handler = updates.get_update_handler(
-                    param_metadata.theta_metadata.update_type
-                )(update_serializer)
-                param = await update_handler.apply(
-                    param_metadata, param_keys, repo=repo, path=args.file
-                )
-                if np.allclose(
-                    param,
-                    new_param,
-                    rtol=EnvVarConstants.PARAMETER_RTOL,
-                    atol=EnvVarConstants.PARAMETER_ATOL,
-                ):
-                    return param_keys, param_metadata
+        lazy_param = metadata.LazyParam.from_param_metadata(param_metadata)
+        new_lazy_param = metadata.LazyParam.from_tensor(new_param)
+
+        if lazy_param == new_lazy_param:
+            return param_keys, param_metadata
 
         update_handler = updates.get_update_handler()(update_serializer)
-        new_theta_metadata = metadata.ThetaMetadata(
+        theta_metadata = metadata.ThetaMetadata(
             update_type=update_handler.name, last_commit=git_utils.get_head(repo)
         )
         lfs_metadata = await update_handler.write(
@@ -119,11 +95,12 @@ def clean(args):
             repo=repo,
             path=args.file,
         )
+        tensor_metadata = new_lazy_param.tensor_metadata
 
         new_param_metadata = metadata.ParamMetadata(
             lfs_metadata=lfs_metadata,
-            tensor_metadata=new_tensor_metadata,
-            theta_metadata=new_theta_metadata,
+            tensor_metadata=tensor_metadata,
+            theta_metadata=theta_metadata,
         )
         return param_keys, new_param_metadata
 
