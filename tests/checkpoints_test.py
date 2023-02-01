@@ -3,7 +3,7 @@
 import os
 import pytest
 
-from git_theta import checkpoints
+from git_theta.models import checkpoints
 
 
 ENV_CHECKPOINT_TYPE = "GIT_THETA_CHECKPOINT_TYPE"

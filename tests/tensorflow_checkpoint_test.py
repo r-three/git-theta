@@ -9,8 +9,8 @@ import numpy as np
 # Skip all these tests if tensorflow is not installed
 tf = pytest.importorskip("tensorflow")
 
-from git_theta import checkpoints
-from git_theta.checkpoints import tensorflow_checkpoint
+from git_theta.models import checkpoints
+from git_theta.models.checkpoints import tensorflow_checkpoint
 
 
 INPUT_SIZE = 10
