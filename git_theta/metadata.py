@@ -10,6 +10,7 @@ from typing import ClassVar
 import numpy as np
 import git
 from typing import Union, TextIO, Dict, Tuple, Any
+import asyncio
 
 from git_theta import git_utils, utils, lsh
 from file_or_name import file_or_name
@@ -172,3 +173,67 @@ class MetadataEncoder(json.JSONEncoder):
             return obj.tolist()
         else:
             return json.JSONEncoder.default(self, obj)
+
+
+class LazyParam:
+    def __init__(
+        self,
+        tensor: np.ndarray = None,
+        tensor_metadata: TensorMetadata = None,
+        lfs_metadata: LfsMetadata = None,
+    ):
+        self._tensor = tensor
+        self.tensor_metadata = tensor_metadata
+        self.lfs_metadata = lfs_metadata
+
+    @classmethod
+    def from_tensor(cls, tensor: np.ndarray):
+        tensor_metadata = TensorMetadata.from_tensor(tensor)
+        return cls(tensor=tensor, tensor_metadata=tensor_metadata)
+
+    @classmethod
+    def from_param_metadata(cls, param_metadata: ParamMetadata):
+        if param_metadata is None:
+            return None
+        return cls(
+            lfs_metadata=param_metadata.lfs_metadata,
+            tensor_metadata=param_metadata.tensor_metadata,
+        )
+
+    def tensor_loaded(self):
+        return self._tensor is not None
+
+    @property
+    def tensor(self):
+        if self._tensor is None:
+            self._tensor = asyncio.run(
+                git_utils.git_lfs_smudge(self.lfs_metadata.lfs_pointer)
+            )
+        return self._tensor
+
+    def __eq__(self, other):
+        if not isinstance(other, LazyParam):
+            return False
+
+        if self.tensor_loaded() and other.tensor_loaded():
+            return np.allclose(
+                self.tensor,
+                other.tensor,
+                rtol=utils.EnvVarConstants.PARAMETER_RTOL,
+                atol=utils.EnvVarConstants.PARAMETER_ATOL,
+            )
+
+        hash_distance = lsh.get_lsh().distance(
+            self.tensor_metadata.hash, other.tensor_metadata.hash
+        )
+        if hash_distance < utils.EnvVarConstants.PARAMETER_ATOL:
+            return True
+        elif hash_distance < utils.EnvVarConstants.LSH_THRESHOLD:
+            return np.allclose(
+                self.tensor,
+                other.tensor,
+                rtol=utils.EnvVarConstants.PARAMETER_RTOL,
+                atol=utils.EnvVarConstants.PARAMETER_ATOL,
+            )
+        else:
+            return False
