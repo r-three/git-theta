@@ -38,7 +38,7 @@ def bold_string(s):
 
 
 def indent_string(s, indent):
-    return '    '*indent + s
+    return "    " * indent + s
 
 
 def print_formatted(s, indent=0, color=None, bold=False):
@@ -58,37 +58,38 @@ def print_header(header, indent=0, color=None):
 
 def print_metadata(param, indent=0, color=None):
     tensor_metadata = TensorMetadata.from_tensor(param)
-    print_formatted(f'shape = {tensor_metadata.shape}', indent=indent, color=color)
-    print_formatted(f'dtype = {tensor_metadata.dtype}', indent=indent, color=color)
+    print_formatted(f"shape = {tensor_metadata.shape}", indent=indent, color=color)
+    print_formatted(f"dtype = {tensor_metadata.dtype}", indent=indent, color=color)
 
 
 def print_added_params_summary(added, indent=0, color=None):
     if len(added):
         print_header("ADDED PARAMETER GROUPS", indent=indent, color=color)
         for flattened_group, param in added.flatten().items():
-            group = '/'.join(flattened_group)
+            group = "/".join(flattened_group)
             print_formatted(group, indent=indent, color=color)
-            print_metadata(param, indent=indent+1, color=color)
-        print_formatted('\n')
+            print_metadata(param, indent=indent + 1, color=color)
+        print_formatted("\n")
+
 
 def print_removed_params_summary(removed, indent=0, color=None):
     if len(removed):
         print_header("REMOVED PARAMETER GROUPS", indent=indent, color=color)
         for flattened_group, param in removed.flatten().items():
-            group = '/'.join(flattened_group)
+            group = "/".join(flattened_group)
             print_formatted(group, indent=indent, color=color)
-            print_metadata(param, indent=indent+1, color=color)
-        print_formatted('\n')
+            print_metadata(param, indent=indent + 1, color=color)
+        print_formatted("\n")
 
 
 def print_modified_params_summary(modified, indent=0, color=None):
     if len(modified):
         print_header("MODIFIED PARAMETER GROUPS", indent=indent, color=color)
         for flattened_group, param in modified.flatten().items():
-            group = '/'.join(flattened_group)
+            group = "/".join(flattened_group)
             print_formatted(group, indent=indent, color=color)
-            print_metadata(param, indent=indent+1, color=color)
-        print_formatted('\n')
+            print_metadata(param, indent=indent + 1, color=color)
+        print_formatted("\n")
 
 
 def main(args):
