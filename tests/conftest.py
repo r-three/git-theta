@@ -7,7 +7,8 @@ import numpy as np
 import tempfile
 import git
 
-from git_theta import metadata, theta
+from git_theta import theta
+from git_theta.models import metadata
 
 
 class DataGenerator:

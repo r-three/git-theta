@@ -4,7 +4,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from git_theta import metadata
+from git_theta.models import metadata
 
 
 def metadata_equal(m1, m2):
