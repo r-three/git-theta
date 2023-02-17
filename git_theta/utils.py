@@ -53,6 +53,10 @@ class DiffState(Enum):
     ADDED_BOTH = f"{TEXT_STYLE.format_who('Both')} them and us <b>{TEXT_STYLE.format_added('added')}</b> this parameter."
 
 
+class NoResult:
+    """A sentinel class used to mark no-action choices."""
+
+
 @dataclass
 class EnvVar:
     name: str

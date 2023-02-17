@@ -110,6 +110,7 @@ setup(
             "average-all = git_theta.merges.average:AverageAll",
             "average-ours-original = git_theta.merges.average:AverageOursOriginal",
             "average-theirs-original = git_theta.merges.average:AverageTheirsOriginal",
+            "context = git_theta.merges.context:Context",
         ],
     },
 )

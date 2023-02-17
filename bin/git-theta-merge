@@ -14,7 +14,7 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
 from git_theta import metadata
 from git_theta import merges
-from git_theta.utils import DiffState, Trie, TEXT_STYLE
+from git_theta.utils import DiffState, Trie, TEXT_STYLE, NoResult
 
 
 logging.basicConfig(
@@ -195,6 +195,9 @@ def merge(args):
     handlers = merges.all_merge_handlers()
     short_cuts = make_short_cuts(handlers)
 
+    # Trigger the context merge for summary of branches.
+    handlers["context"]().merge()
+
     # A place to aggregate metadata for the merged model.
     merged_model = {}
     # A place to store loaded parameters to enable reuse/caching. Currently
@@ -258,50 +261,54 @@ def merge(args):
             f' in model <i><style bg="{TEXT_STYLE.model}">{args.path}</style></i>'
         )
 
-        # User action selection.
-        action = session.prompt(
-            # Show the menu
-            text,
-            # Show the merge context
-            bottom_toolbar=context,
-            # Validate that their input is either a valid action or is the
-            # prefix of a valid action. This lets us alert early if their input
-            # is not in the autocomplete menu.
-            validator=CommandValidator(available_actions, available_prefixes),
-            # Suggest completions they have used before, accept with ->
-            auto_suggest=FilteredAutoSuggestFromHistory(
-                valid_suggestions=available_actions
-            ),
-            # Give them a list of autocomplete actions based on the valid actions.
-            completer=WordCompleter(available_actions),
-            # Pop up the completion list as they type.
-            complete_while_typing=True,
-        )
-        action = action.strip()
-        logging.debug(f"User Input: {action}")
-        if action == "q":
-            logging.debug("User quit the merge tool. Leaving merge files as they are.")
-            sys.exit(1)
-        # Dispatch based on action
-        # TODO: When should these objects be initialized?
-        # TODO: How should we configure these actions?
-        # TODO: Move to a verb object compositional approach?
-        # TODO: Move to async for actions?
-        merged_parameter = available_actions[action]()(
-            param_name,
-            current_param,
-            other_param,
-            ancestor_param,
-            current,
-            other,
-            ancestor,
-            # TODO: Update API so these don't need to be in-place updates?
-            partial_current,
-            partial_other,
-            partial_ancestor,
-            # The path to where the model actually lives.
-            args.path,
-        )
+        merged_parameter = NoResult
+        while merged_parameter is NoResult:
+            # User action selection.
+            action = session.prompt(
+                # Show the menu
+                text,
+                # Show the merge context
+                bottom_toolbar=context,
+                # Validate that their input is either a valid action or is the
+                # prefix of a valid action. This lets us alert early if their input
+                # is not in the autocomplete menu.
+                validator=CommandValidator(available_actions, available_prefixes),
+                # Suggest completions they have used before, accept with ->
+                auto_suggest=FilteredAutoSuggestFromHistory(
+                    valid_suggestions=available_actions
+                ),
+                # Give them a list of autocomplete actions based on the valid actions.
+                completer=WordCompleter(available_actions),
+                # Pop up the completion list as they type.
+                complete_while_typing=True,
+            )
+            action = action.strip()
+            logging.debug(f"User Input: {action}")
+            if action == "q":
+                logging.debug(
+                    "User quit the merge tool. Leaving merge files as they are."
+                )
+                sys.exit(1)
+            # Dispatch based on action
+            # TODO: When should these objects be initialized?
+            # TODO: How should we configure these actions?
+            # TODO: Move to a verb object compositional approach?
+            # TODO: Move to async for actions?
+            merged_parameter = available_actions[action]()(
+                param_name,
+                current_param,
+                other_param,
+                ancestor_param,
+                current,
+                other,
+                ancestor,
+                # TODO: Update API so these don't need to be in-place updates?
+                partial_current,
+                partial_other,
+                partial_ancestor,
+                # The path to where the model actually lives.
+                args.path,
+            )
         # Some of the actions result in deleting a parameter (it has a value of
         # None) so if we see that, don't add this parameter name to the merged
         # model.
