@@ -1,4 +1,4 @@
-Implemented a Hello World exampe using a design similar to the proposal in [#16](https://github.com/r-three/checkpoint-vcs/issues/16).  
+Implemented a Hello World exampe using a design similar to the proposal in [#16](https://github.com/r-three/checkpoint-vcs/issues/16).
 
 Below is a demo of the implemented proof of concept:
 
@@ -42,7 +42,7 @@ to `.git/config`. This means that when `foo.json` is being added to staging area
 }
 ```
 
-4. Run `git-theta add my_model.json`. 
+4. Run `git-theta add my_model.json`.
 
 `git-theta` is a python program that (1) loads `my_model.json`, (2) saves each individual parameter group to the filesystem under `.git_theta/my_model`, (3) runs git add on each parameter group file saved under `.git_theta`, (4) runs git add on `my_model.json`.
 
@@ -65,7 +65,7 @@ Changes to be committed:
 ```
 
 5. `git commit` to commit the model
-6. Modify one parameter group in `my_model.json` 
+6. Modify one parameter group in `my_model.json`
 7. Run `git-theta add my_model.json` to stage the changes to the model.
 
 At this point in time only the modified parameter group's file under `.git_theta` has been modified. The output of `git status` at this point is:
@@ -98,7 +98,7 @@ Date:   Wed Oct 5 00:29:21 2022 -0400
 
 `git checkout d13dca536d2690cb758c3866acb2abd1e0f32790 -b my_branch`
 
-When this occurs, the smudge filter intercepts the model file and is called with `git-theta-filter smudge my_model.json`. `git-theta-filter smudge` is a python program that reads the metadata file and reconstructs the model checkpoint from the data in `.git_theta/my_model`. 
+When this occurs, the smudge filter intercepts the model file and is called with `git-theta-filter smudge my_model.json`. `git-theta-filter smudge` is a python program that reads the metadata file and reconstructs the model checkpoint from the data in `.git_theta/my_model`.
 
 11. Check the contents of `my_model.json`
 
