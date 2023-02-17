@@ -30,9 +30,9 @@ Git on its own can certainly be used for versioning non-text files such as model
 1. Git remotes like Github and Bitbucket have a maximum file size (~50MB)
 2. Git is not designed to handle very large repositories
 
-There are a number of existing solutions for storing large files with Git that circumvent the maximum file and repository size, such as Git LFS. These work by pushing large files to an external LFS endpoint rather than to the Git remote. The main issue with using Git LFS-like systems for versioning ML models is that they are unaware of the structure of ML models. 
+There are a number of existing solutions for storing large files with Git that circumvent the maximum file and repository size, such as Git LFS. These work by pushing large files to an external LFS endpoint rather than to the Git remote. The main issue with using Git LFS-like systems for versioning ML models is that they are unaware of the structure of ML models.
 
-Imagine you have a checkpoint that you are updating by training only a sparse subset of the parameters [^1][^2], training only a few of the layers [^3], or by adding new trainable modules [^4][^5][^6]. In these cases, most of the model remains the same and only a small fraction of the model gets modified. However, tools like Git LFS just see that the checkpoint file has changed, and will store the new version of the checkpoint file in its entirety. 
+Imagine you have a checkpoint that you are updating by training only a sparse subset of the parameters [^1][^2], training only a few of the layers [^3], or by adding new trainable modules [^4][^5][^6]. In these cases, most of the model remains the same and only a small fraction of the model gets modified. However, tools like Git LFS just see that the checkpoint file has changed, and will store the new version of the checkpoint file in its entirety.
 
 Git-Theta understands that ML models are logically partitioned into parameter groups (weight matrices, bias vectors, etc.) and is designed to store only the parts of a model that have changed from its previous version as efficiently as possible.
 

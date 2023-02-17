@@ -20,7 +20,6 @@ def updater():
 
 
 def test_low_rank_update_rank_inference(updater):
-
     for _ in range(TRIALS):
         parameter = np.random.randn(INPUT_SIZE, OUTPUT_SIZE)
         R = np.random.randn(INPUT_SIZE, K)
@@ -34,7 +33,6 @@ def test_low_rank_update_rank_inference(updater):
 
 @pytest.mark.xfail(strict=False)
 def test_low_rank_update_application(updater):
-
     for _ in range(TRIALS):
         parameter = np.random.randn(INPUT_SIZE, OUTPUT_SIZE)
         R = np.random.randn(INPUT_SIZE, K)

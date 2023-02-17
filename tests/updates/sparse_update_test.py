@@ -21,7 +21,6 @@ def updater():
 
 
 def test_sparse_round_trip_application(updater):
-
     for _ in range(TRIALS):
         parameter = np.random.randn(SHAPE, SHAPE, SHAPE)
         x, y, z = np.random.choice(
@@ -41,7 +40,6 @@ def test_sparse_round_trip_application(updater):
 
 
 def test_known_sparsity(updater):
-
     for _ in range(TRIALS):
         parameter = np.random.randn(SHAPE, SHAPE, SHAPE)
         diff_tensor = np.random.randn(SHAPE, SHAPE, SHAPE)
@@ -60,7 +58,6 @@ def test_known_sparsity(updater):
 
 
 def test_monotonic_increasing_sparseness(updater):
-
     for _ in range(TRIALS):
         parameter = np.random.randn(SHAPE, SHAPE, SHAPE)
         diff_tensor = np.random.randn(SHAPE, SHAPE, SHAPE)
