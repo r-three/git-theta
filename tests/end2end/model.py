@@ -78,7 +78,7 @@ def main(args):
     elif args.action == "sparse":
         previous = torch.load(args.previous)
         model = TestingModel().state_dict()
-        sprase = {name: value + previous[name] for name, value in model.items()}
+        sparse = {name: value + previous[name] for name, value in model.items()}
         torch.save(sparse, args.model_name)
         torch.save(sparse, persistant_name)
 
