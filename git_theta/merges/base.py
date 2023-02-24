@@ -8,9 +8,10 @@ Note:
 
 
 from abc import ABCMeta, abstractmethod
+from dataclasses import dataclass
 import logging
 import sys
-from typing import FrozenSet, Dict, Tuple, Any
+from typing import FrozenSet, Dict, Tuple, Any, Type, Union, List, Optional
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
@@ -24,6 +25,32 @@ from git_theta import utils
 ParamName = Tuple[str, ...]
 Parameter = Any
 PartialModel = Dict[ParamName, Parameter]
+
+
+@dataclass
+class MergeArgument:
+    """Metadata for how to describe and validate a user-specified merge-strategy-specific argument"""
+
+    name: str
+    description: str
+    type: Type
+    range: Optional[Tuple[Union[float, int], Union[float, int]]]
+
+    @property
+    def validator(self):
+        """Returns a function checking whether a given string is a valid input for this argument"""
+
+        def is_valid(x):
+            # TODO: May need to support non-numeric types at some point
+            try:
+                x = self.type(x)
+                if self.range:
+                    return x >= self.range[0] and x <= self.range[1]
+                return False
+            except:
+                return False
+
+        return is_valid
 
 
 class PrintableABCMeta(ABCMeta):
@@ -69,6 +96,7 @@ class Merge(metaclass=PrintableABCMeta):
         modelB: PartialModel,
         modelO: PartialModel,
         path: str,
+        **kwargs,
     ) -> metadata.ParamMetadata:
         """Merge parameters parameters.
 
@@ -91,7 +119,18 @@ class Merge(metaclass=PrintableABCMeta):
                 the ancestor. Allows caching and reuse for any sort of
                 "full model" merging method.
             path: The path to where the model actually lives.
+            kwargs: Merge-strategy-specific arguments.
         """
+
+    @classmethod
+    def merge_arguments(self) -> List[MergeArgument]:
+        """Returns a list of `MergeArgument`s that provide information about the arguments specific to each merge strategy
+        Each `MergeArgument` contains:
+            1. The name of the merge argument
+            2. A text description of what the argument does
+            3. The type of the argument
+        """
+        return []
 
 
 def all_merge_handlers() -> Dict[str, Merge]:

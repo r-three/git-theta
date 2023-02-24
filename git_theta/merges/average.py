@@ -1,9 +1,9 @@
 """Merge parameters by averaging them."""
 
-from typing import Dict, Any, Sequence
+from typing import Dict, Any, Sequence, List
 import numpy as np
 from git_theta import metadata
-from git_theta.merges import Merge
+from git_theta.merges import Merge, MergeArgument
 from git_theta.utils import DiffState, TEXT_STYLE
 from git_theta.types import ParamName
 from git_theta import updates
@@ -79,13 +79,26 @@ class Average(Merge):
         modelB: PartialModel,
         modelO: PartialModel,
         path: str,
+        alpha: float,
     ) -> metadata.ParamMetadata:
         # Load the current parameter
         paramA = self.read_parameter(paramA, param_name, path)
         # Load the other parameter
         paramB = self.read_parameter(paramB, param_name, path)
-        result = self.average(paramA, paramB)
+        result = self.average(alpha * paramA, (1 - alpha) * paramB)
         return self.write_merged(result, param_name)
+
+    @classmethod
+    def merge_arguments(self) -> List[MergeArgument]:
+        """Returns a `MergeArgument` for the interpolation parameter"""
+        return [
+            MergeArgument(
+                name="alpha",
+                description=f"Average two parameters with <b>{TEXT_STYLE.format_argument('alpha')}*{TEXT_STYLE.format_who('our')} + (1 - {TEXT_STYLE.format_argument('alpha')})*{TEXT_STYLE.format_who('their')}</b>",
+                type=float,
+                range=(0, 1),
+            )
+        ]
 
 
 class AverageAll(Average):
@@ -120,6 +133,8 @@ class AverageAll(Average):
         modelB: PartialModel,
         modelO: PartialModel,
         path: str,
+        alpha1: float,
+        alpha2: float,
     ) -> metadata.ParamMetadata:
         # Load the current parameter
         paramA = self.read_parameter(paramA, param_name, path)
@@ -127,8 +142,28 @@ class AverageAll(Average):
         paramB = self.read_parameter(paramB, param_name, path)
         # Load the original parameter
         paramO = self.read_parameter(paramO, param_name, path)
-        result = self.average(paramA, paramB, paramO)
+        result = self.average(
+            alpha1 * paramA, alpha2 * paramB, (1 - alpha1 - alpha2) * paramO
+        )
         return self.write_merged(result, param_name)
+
+    @classmethod
+    def merge_arguments(self) -> List[MergeArgument]:
+        """Returns a `MergeArgument` for the interpolation parameter"""
+        return [
+            MergeArgument(
+                name="alpha1",
+                description=f"Average two parameters with <b>{TEXT_STYLE.format_argument('alpha1')}*{TEXT_STYLE.format_who('our')} + {TEXT_STYLE.format_argument('alpha2')}*{TEXT_STYLE.format_who('their')} + (1 - {TEXT_STYLE.format_argument('alpha1')} - {TEXT_STYLE.format_argument('alpha2')})*{TEXT_STYLE.format_who('original')}</b>",
+                type=float,
+                range=(0, 1),
+            ),
+            MergeArgument(
+                name="alpha2",
+                description=f"Average two parameters with <b>{TEXT_STYLE.format_argument('alpha1')}*{TEXT_STYLE.format_who('our')} + {TEXT_STYLE.format_argument('alpha2')}*{TEXT_STYLE.format_who('their')} + (1 - {TEXT_STYLE.format_argument('alpha1')} - {TEXT_STYLE.format_argument('alpha2')})*{TEXT_STYLE.format_who('original')}</b>",
+                type=float,
+                range=(0, 1),
+            ),
+        ]
 
 
 class AverageOursOriginal(Average):
@@ -163,13 +198,26 @@ class AverageOursOriginal(Average):
         modelB: PartialModel,
         modelO: PartialModel,
         path: str,
+        alpha: float,
     ) -> metadata.ParamMetadata:
         # Load the current parameter
         paramA = self.read_parameter(paramA, param_name, path)
         # Load the original parameter
         paramO = self.read_parameter(paramO, param_name, path)
-        result = self.average(paramA, paramO)
+        result = self.average(alpha * paramA, (1 - alpha) * paramO)
         return self.write_merged(result, param_name)
+
+    @classmethod
+    def merge_arguments(self) -> List[MergeArgument]:
+        """Returns a `MergeArgument` for the interpolation parameter"""
+        return [
+            MergeArgument(
+                name="alpha",
+                description=f"Average two parameters with <b>{TEXT_STYLE.format_argument('alpha')}*{TEXT_STYLE.format_who('our')} + (1 - {TEXT_STYLE.format_argument('alpha')})*{TEXT_STYLE.format_who('original')}</b>",
+                type=float,
+                range=(0, 1),
+            )
+        ]
 
 
 class AverageTheirsOriginal(Average):
@@ -204,10 +252,23 @@ class AverageTheirsOriginal(Average):
         modelB: PartialModel,
         modelO: PartialModel,
         path: str,
+        alpha: float,
     ) -> metadata.ParamMetadata:
         # Load the other parameter
         paramB = self.read_parameter(paramB, param_name, path)
         # Load the original parameter
         paramO = self.read_parameter(paramO, param_name, path)
-        result = self.average(paramB, paramO)
+        result = self.average(alpha * paramB, (1 - alpha) * paramO)
         return self.write_merged(result, param_name)
+
+    @classmethod
+    def merge_arguments(self) -> List[MergeArgument]:
+        """Returns a `MergeArgument` for the interpolation parameter"""
+        return [
+            MergeArgument(
+                name="alpha",
+                description=f"Average two parameters with <b>{TEXT_STYLE.format_argument('alpha')}*{TEXT_STYLE.format_who('their')} + (1 - {TEXT_STYLE.format_argument('alpha')})*{TEXT_STYLE.format_who('original')}</b>",
+                type=float,
+                range=(0, 1),
+            )
+        ]
