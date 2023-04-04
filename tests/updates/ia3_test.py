@@ -22,7 +22,6 @@ def updater():
 
 
 def test_ia3_round_trip_application(updater):
-
     for _ in range(TRIALS):
         parameter = np.random.randn(SHAPE1, SHAPE2, SHAPE3, SHAPE4)
         update = np.random.randn(SHAPE1, SHAPE2, 1, SHAPE4)
@@ -37,7 +36,6 @@ def test_ia3_round_trip_application(updater):
 
 
 def test_ia3_round_trip_application_with_moredims(updater):
-
     for _ in range(TRIALS):
         parameter = np.random.randn(SHAPE1, SHAPE2, SHAPE3, SHAPE4)
         update = np.random.randn(1, SHAPE2, SHAPE3, 1)
@@ -54,7 +52,6 @@ def test_ia3_round_trip_application_with_moredims(updater):
 
 
 def test_ia3_round_trip_application_with_sparse_parameter(updater):
-
     for _ in range(TRIALS):
         parameter = np.random.randn(SHAPE1, SHAPE2, SHAPE3, SHAPE4)
         update = np.random.randn(SHAPE1, SHAPE2, 1, 1)
