@@ -16,6 +16,9 @@ else:
 
 def run(*args, **kwargs):
     """Run an awaitable to completion, dispatch based on python version."""
+    if sys.version_info < (3, 8):
+        if sys.platform in ("win32", "cygwin"):
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     # TODO(bdlester): Remove if we bump to python 3.7
     if sys.version_info < (3, 7):
         loop = asyncio.get_event_loop()

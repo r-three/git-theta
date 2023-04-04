@@ -1,5 +1,6 @@
 """Tests for metadata.py"""
 
+import os
 import tempfile
 
 import numpy as np
@@ -71,10 +72,12 @@ def test_metadata_file_roundtrip(data_generator):
     Test that Metadata serializes to file and can be generated from file correctly
     """
     metadata_obj = data_generator.random_metadata()
-    with tempfile.NamedTemporaryFile(mode="w") as tmp:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
         metadata_obj.write(tmp)
         tmp.flush()
+        tmp.close()
         metadata_roundtrip = metadata.Metadata.from_file(tmp.name)
+        os.unlink(tmp.name)
     assert metadata_equal(metadata_obj, metadata_roundtrip)
 
 

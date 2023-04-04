@@ -2,7 +2,9 @@
 
 import argparse
 import logging
+import os
 import sys
+import tempfile
 
 import numpy as np
 
@@ -20,7 +22,7 @@ from git_theta.utils import EnvVarConstants
 logging.basicConfig(
     level=logging.DEBUG,
     # Log to a file for clean/smudge as they don't appear on the console when called via git.
-    filename="/tmp/git-theta.log",
+    filename=os.path.join(tempfile.gettempdir(), "git-theta.log"),
     format="git-theta-filter: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s",
 )
 

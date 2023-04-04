@@ -1,6 +1,8 @@
 """Shared fixtures for running tests"""
 
+import os
 import random
+import shutil
 import string
 import tempfile
 
@@ -105,7 +107,9 @@ def git_repo_with_commits():
     ]
     commit_hashes = []
 
-    with tempfile.TemporaryDirectory() as repo_dir:
+    repo_dir = ".delete-me"
+    os.mkdir(repo_dir)
+    try:
         repo = git.Repo.init(repo_dir)
 
         config_writer = repo.config_writer(config_level="repository")
@@ -123,3 +127,6 @@ def git_repo_with_commits():
             commit_hashes.append(commit_hash)
 
         yield repo, commit_hashes, commit_infos
+    finally:
+        repo.close()
+        git.rmtree(repo_dir)
