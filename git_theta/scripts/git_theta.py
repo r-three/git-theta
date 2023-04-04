@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+"""Installation and .git manipulation scripts."""
 
 import argparse
 import sys
@@ -158,7 +158,7 @@ def add(args, unparsed_args):
         repo.git.add(*unparsed_args)
 
 
-if __name__ == "__main__":
+def main():
     args, unparsed_args = parse_args()
     if not args.func == install:
         git_utils.set_hooks()
@@ -166,3 +166,7 @@ if __name__ == "__main__":
         args.func(args, unparsed_args)
     else:
         args.func(args)
+
+
+if __name__ == "__main__":
+    main()

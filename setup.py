@@ -56,7 +56,6 @@ setup(
     url="https://github.com/r-three/checkpoint-vcs",
     packages=find_packages(),
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
-    scripts=["bin/git-theta", "bin/git-theta-filter", "bin/git-theta-merge"],
     long_description="Version control system for model checkpoints.",
     python_requires=">=3.7",
     classifiers=[
@@ -87,6 +86,11 @@ setup(
     },
     # TODO: Can we auto register these?
     entry_points={
+        "console_scripts": [
+            "git-theta = git_theta.scripts.git_theta:main",
+            "git-theta-filter = git_theta.scripts.git_theta_filter:main",
+            "git-theta-merge = git_theta.scripts.git_theta_merge:main",
+        ],
         "git_theta.plugins.checkpoints": [
             "pytorch = git_theta.checkpoints.pickled_dict_checkpoint:PickledDictCheckpoint",
             "pickled-dict = git_theta.checkpoints.pickled_dict_checkpoint:PickledDictCheckpoint",
