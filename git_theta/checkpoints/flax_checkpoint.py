@@ -6,6 +6,7 @@ from file_or_name import file_or_name
 
 
 class FlaxCheckpoint(Checkpoint):
+    """Load a msgpack based Flax Checkpoint."""
 
     name: str = "flax"
 
