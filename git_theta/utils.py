@@ -78,6 +78,7 @@ class EnvVarConstants:
     LSH_THRESHOLD = EnvVar(name="GIT_THETA_LSH_THRESHOLD", default=1e-6)
     LSH_POOL_SIZE = EnvVar(name="GIT_THETA_LSH_POOL_SIZE", default=10_000)
     MAX_CONCURRENCY = EnvVar(name="GIT_THETA_MAX_CONCURRENCY", default=-1)
+    MANUAL_MERGE = EnvVar(name="GIT_THETA_MANUAL_MERGE", default=False)
 
 
 def flatten(

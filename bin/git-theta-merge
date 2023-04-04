@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+import asyncio
 import argparse
 import itertools
 import logging
@@ -14,7 +15,8 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
 from git_theta import metadata
 from git_theta import merges
-from git_theta.utils import DiffState, Trie, TEXT_STYLE, NoResult
+from git_theta.utils import DiffState, Trie, TEXT_STYLE, NoResult, EnvVarConstants
+from git_theta import async_utils
 
 
 logging.basicConfig(
@@ -171,6 +173,39 @@ def build_menu(
     return menu
 
 
+def manual_merge(args):
+    logging.info(f"Writing model weights from {args.path} for manual merging.")
+
+    # TODO: Update smudge API to make it easier to call programatically.
+    async def load(name, path):
+        with open(path, "rb") as f:
+            raw_weights = (
+                await async_utils.subprocess_run(
+                    ["git-theta-filter", "smudge", args.path],
+                    f.read(),
+                    capture_output=True,
+                )
+            ).stdout
+        return name, raw_weights
+
+    checkpoints = {
+        "ours": args.current,
+        "theirs": args.other,
+        "ancestor": args.ancestor,
+    }
+
+    checkpoints = async_utils.run(async_utils.run_map(checkpoints, load))
+    for name, raw_weights in checkpoints.items():
+        with open(f"{name}.ckpt", "wb") as wf:
+            logging.info(f"Saving {name} model to {name}.ckpt")
+            wf.write(raw_weights)
+    logging.info(
+        "Manual Merging: Combine checkpoints as you wish, save the "
+        f"result to {args.path} and continue the merge."
+    )
+    sys.exit(1)
+
+
 def merge(args):
     """git-theta checkpoint aware merging."""
     print_formatted_text(
@@ -186,6 +221,7 @@ def merge(args):
     # Load the `cleaned` metadata file for commit on the other branch.
     other = metadata.Metadata.from_file(args.other)
     other = other.flatten()
+
     # Collect the list of all parameter names. NB: Names are collected from all
     # models as they may have been deleted/added on different branches.
     all_params = sorted(
@@ -346,4 +382,7 @@ def merge(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    merge(args)
+    if EnvVarConstants.MANUAL_MERGE:
+        manual_merge(args)
+    else:
+        merge(args)
