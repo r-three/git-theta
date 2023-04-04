@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+"""Installation and .git manipulation scripts."""
 
 import argparse
 import sys

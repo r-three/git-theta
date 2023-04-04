@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+"""Clean and Smudge filters for version controlling machine learning models."""
 
 import argparse
 import sys

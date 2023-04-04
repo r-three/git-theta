@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+"""Custom git-theta merge tool."""
 
 import asyncio
 import argparse
