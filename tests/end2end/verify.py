@@ -13,10 +13,10 @@ parser.add_argument("--compare")
 
 
 def get_compare_function(compare):
-    """Eventually add configurable comaprison functions?"""
+    """Eventually add configurable comparison functions?"""
 
     def _cmp(a, b):
-        return np.allclose(a.numpy(), b.numpy())
+        return np.array_equal(a.numpy(), b.numpy())
 
     return _cmp
 

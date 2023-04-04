@@ -67,20 +67,20 @@ def main(args):
     torch.use_deterministic_algorithms(True)
 
     file_name, ext = os.path.splitext(args.model_name)
-    persistant_name = f"{file_name}-{args.action}-{args.seed}{ext}"
+    persistent_name = f"{file_name}-{args.action}-{args.seed}{ext}"
     if args.previous is None:
         args.previous = args.model_name
 
     if args.action == "init" or args.action == "dense":
         model = TestingModel().state_dict()
         torch.save(model, args.model_name)
-        torch.save(model, persistant_name)
+        torch.save(model, persistent_name)
     elif args.action == "sparse":
         previous = torch.load(args.previous)
         model = TestingModel().state_dict()
         sparse = {name: value + previous[name] for name, value in model.items()}
         torch.save(sparse, args.model_name)
-        torch.save(sparse, persistant_name)
+        torch.save(sparse, persistent_name)
 
     elif args.action == "low-rank":
         previous = torch.load(args.previous)
@@ -90,9 +90,9 @@ def main(args):
             for name, value in previous.items()
         }
         torch.save(new_model, args.model_name)
-        torch.save(new_model, persistant_name)
+        torch.save(new_model, persistent_name)
 
-    print(persistant_name)
+    print(persistent_name)
 
 
 if __name__ == "__main__":
