@@ -1,4 +1,4 @@
-name: End2EndTests
+name: BuildDocs
 
 on:
   push:
