@@ -6,7 +6,6 @@ import pytest
 from git_theta import async_utils
 from git_theta import params
 from git_theta.updates import ia3
-import scipy.sparse
 
 SHAPE1 = 3
 SHAPE2 = 30
