@@ -83,6 +83,7 @@ setup(
         # Install all framework deps with the all target.
         "test": ["pytest"],
         "all": list(set(itertools.chain(*frameworks_require.values()))),
+        "docs": ["sphinx", "numpydoc"], 
     },
     # TODO: Can we auto register these?
     entry_points={
