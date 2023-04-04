@@ -7,6 +7,11 @@ import logging
 import re
 import fnmatch
 
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
+
 from git_theta import git_utils, utils, theta, metadata, async_utils
 
 logging.basicConfig(
@@ -55,7 +60,7 @@ def parse_args():
     add_parser = subparsers.add_parser("add", help="add command used to stage files.")
     add_parser.add_argument(
         "--update-type",
-        choices=["dense", "sparse", "low-rank"],
+        choices=[e.name for e in entry_points(group="git_theta.plugins.updates")],
         help="Type of update being applied",
     )
     add_parser.set_defaults(func=add)
