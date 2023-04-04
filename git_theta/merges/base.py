@@ -100,8 +100,8 @@ class Merge(metaclass=PrintableABCMeta):
     ) -> metadata.ParamMetadata:
         """Merge parameters parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
             param_name: The name of the parameter we are looking at.
             paramA: The parameter metadata from branch A (current).
             paramB: The parameter metadata from branch B (other).
