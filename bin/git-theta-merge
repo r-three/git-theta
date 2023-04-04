@@ -295,16 +295,18 @@ def merge(args):
             for merge_argument in available_actions[action].merge_arguments():
                 param_text = HTML(
                     "\n".join(
-                       [
+                        [
                             merge_argument.description,
                             f"<b>{TEXT_STYLE.format_argument(merge_argument.name)}</b>: ",
-                       ]
+                        ]
                     )
                 )
                 validator = Validator.from_callable(merge_argument.validator)
                 argument_value = prompt(param_text, validator=validator)
                 # TODO: Add backend validation of the argument value
-                action_arguments[merge_argument.name] = merge_argument.type(argument_value)
+                action_arguments[merge_argument.name] = merge_argument.type(
+                    argument_value
+                )
 
             # Dispatch based on action
             # TODO: When should these objects be initialized?
