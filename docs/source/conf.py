@@ -13,6 +13,8 @@
 import os
 import sys
 
+import git_theta
+
 sys.path.insert(0, os.path.abspath(os.path.join("..", "..")))
 
 
@@ -23,7 +25,7 @@ copyright = "2023, r-three"
 author = "r-three"
 
 # The full version, including alpha/beta/rc tags
-release = "0"
+release = git_theta.__version__
 
 
 # -- General configuration ---------------------------------------------------
