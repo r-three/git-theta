@@ -22,6 +22,7 @@ def _format(self, value, tag):
 class TextStyle:
     param: str = "purple"
     model: str = "cyan"
+    argument: str = "Salmon"
     who: str = "u"
     changed: str = "yellow"
     added: str = "green"
