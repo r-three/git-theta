@@ -3,6 +3,7 @@
 import dataclasses
 from enum import Enum
 import functools
+import inspect
 import re
 import subprocess
 from types import MethodType
@@ -232,3 +233,58 @@ class Trie:
 
     def __str__(self):
         return f"{self.__class__.__name__}(char={self.char}, is_word={self.is_word}, next={self.next.keys()})"
+
+
+def abstract_classattributes(*attributes):
+    """Force subclasses to define some class attributes."""
+
+    # Note, we are modifying the class with the decorator, not wrapping it so we
+    # don't need @functools.wraps to maintain information about our class.
+    def inner(base_cls):
+        # First set all attributes (on the base class) to NotImplemented
+        # so the subclasses will inherit them and give us something to compare to.
+        for attribute in attributes:
+            setattr(base_cls, attribute, NotImplemented)
+
+        # Save the original verson of the init, this lets us exectue it to make
+        # sure we preserve any functionality defined by the base class.
+        og_init_subclass = base_cls.__init_subclass__
+
+        # A new version of __init_subclass__ that checks for our attributes.
+        # TODO: How does this change things like __doc__ and __name__?
+        def enforcing_init_subclass(cls, **kwargs):
+            # Call the original one, if they didn't override the implementation it
+            # doesn't take cls as an argument. Just try each version to see what works.
+            try:
+                og_init_subclass(cls, **kwargs)
+            except TypeError:
+                og_init_subclass(**kwargs)
+
+            # Collect all attributes on the subclass now, that still have their
+            # default (inherited) value.
+            missing_attributes = []
+            for attribute in attributes:
+                if getattr(cls, attribute, NotImplemented) is NotImplemented:
+                    missing_attributes.append(attribute)
+
+            # Error out if they are a concrete class and missing things.
+            if missing_attributes and not inspect.isabstract(cls):
+                missing = [f'"{attr}"' for attr in missing_attributes]
+                plural = ""
+                # Make it look pretty and handle pluralization.
+                if len(missing) > 1:
+                    missing[-1] = f"and {missing[-1]}"
+                    plural = "s"
+                missing = ", ".join(missing)
+                raise NotImplementedError(
+                    f"Abstract Attribute{plural} {missing} missing "
+                    "on class {cls.__name__}"
+                )
+
+            return cls
+
+        # Set this as the new __init_subclass__ and make sure it is a class method.
+        base_cls.__init_subclass__ = classmethod(enforcing_init_subclass)
+        return base_cls
+
+    return inner

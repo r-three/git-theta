@@ -33,6 +33,7 @@ class PrintableABCMeta(ABCMeta):
         return f"{cls.NAME}: {cls.DESCRIPTION}"
 
 
+@utils.abstract_classattributes("DESCRIPTION", "NAME", "SHORT_CUT", "INACTIVE_STATES")
 class Merge(metaclass=PrintableABCMeta):
     """A Plug-in that handles parameter merging.
 
@@ -41,11 +42,14 @@ class Merge(metaclass=PrintableABCMeta):
       supported HTML markup for styling and coloring text.
     """
 
-    DESCRIPTION: str = "Description of Merge Action, shown in menu."
-    NAME: str = "Unique name of the merge, to look up the plugin with."
-    SHORT_CUT: str = "A Request keyboard shortcut to use during merging."
-    # States where this action will not appear in the menu.
-    INACTIVE_STATES: FrozenSet[utils.DiffState] = frozenset()
+    DESCRIPTION: str = NotImplemented  # Description of Merge Action, shown in menu.
+    NAME: str = NotImplemented  # Unique name of the merge, to look up the plugin with.
+    SHORT_CUT: str = (
+        NotImplemented  # A Request keyboard shortcut to use during merging.
+    )
+    INACTIVE_STATES: FrozenSet[
+        utils.DiffState
+    ] = frozenset()  # States where this action will not appear in the menu.
 
     def __call__(self, param_name, *args, **kwargs):
         logging.info(f"Running {self.NAME} merge on parameter {'/'.join(param_name,)}")

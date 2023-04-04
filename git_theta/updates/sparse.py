@@ -13,14 +13,12 @@ Parameter = Any
 class SparseUpdate(IncrementalUpdate):
     """An update where only some parameters are touched."""
 
+    name: str = "sparse"
+
     def __init__(self, serializer: params.Serializer, threshold: float = 1e-12):
         # TODO: Make threshold configurable
         super().__init__(serializer)
         self.threshold = threshold
-
-    @property
-    def name(self):
-        return "sparse"
 
     async def calculate_update(
         self, parameter: Parameter, previous_parameter: Parameter

@@ -20,16 +20,14 @@ from git_theta import git_utils, utils, params, metadata
 Parameter = np.ndarray
 
 
+@utils.abstract_classattributes("name")
 class Update(metaclass=ABCMeta):
     """Base class for parameter update plugins."""
 
+    name: str = NotImplemented  # The name used to lookup the plug-in.
+
     def __init__(self, serializer: params.Serializer):
         self.serializer = serializer
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """The name used to lookup the plug-in."""
 
     async def read(self, param_metadata: metadata.ParamMetadata) -> Parameter:
         """Read in and deserialize a single parameter value based metadata."""

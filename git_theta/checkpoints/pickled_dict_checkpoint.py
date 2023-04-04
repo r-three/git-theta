@@ -9,6 +9,8 @@ from git_theta.checkpoints import Checkpoint
 class PickledDictCheckpoint(Checkpoint):
     """Class for wrapping picked dict checkpoints, commonly used with PyTorch."""
 
+    name: str = "pickled_dict"
+
     @classmethod
     def load(cls, checkpoint_path):
         """Load a checkpoint into a dict format.
