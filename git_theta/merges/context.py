@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import os
+
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
-from git_theta.merges import Merge
-from git_theta.utils import DiffState, TEXT_STYLE, NoResult
-from git_theta.types import ParamName
+
 from git_theta import git_utils
+from git_theta.merges import Merge
+from git_theta.types import ParamName
+from git_theta.utils import TEXT_STYLE, DiffState, NoResult
 
 
 def get_other_commit_in_merge() -> str:

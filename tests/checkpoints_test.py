@@ -1,10 +1,10 @@
 """Tests for checkpoints.py"""
 
 import os
+
 import pytest
 
 from git_theta import checkpoints
-
 
 ENV_CHECKPOINT_TYPE = "GIT_THETA_CHECKPOINT_TYPE"
 

@@ -1,22 +1,21 @@
 """Custom git-theta merge tool."""
 
-import asyncio
 import argparse
+import asyncio
+import functools
 import itertools
 import logging
 import sys
-import functools
-from typing import Optional, Dict, Any, List, FrozenSet, Union
+from typing import Any, Dict, FrozenSet, List, Optional, Union
+
 from prompt_toolkit import PromptSession, print_formatted_text, prompt
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.validation import Validator, ValidationError
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
-from git_theta import metadata
-from git_theta import merges
-from git_theta.utils import DiffState, Trie, TEXT_STYLE, NoResult, EnvVarConstants
-from git_theta import async_utils
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.validation import ValidationError, Validator
 
+from git_theta import async_utils, merges, metadata
+from git_theta.utils import TEXT_STYLE, DiffState, EnvVarConstants, NoResult, Trie
 
 logging.basicConfig(
     level=logging.DEBUG,

@@ -1,8 +1,9 @@
 """Tool to verify that checkpoints match."""
 
 import argparse
-import torch
+
 import numpy as np
+import torch
 
 parser = argparse.ArgumentParser(description="Compare checkpoints for testing.")
 parser.add_argument("--new-model", help="The path to the new model.")

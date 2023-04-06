@@ -1,16 +1,13 @@
 """Merge parameters by averaging them."""
 
-from typing import Dict, Any, Sequence, List
-import numpy as np
-from git_theta import metadata
-from git_theta.merges import Merge, MergeArgument
-from git_theta.utils import DiffState, TEXT_STYLE
-from git_theta.types import ParamName
-from git_theta import updates
-from git_theta import params
-from git_theta import async_utils
-from git_theta import git_utils
+from typing import Any, Dict, List, Sequence
 
+import numpy as np
+
+from git_theta import async_utils, git_utils, metadata, params, updates
+from git_theta.merges import Merge, MergeArgument
+from git_theta.types import ParamName
+from git_theta.utils import TEXT_STYLE, DiffState
 
 PartialModel = Dict[ParamName, Any]
 Parameter = Any

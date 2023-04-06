@@ -3,7 +3,9 @@
 
 import logging
 from typing import Any, Optional
+
 import numpy as np
+
 from git_theta.updates import IncrementalUpdate
 
 Parameter = Any

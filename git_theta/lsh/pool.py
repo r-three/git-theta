@@ -1,12 +1,12 @@
 """Class for deterministically supplying pre-computed random values"""
 
-import numpy as np
-from numpy.random import Generator, MT19937
-import numba as nb
 import sys
 
-from git_theta.utils import EnvVarConstants
+import numba as nb
+import numpy as np
+from numpy.random import MT19937, Generator
 
+from git_theta.utils import EnvVarConstants
 
 spec = [("pool", nb.float64[:]), ("signature_offsets", nb.int64[:])]
 

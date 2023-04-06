@@ -1,6 +1,7 @@
 """Tests for git_utils.py"""
 
 import os
+
 import pytest
 
 from git_theta import git_utils

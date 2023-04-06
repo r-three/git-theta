@@ -3,8 +3,9 @@
 
 import numpy as np
 import tensorflow as tf
-from git_theta.checkpoints import Checkpoint
+
 from git_theta import utils
+from git_theta.checkpoints import Checkpoint
 
 
 class DynamicNetwork(tf.keras.Model):

@@ -1,18 +1,19 @@
 """Classes representing checkpoint metadata files"""
 
 from __future__ import annotations
-import hashlib
-import dataclasses
-from collections import OrderedDict
-import re
-import json
-from typing import ClassVar
-import numpy as np
-import git
-from typing import Union, TextIO, Dict, Tuple, Any
 
-from git_theta import git_utils, utils, lsh
+import dataclasses
+import hashlib
+import json
+import re
+from collections import OrderedDict
+from typing import Any, ClassVar, Dict, TextIO, Tuple, Union
+
+import git
+import numpy as np
 from file_or_name import file_or_name
+
+from git_theta import git_utils, lsh, utils
 
 
 @dataclasses.dataclass(eq=True)

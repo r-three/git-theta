@@ -1,4 +1,4 @@
-<img src="https://user-images.githubusercontent.com/417568/229904559-d61d710c-7986-4a07-a405-d86b196f5046.png" width="50"> 
+<img src="https://user-images.githubusercontent.com/417568/229904559-d61d710c-7986-4a07-a405-d86b196f5046.png" width="50">
 
 `git-theta` is a Git extension for collaborative, continual, and communal development of machine learning models.
 

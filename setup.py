@@ -2,7 +2,8 @@
 
 import ast
 import itertools
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 
 def get_version(file_name: str, version_variable: str = "__version__") -> str:

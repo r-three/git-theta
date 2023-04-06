@@ -1,11 +1,13 @@
 """A class for handling sparse updates to parameters."""
 
 import logging
-from typing import Optional, Any
-from git_theta.updates import IncrementalUpdate
-from git_theta import params
-import scipy.sparse
+from typing import Any, Optional
+
 import numpy as np
+import scipy.sparse
+
+from git_theta import params
+from git_theta.updates import IncrementalUpdate
 
 Parameter = Any
 

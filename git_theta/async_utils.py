@@ -4,16 +4,8 @@ import asyncio
 import dataclasses
 import functools
 import sys
-from typing import (
-    Any,
-    Dict,
-    Tuple,
-    TypeVar,
-    Awaitable,
-    Union,
-    Optional,
-    Sequence,
-)
+from typing import Any, Awaitable, Dict, Optional, Sequence, Tuple, TypeVar, Union
+
 import six
 
 if sys.version_info >= (3, 8):

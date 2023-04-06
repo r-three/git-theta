@@ -3,10 +3,9 @@
 
 import numpy as np
 import pytest
-from git_theta import async_utils
-from git_theta import params
-from git_theta.updates import low_rank
 
+from git_theta import async_utils, params
+from git_theta.updates import low_rank
 
 K = 20
 INPUT_SIZE = 1024
