@@ -31,6 +31,9 @@ function make_repo {
     echo "Making Git Repo."
     git init
     git branch -m main
+    # Set the git user/email for the generated test repo
+    git config --local user.email "git-theta-tester@example.com"
+    git config --local user.name "Git Theta Tester"
 }
 
 function test_init {

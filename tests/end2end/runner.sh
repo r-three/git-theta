@@ -5,10 +5,6 @@ source ./utils.sh
 # Create an associated array mapping test name to exit code.
 declare -A TESTS
 
-# Setup Git Identity for tests
-git config --global user.email "git-theta-tester@example.com"
-git config --global user.name "Git Theta Tester"
-
 for test in ./*/
 do
     testname="${test%*/}"
@@ -35,6 +31,10 @@ do
     else
         red_echo "${test}"
     fi
+    # Passes tests have return values of 0. Summing all passed test results in
+    # a 0 return value for the whole running. If one of the tests has a non-zero
+    # return value, the runner will have a non-zero value (return value beyond
+    # non-zero is not meaningful).
     FAILED+="${TESTS[$test]}"
 done
 

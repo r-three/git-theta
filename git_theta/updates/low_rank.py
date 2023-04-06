@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import Any, Optional
+from typing import Any, FrozenSet, Optional
 
 import numpy as np
 
@@ -15,6 +15,7 @@ class LowRankUpdate(IncrementalUpdate):
     """An update make for 2 low rank matrices."""
 
     name: str = "low-rank"
+    required_keys: FrozenSet[str] = frozenset(("R", "C"))
 
     # TODO: Make these configuration options easy set.
     def __init__(
@@ -23,6 +24,15 @@ class LowRankUpdate(IncrementalUpdate):
         super().__init__(*args, **kwargs)
         self.K = K
         self.threshold = threshold
+
+    @classmethod
+    def format_update(
+        cls, param1: Parameter, param2: Parameter, *args, **kwargs
+    ) -> Parameter:
+        return {
+            "R": param1,
+            "C": param2,
+        }
 
     async def calculate_update(
         self, parameter: Parameter, previous_parameter: Parameter

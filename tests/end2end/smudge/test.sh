@@ -34,7 +34,7 @@ git show ${SHA}:${MODEL_NAME} > init-metadata.json
 echo "Making Sparse Update to ${MODEL_NAME}"
 SPARSE_MODEL=`python ../${MODEL_SCRIPT} --action sparse --seed 1234 --model-name=${MODEL_NAME}`
 echo "Adding Sparse Update to the git repo."
-git add ${MODEL_NAME}
+git theta add ${MODEL_NAME} --update-type=sparse --update-data=sparse-data.pt
 echo "Commiting sparser update to repo."
 SPARSE_SHA=$(commit "sparse update")
 
@@ -85,3 +85,5 @@ python ../verify.py --old-model ${SPARSE_MODEL} --new-model sparse-model.pt
 echo "Verifying initial model"
 git-theta-filter smudge ${MODEL_NAME} < init-metadata.json > init-model.pt
 python ../verify.py --old-model ${INIT_MODEL} --new-model init-model.pt
+
+green_echo "Smudging at various commits passed!"
