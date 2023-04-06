@@ -16,10 +16,13 @@ do
     yellow_echo "Running Test: ${testname}"
     echo "============================================================"
     pushd ${testname}
-    ./clean.sh
     ./test.sh
     TESTS[${testname}]=${?}
-    ./clean.sh
+    if [[ -f ./clean.sh ]]; then
+        ./clean.sh
+    else
+        ../clean.sh
+    fi
     popd
 done
 
