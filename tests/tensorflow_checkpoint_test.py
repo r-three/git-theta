@@ -1,17 +1,17 @@
 """Tensorflow checkpoint tests."""
 
 import os
-from unittest import mock
 import tempfile
-import pytest
+from unittest import mock
+
 import numpy as np
+import pytest
 
 # Skip all these tests if tensorflow is not installed
 tf = pytest.importorskip("tensorflow")
 
 from git_theta import checkpoints
 from git_theta.checkpoints import tensorflow_checkpoint
-
 
 INPUT_SIZE = 10
 

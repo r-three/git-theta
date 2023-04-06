@@ -1,8 +1,9 @@
 """Base class for computing locality-sensitive hashes"""
 
 import abc
+
 from git_theta.lsh import RandomnessPool
-from git_theta.lsh.types import Signature, Parameter
+from git_theta.lsh.types import Parameter, Signature
 
 
 class HashFamily(metaclass=abc.ABCMeta):

@@ -1,10 +1,11 @@
 """Module for reading and writing to .git/theta"""
 
-import os
-import json
-import re
-import logging
 import functools
+import json
+import logging
+import os
+import re
+
 from file_or_name import file_or_name
 
 from git_theta import utils

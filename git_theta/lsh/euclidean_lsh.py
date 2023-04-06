@@ -1,11 +1,12 @@
 """Classes for computing Euclidean locality-sensitive hashes"""
 
-import numpy as np
-import numba as nb
 import os
 
+import numba as nb
+import numpy as np
+
 from git_theta.lsh import HashFamily, RandomnessPool
-from git_theta.lsh.types import Signature, Parameter
+from git_theta.lsh.types import Parameter, Signature
 from git_theta.utils import EnvVarConstants
 
 

@@ -1,9 +1,9 @@
 """Tests for theta.py"""
 
-import tempfile
 import random
+import tempfile
 
-from git_theta import theta, git_utils
+from git_theta import git_utils, theta
 
 
 def test_commit_info_serialization(data_generator):

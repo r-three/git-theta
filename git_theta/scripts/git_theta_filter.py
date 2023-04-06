@@ -1,21 +1,21 @@
 """Clean and Smudge filters for version controlling machine learning models."""
 
 import argparse
-import sys
 import logging
+import sys
+
 import numpy as np
 
 from git_theta import (
-    git_utils,
-    checkpoints,
-    params,
-    metadata,
-    updates,
     async_utils,
+    checkpoints,
+    git_utils,
     lsh,
+    metadata,
+    params,
+    updates,
 )
 from git_theta.utils import EnvVarConstants
-
 
 logging.basicConfig(
     level=logging.DEBUG,

@@ -1,17 +1,18 @@
 """Utilities for manipulating git."""
 
+import filecmp
 import fnmatch
-import git
-import os
+import io
 import json
 import logging
-import io
+import os
 import re
-from typing import List, Union, Sequence
-import subprocess
 import shutil
-import filecmp
+import subprocess
 import sys
+from typing import List, Sequence, Union
+
+import git
 
 # TODO(bdlester): importlib.resources doesn't have the `.files` API until python
 # version `3.9` so use the backport even if using a python version that has

@@ -1,11 +1,12 @@
 """Shared fixtures for running tests"""
 
-import pytest
-import string
 import random
-import numpy as np
+import string
 import tempfile
+
 import git
+import numpy as np
+import pytest
 
 from git_theta import metadata, theta
 

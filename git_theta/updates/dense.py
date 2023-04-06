@@ -1,10 +1,10 @@
 """Class managing dense parameter updates."""
 
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
+
 from git_theta import git_utils, metadata
 from git_theta.updates import Update
-
 
 Parameter = Any
 

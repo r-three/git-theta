@@ -2,8 +2,10 @@
 
 import asyncio
 import random
-import pytest
+
 import numpy as np
+import pytest
+
 from git_theta import params
 
 

@@ -1,15 +1,15 @@
 """Utilities for git theta."""
 
 import dataclasses
-from enum import Enum
 import functools
 import inspect
+import os
 import re
 import subprocess
-from types import MethodType
-from typing import Dict, Any, Tuple, Union, Callable, Iterable, Optional
 from dataclasses import dataclass
-import os
+from enum import Enum
+from types import MethodType
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union
 
 
 def _format(self, value, tag):

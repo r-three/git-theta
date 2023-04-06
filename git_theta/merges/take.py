@@ -2,8 +2,8 @@
 
 from git_theta import metadata
 from git_theta.merges import Merge
-from git_theta.utils import DiffState, TEXT_STYLE
 from git_theta.types import ParamName
+from git_theta.utils import TEXT_STYLE, DiffState
 
 
 class TakeUs(Merge):

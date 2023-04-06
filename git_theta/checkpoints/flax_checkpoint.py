@@ -1,8 +1,9 @@
 """Checkpoint plugin for Flax's msgpack format."""
 
-from git_theta.checkpoints import Checkpoint
-from flax import serialization
 from file_or_name import file_or_name
+from flax import serialization
+
+from git_theta.checkpoints import Checkpoint
 
 
 class FlaxCheckpoint(Checkpoint):

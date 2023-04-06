@@ -1,6 +1,7 @@
 """Tests for metadata.py"""
 
 import tempfile
+
 import numpy as np
 import pytest
 

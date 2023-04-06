@@ -1,10 +1,11 @@
 """Tests for common update plugin functions."""
 
 import os
-import pytest
-from git_theta.updates import base
-from git_theta import utils
 
+import pytest
+
+from git_theta import utils
+from git_theta.updates import base
 
 ENV_UPDATE_TYPE = "GIT_THETA_UPDATE_TYPE"
 

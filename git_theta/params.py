@@ -1,11 +1,12 @@
 """Classes for serializing model updates."""
 
+import io
+import posixpath
+import tarfile
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+
 import tensorstore as ts
-import io
-import tarfile
-import posixpath
 
 
 class TensorSerializer(metaclass=ABCMeta):

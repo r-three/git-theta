@@ -3,11 +3,11 @@
 import argparse
 import os
 import random
+
 import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
-
 
 parser = argparse.ArgumentParser(description="Model building for Integration tests.")
 parser.add_argument(

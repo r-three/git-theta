@@ -1,18 +1,19 @@
 """Installation and .git manipulation scripts."""
 
 import argparse
-import sys
-import git
+import fnmatch
 import logging
 import re
-import fnmatch
+import sys
+
+import git
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
 else:
     from importlib.metadata import entry_points
 
-from git_theta import git_utils, utils, theta, metadata, async_utils
+from git_theta import async_utils, git_utils, metadata, theta, utils
 
 logging.basicConfig(
     level=logging.DEBUG,

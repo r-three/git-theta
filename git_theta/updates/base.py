@@ -1,8 +1,8 @@
 """Base class for parameter update plugins."""
 
-from abc import ABCMeta, abstractmethod
 import os
 import sys
+from abc import ABCMeta, abstractmethod
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
@@ -14,8 +14,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from git_theta import git_utils, utils, params, metadata
-
+from git_theta import git_utils, metadata, params, utils
 
 Parameter = np.ndarray
 
