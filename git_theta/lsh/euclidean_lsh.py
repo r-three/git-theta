@@ -5,7 +5,8 @@ import os
 import numba as nb
 import numpy as np
 
-from git_theta.lsh import HashFamily, RandomnessPool
+from git_theta.lsh import HashFamily
+from git_theta.lsh.pool import RandomnessPool
 from git_theta.lsh.types import Parameter, Signature
 from git_theta.utils import EnvVarConstants
 

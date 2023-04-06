@@ -2,7 +2,7 @@
 
 import abc
 
-from git_theta.lsh import RandomnessPool
+from git_theta.lsh.pool import RandomnessPool
 from git_theta.lsh.types import Parameter, Signature
 
 
