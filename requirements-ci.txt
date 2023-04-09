@@ -12,5 +12,5 @@ setuptools==49.2.1
 six==1.15.0
 tensorflow==2.12.0
 tensorstore==0.1.27
-torch==1.8.1
+torch>=1.8.1
 typing_extensions>=4.1.1
