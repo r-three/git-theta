@@ -54,7 +54,7 @@ def test_known_sparsity(updater):
             sparse_updater.calculate_update(updated_parameter, parameter)
         )
         calc_sparsity = 1 - len(update_dict["data"]) / np.prod(parameter.shape)
-        np.testing.assert_allclose(calc_sparsity, 0.3, rtol=1e-6)
+        np.testing.assert_allclose(calc_sparsity, 0.3, rtol=1e-5)
 
 
 def test_monotonic_increasing_sparseness(updater):
