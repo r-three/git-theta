@@ -5,7 +5,9 @@ import asyncio
 import functools
 import itertools
 import logging
+import os
 import sys
+import tempfile
 from typing import Any, Dict, FrozenSet, List, Optional, Union
 
 from prompt_toolkit import PromptSession, print_formatted_text, prompt
@@ -20,7 +22,7 @@ from git_theta.utils import TEXT_STYLE, DiffState, EnvVarConstants, NoResult, Tr
 logging.basicConfig(
     level=logging.DEBUG,
     # Log to a file for clean/smudge as they don't appear on the console when called via git.
-    filename="/tmp/git-theta.log",
+    filename=os.path.join(tempfile.gettempdir(), "git-theta.log"),
     format="git-theta-merge: [%(asctime)s] %(levelname)s - %(message)s",
 )
 

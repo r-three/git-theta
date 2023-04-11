@@ -58,7 +58,7 @@ setup(
     packages=find_packages(),
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
     long_description="Version control system for model checkpoints.",
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
