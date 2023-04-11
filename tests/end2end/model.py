@@ -5,9 +5,12 @@ import os
 import random
 
 import numpy as np
+import scipy.sparse
 import torch
 from torch import nn
 from torch.nn import functional as F
+
+import git_theta
 
 parser = argparse.ArgumentParser(description="Model building for Integration tests.")
 parser.add_argument(
@@ -52,11 +55,12 @@ class TestingLayer(nn.Module):
 
 
 def low_rank_update(t, rank):
+    # TODO: Add a way to get numpy dtype from torch dtype easily.
     if t.ndim == 1:
-        return np.random.uniform(size=t.shape, dtype=t.dtype)
-    R = np.random.uniform(size=(*t.shape[:-1], rank), dtype=t.dtype)
-    C = np.random.uniform(size=(rank, *t.shape[-1:]), dtype=t.dtype)
-    return R @ C
+        return np.random.uniform(size=t.shape).astype(np.float32)
+    R = np.random.uniform(size=(*t.shape[:-1], rank)).astype(np.float32)
+    C = np.random.uniform(size=(rank, *t.shape[-1:])).astype(np.float32)
+    return {"A": R, "B": C}
 
 
 def main(args):
@@ -76,20 +80,49 @@ def main(args):
         torch.save(model, args.model_name)
         torch.save(model, persistent_name)
     elif args.action == "sparse":
+        update_handler = git_theta.updates.get_update_handler("sparse")
         previous = torch.load(args.previous)
-        model = TestingModel().state_dict()
-        sparse = {name: value + previous[name] for name, value in model.items()}
-        torch.save(sparse, args.model_name)
-        torch.save(sparse, persistent_name)
+        # Create a new version of the model and call it the "sparse" update
+        sparse = TestingModel().state_dict()
+        # Combine the sparse update and the old values to create the "new" model
+        with_sparse = {name: value + previous[name] for name, value in sparse.items()}
+        # Save the combined model to the persistent location for comparisons.
+        torch.save(with_sparse, persistent_name)
+        # Convert the sparse update into a sparse format.
+        sparse_update = {}
+        for name, value in sparse.items():
+            update = update_handler.format_update(value.numpy())
+            for k, v in update.items():
+                sparse_update[f"{name}/{k}"] = torch.tensor(v)
+        torch.save(sparse_update, "sparse-data.pt")
 
     elif args.action == "low-rank":
         previous = torch.load(args.previous)
         low_rank = 2
-        new_model = {
-            name: value + low_rank_update(value, low_rank)
-            for name, value in previous.items()
+        lr_update = {
+            name: low_rank_update(value, low_rank) for name, value in previous.items()
         }
-        torch.save(new_model, args.model_name)
+        update_handler = git_theta.updates.get_update_handler("low-rank")
+        # Just the low-rank data
+        update_data = {}
+        # The updated parameter values
+        new_model = {}
+        for name, update in lr_update.items():
+            if isinstance(update, dict):
+                # Formatter is simple, just assigned param1 and param2 to R and
+                # C respectivly.
+                update = update_handler.format_update(update["A"], update["B"])
+                for k, v in update.items():
+                    update_data[f"{name}/{k}"] = torch.tensor(v)
+                new_model[name] = previous[name] + update["R"] @ update["C"]
+            else:
+                new_model[name] = previous[name] + update
+                previous[name] = previous[name] + update
+        # Checkpoint with the non-low-rank changes added
+        torch.save(previous, args.model_name)
+        # Checkpoint with the low-rank updates
+        torch.save(update_data, "low-rank-data.pt")
+        # Checkpoint with all changes added
         torch.save(new_model, persistent_name)
 
     print(persistent_name)

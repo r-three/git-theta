@@ -16,7 +16,7 @@ TRIALS = 50
 @pytest.fixture
 def updater():
     return lambda threshold: sparse.SparseUpdate(
-        params.get_update_serializer(), threshold
+        params.get_update_serializer(), threshold=threshold
     )
 
 
@@ -30,7 +30,7 @@ def test_sparse_round_trip_application(updater):
         updated_parameter = parameter.copy()
         updated_parameter[x, y, z] = sparse_update
 
-        sparse_updater = updater(1e-12)
+        sparse_updater = updater(threshold=1e-12)
         update = async_utils.run(
             sparse_updater.calculate_update(updated_parameter, parameter)
         )
@@ -49,7 +49,7 @@ def test_known_sparsity(updater):
         diff_tensor[diff_tensor < threshold] = 0
         updated_parameter = parameter + diff_tensor
 
-        sparse_updater = updater(1e-12)
+        sparse_updater = updater(threshold=1e-12)
         update_dict = async_utils.run(
             sparse_updater.calculate_update(updated_parameter, parameter)
         )
@@ -66,7 +66,7 @@ def test_monotonic_increasing_sparseness(updater):
         updated_parameter = parameter + diff_tensor
         sparseness = []
         for threshold in [1e-4, 1e-3, 1e-2, 1e-1, 1, 10, 100]:
-            sparse_updater = updater(threshold)
+            sparse_updater = updater(threshold=threshold)
             update_dict = async_utils.run(
                 sparse_updater.calculate_update(updated_parameter, parameter)
             )

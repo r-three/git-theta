@@ -1,6 +1,10 @@
 """Tests for utils.py"""
 
 import operator as op
+import os
+import time
+
+import pytest
 
 from git_theta import utils
 
@@ -89,3 +93,23 @@ def test_is_valid_commit_hash(data_generator):
     assert all(
         [utils.is_valid_commit_hash(commit_hash) for commit_hash in commit_hashes]
     )
+
+
+@pytest.fixture
+def test_file():
+    path = "./test-file.txt"
+    with open(path, "w") as w:
+        w.write("Testing")
+    yield path
+    os.remove(path)
+
+
+def test_touch(test_file):
+    old_stats = os.stat(test_file)
+    # Buffer to make sure that our new a/mtime is greater than the resolution of
+    # the host operating system.
+    time.sleep(1)
+    utils.touch(test_file)
+    new_stats = os.stat(test_file)
+    assert old_stats.st_atime < new_stats.st_atime
+    assert old_stats.st_mtime < new_stats.st_mtime

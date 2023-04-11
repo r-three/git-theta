@@ -59,11 +59,13 @@ def parse_args():
     track_parser.set_defaults(func=track)
 
     add_parser = subparsers.add_parser("add", help="add command used to stage files.")
+    add_parser.add_argument("file", help="The file we are git adding.")
     add_parser.add_argument(
         "--update-type",
         choices=[e.name for e in entry_points(group="git_theta.plugins.updates")],
         help="Type of update being applied",
     )
+    add_parser.add_argument("--update-data", help="Where update data is stored.")
     add_parser.set_defaults(func=add)
 
     args = parser.parse_known_args()
@@ -154,9 +156,17 @@ def track(args):
 
 def add(args, unparsed_args):
     repo = git_utils.get_git_repo()
-    env_vars = {utils.EnvVarConstants.UPDATE_TYPE: args.update_type}
+    env_vars = {
+        "GIT_THETA_UPDATE_TYPE": args.update_type,
+        "GIT_THETA_UPDATE_DATA_PATH": args.update_data,
+    }
+    # The most common use for `git theta add` is when you have side-loaded
+    # information and thus the main checkpoint file has not been modified. This
+    # results in git not running the add command as the modification time has
+    # not changed. We touch the file so it will actually get added.
+    utils.touch(args.file)
     with repo.git.custom_environment(**env_vars):
-        repo.git.add(*unparsed_args)
+        repo.git.add(args.file, *unparsed_args)
 
 
 def main():
