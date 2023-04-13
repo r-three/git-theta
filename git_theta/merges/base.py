@@ -7,20 +7,18 @@ Note:
 """
 
 
-from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
 import logging
 import sys
-from typing import FrozenSet, Dict, Tuple, Any, Type, Union, List, Optional
+from abc import ABCMeta, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict, FrozenSet, List, Optional, Tuple, Type, Union
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
 else:
     from importlib.metadata import entry_points
 
-from git_theta import metadata
-from git_theta import utils
-
+from git_theta import metadata, utils
 
 ParamName = Tuple[str, ...]
 Parameter = Any
@@ -100,8 +98,8 @@ class Merge(metaclass=PrintableABCMeta):
     ) -> metadata.ParamMetadata:
         """Merge parameters parameters.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
             param_name: The name of the parameter we are looking at.
             paramA: The parameter metadata from branch A (current).
             paramB: The parameter metadata from branch B (other).

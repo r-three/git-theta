@@ -4,16 +4,8 @@ import asyncio
 import dataclasses
 import functools
 import sys
-from typing import (
-    Any,
-    Dict,
-    Tuple,
-    TypeVar,
-    Awaitable,
-    Union,
-    Optional,
-    Sequence,
-)
+from typing import Any, Awaitable, Dict, Optional, Sequence, Tuple, TypeVar, Union
+
 import six
 
 if sys.version_info >= (3, 8):
@@ -24,10 +16,9 @@ else:
 
 def run(*args, **kwargs):
     """Run an awaitable to completion, dispatch based on python version."""
-    # TODO(bdlester): Remove if we bump to python 3.7
-    if sys.version_info < (3, 7):
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(*args, **kwargs)
+    if sys.version_info < (3, 8):
+        if sys.platform in ("win32", "cygwin"):
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     return asyncio.run(*args, **kwargs)
 
 

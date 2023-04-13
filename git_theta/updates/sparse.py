@@ -1,11 +1,13 @@
 """A class for handling sparse updates to parameters."""
 
 import logging
-from typing import Optional, Any
-from git_theta.updates import IncrementalUpdate
-from git_theta import params
-import scipy.sparse
+from typing import Any, FrozenSet, Optional
+
 import numpy as np
+import scipy.sparse
+
+from git_theta import params
+from git_theta.updates import IncrementalUpdate
 
 Parameter = Any
 
@@ -14,11 +16,28 @@ class SparseUpdate(IncrementalUpdate):
     """An update where only some parameters are touched."""
 
     name: str = "sparse"
+    required_keys: FrozenSet[str] = frozenset(("data", "indices", "indptr", "shape"))
 
-    def __init__(self, serializer: params.Serializer, threshold: float = 1e-12):
+    def __init__(
+        self,
+        serializer: params.Serializer,
+        update_data: str = "",
+        threshold: float = 1e-12,
+    ):
         # TODO: Make threshold configurable
-        super().__init__(serializer)
+        super().__init__(serializer, update_data)
         self.threshold = threshold
+
+    @classmethod
+    def format_update(cls, param: Parameter, *args, **kwargs) -> Parameter:
+        """User-facing helper to convert an array to sparse storage."""
+        update = scipy.sparse.csr_matrix(np.reshape(param, (1, -1)))
+        return {
+            "data": update.data,
+            "indices": update.indices,
+            "indptr": update.indptr,
+            "shape": np.array(param.shape),
+        }
 
     async def calculate_update(
         self, parameter: Parameter, previous_parameter: Parameter

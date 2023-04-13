@@ -1,10 +1,10 @@
 """Class managing dense parameter updates."""
 
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
+
 from git_theta import git_utils, metadata
 from git_theta.updates import Update
-
 
 Parameter = Any
 
@@ -14,6 +14,9 @@ class DenseUpdate(Update):
 
     name: str = "dense"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     async def apply(self, param_metadata, param_keys, *args, **kwargs) -> Parameter:
         logging.debug(f"Reading Dense update for {'/'.join(param_keys)}")
         return await self.read(param_metadata)
@@ -22,4 +25,4 @@ class DenseUpdate(Update):
         logging.debug(f"Writing Dense update for {'/'.join(param_keys)}")
         serialized = await self.serializer.serialize({"parameter": param})
         lfs_pointer = await git_utils.git_lfs_clean(serialized)
-        return metadata.LfsMetadata.from_pointer(lfs_pointer)
+        return metadata.LfsMetadata.from_pointer(lfs_pointer), None

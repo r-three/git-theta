@@ -1,28 +1,28 @@
-#!/usr/bin/env python
+"""Custom git-theta merge tool."""
 
-
-import asyncio
 import argparse
+import asyncio
+import functools
 import itertools
 import logging
+import os
 import sys
-import functools
-from typing import Optional, Dict, Any, List, FrozenSet, Union
+import tempfile
+from typing import Any, Dict, FrozenSet, List, Optional, Union
+
 from prompt_toolkit import PromptSession, print_formatted_text, prompt
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.validation import Validator, ValidationError
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
-from git_theta import metadata
-from git_theta import merges
-from git_theta.utils import DiffState, Trie, TEXT_STYLE, NoResult, EnvVarConstants
-from git_theta import async_utils
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.validation import ValidationError, Validator
 
+from git_theta import async_utils, merges, metadata
+from git_theta.utils import TEXT_STYLE, DiffState, EnvVarConstants, NoResult, Trie
 
 logging.basicConfig(
     level=logging.DEBUG,
     # Log to a file for clean/smudge as they don't appear on the console when called via git.
-    filename="/tmp/git-theta.log",
+    filename=os.path.join(tempfile.gettempdir(), "git-theta.log"),
     format="git-theta-merge: [%(asctime)s] %(levelname)s - %(message)s",
 )
 
@@ -380,9 +380,13 @@ def merge(args):
     return 0
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     if EnvVarConstants.MANUAL_MERGE:
         manual_merge(args)
     else:
         merge(args)
+
+
+if __name__ == "__main__":
+    main()

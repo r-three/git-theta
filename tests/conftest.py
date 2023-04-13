@@ -1,11 +1,14 @@
 """Shared fixtures for running tests"""
 
-import pytest
-import string
+import os
 import random
-import numpy as np
+import shutil
+import string
 import tempfile
+
 import git
+import numpy as np
+import pytest
 
 from git_theta import metadata, theta
 
@@ -104,7 +107,9 @@ def git_repo_with_commits():
     ]
     commit_hashes = []
 
-    with tempfile.TemporaryDirectory() as repo_dir:
+    repo_dir = ".delete-me"
+    os.mkdir(repo_dir)
+    try:
         repo = git.Repo.init(repo_dir)
 
         config_writer = repo.config_writer(config_level="repository")
@@ -122,3 +127,6 @@ def git_repo_with_commits():
             commit_hashes.append(commit_hash)
 
         yield repo, commit_hashes, commit_infos
+    finally:
+        repo.close()
+        git.rmtree(repo_dir)

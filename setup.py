@@ -2,7 +2,8 @@
 
 import ast
 import itertools
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 
 def get_version(file_name: str, version_variable: str = "__version__") -> str:
@@ -56,9 +57,8 @@ setup(
     url="https://github.com/r-three/checkpoint-vcs",
     packages=find_packages(),
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
-    scripts=["bin/git-theta", "bin/git-theta-filter", "bin/git-theta-merge"],
     long_description="Version control system for model checkpoints.",
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
@@ -84,9 +84,15 @@ setup(
         # Install all framework deps with the all target.
         "test": ["pytest"],
         "all": list(set(itertools.chain(*frameworks_require.values()))),
+        "docs": ["sphinx", "numpydoc"],
     },
     # TODO: Can we auto register these?
     entry_points={
+        "console_scripts": [
+            "git-theta = git_theta.scripts.git_theta:main",
+            "git-theta-filter = git_theta.scripts.git_theta_filter:main",
+            "git-theta-merge = git_theta.scripts.git_theta_merge:main",
+        ],
         "git_theta.plugins.checkpoints": [
             "pytorch = git_theta.checkpoints.pickled_dict_checkpoint:PickledDictCheckpoint",
             "pickled-dict = git_theta.checkpoints.pickled_dict_checkpoint:PickledDictCheckpoint",

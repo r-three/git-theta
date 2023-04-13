@@ -1,9 +1,10 @@
 """Base class and utilities for different checkpoint format backends."""
 
-from abc import ABCMeta, abstractmethod
 import os
 import sys
+from abc import ABCMeta, abstractmethod
 from typing import Optional
+
 import numpy as np
 
 if sys.version_info < (3, 10):

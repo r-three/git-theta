@@ -1,6 +1,6 @@
-# Git-Theta
+<img src="https://user-images.githubusercontent.com/417568/229904559-d61d710c-7986-4a07-a405-d86b196f5046.png" width="50">
 
-A Git extension for collaborative, continual, and communal development of machine learning models.
+`git-theta` is a Git extension for collaborative, continual, and communal development of machine learning models.
 
 <!--We should motivate this better...-->
 Large distributed teams are able to efficiently work on shared codebases due to version control systems like Git. In an effort to [build ML models like we build open-source software](https://colinraffel.com/blog/a-call-to-build-models-like-we-build-open-source-software.html), Git-Theta is a Git extension that allows you to *efficiently* and *meaningfully* track a model's version history natively through Git.

@@ -1,0 +1,16 @@
+file_or_name>=1.1.6
+flax
+GitPython>=3.1.31
+importlib_metadata>=4.11.1
+importlib_resources>=5.1.4
+numba>=0.56.4
+numpy>=1.23.5
+prompt_toolkit>=3.0.18
+pytest>=6.2.3
+scipy>=1.10.1
+setuptools>=49.2.1
+six>=1.15.0
+tensorflow>=2.12.0
+tensorstore>=0.1.27
+torch>=1.8.1
+typing_extensions>=4.1.1

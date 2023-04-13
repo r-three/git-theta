@@ -1,15 +1,16 @@
 """Utilities for git theta."""
 
 import dataclasses
-from enum import Enum
+import datetime
 import functools
 import inspect
+import os
 import re
 import subprocess
-from types import MethodType
-from typing import Dict, Any, Tuple, Union, Callable, Iterable, Optional
 from dataclasses import dataclass
-import os
+from enum import Enum
+from types import MethodType
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Union
 
 
 def _format(self, value, tag):
@@ -72,6 +73,7 @@ class EnvVar:
 class EnvVarConstants:
     CHECKPOINT_TYPE = EnvVar(name="GIT_THETA_CHECKPOINT_TYPE", default="pytorch")
     UPDATE_TYPE = EnvVar(name="GIT_THETA_UPDATE_TYPE", default="dense")
+    UPDATE_DATA_PATH = EnvVar(name="GIT_THETA_UPDATE_DATA_PATH", default="update.pt")
     PARAMETER_ATOL = EnvVar(name="GIT_THETA_PARAMETER_ATOL", default=1e-8)
     PARAMETER_RTOL = EnvVar(name="GIT_THETA_PARAMETER_RTOL", default=1e-5)
     LSH_SIGNATURE_SIZE = EnvVar(name="GIT_THETA_LSH_SIGNATURE_SIZE", default=16)
@@ -284,7 +286,7 @@ def abstract_classattributes(*attributes):
                 missing = ", ".join(missing)
                 raise NotImplementedError(
                     f"Abstract Attribute{plural} {missing} missing "
-                    "on class {cls.__name__}"
+                    f"on class {cls.__name__}"
                 )
 
             return cls
@@ -294,3 +296,9 @@ def abstract_classattributes(*attributes):
         return base_cls
 
     return inner
+
+
+def touch(path: str):
+    """Update the access and modify time of `path`."""
+    dt_epoch = datetime.datetime.now().timestamp()
+    os.utime(path, (dt_epoch, dt_epoch))

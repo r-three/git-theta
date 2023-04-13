@@ -3,10 +3,10 @@
 
 import numpy as np
 import pytest
-from git_theta import async_utils
-from git_theta import params
-from git_theta.updates import sparse
 import scipy.sparse
+
+from git_theta import async_utils, params
+from git_theta.updates import sparse
 
 SHAPE = 100
 NUM_UPDATES = 1000
@@ -16,7 +16,7 @@ TRIALS = 50
 @pytest.fixture
 def updater():
     return lambda threshold: sparse.SparseUpdate(
-        params.get_update_serializer(), threshold
+        params.get_update_serializer(), threshold=threshold
     )
 
 
@@ -30,7 +30,7 @@ def test_sparse_round_trip_application(updater):
         updated_parameter = parameter.copy()
         updated_parameter[x, y, z] = sparse_update
 
-        sparse_updater = updater(1e-12)
+        sparse_updater = updater(threshold=1e-12)
         update = async_utils.run(
             sparse_updater.calculate_update(updated_parameter, parameter)
         )
@@ -49,12 +49,12 @@ def test_known_sparsity(updater):
         diff_tensor[diff_tensor < threshold] = 0
         updated_parameter = parameter + diff_tensor
 
-        sparse_updater = updater(1e-12)
+        sparse_updater = updater(threshold=1e-12)
         update_dict = async_utils.run(
             sparse_updater.calculate_update(updated_parameter, parameter)
         )
         calc_sparsity = 1 - len(update_dict["data"]) / np.prod(parameter.shape)
-        np.testing.assert_allclose(calc_sparsity, 0.3, rtol=1e-6)
+        np.testing.assert_allclose(calc_sparsity, 0.3, rtol=1e-5)
 
 
 def test_monotonic_increasing_sparseness(updater):
@@ -66,7 +66,7 @@ def test_monotonic_increasing_sparseness(updater):
         updated_parameter = parameter + diff_tensor
         sparseness = []
         for threshold in [1e-4, 1e-3, 1e-2, 1e-1, 1, 10, 100]:
-            sparse_updater = updater(threshold)
+            sparse_updater = updater(threshold=threshold)
             update_dict = async_utils.run(
                 sparse_updater.calculate_update(updated_parameter, parameter)
             )

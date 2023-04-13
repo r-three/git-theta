@@ -2,7 +2,6 @@
 
 from setuptools import setup
 
-
 setup(
     name="git_theta_json_checkpoint",
     description="Demo plugin for the git theta VCS.",
