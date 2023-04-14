@@ -4,6 +4,7 @@ import asyncio
 import dataclasses
 import functools
 import sys
+from concurrent.futures import thread
 from typing import Any, Awaitable, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
 import six
@@ -12,6 +13,19 @@ if sys.version_info >= (3, 8):
     from typing import Protocol
 else:
     from typing_extensions import Protocol
+
+
+class Asyncify:
+    """Wrap sync functions for use in async."""
+
+    def __init__(self, *args, **kwargs):
+        self.executor = thread.ThreadPoolExecutor(*args, **kwargs)
+
+    async def __call__(self, fn, *args, **kwargs):
+        return await asyncio.wrap_future(self.executor.submit(fn, *args, **kwargs))
+
+
+asyncify = Asyncify()
 
 
 def run(*args, **kwargs):

@@ -64,7 +64,9 @@ def clean(
         # Get the metadata from the previous version of the parameter
         param_metadata = prev_metadata.get(param_keys)
         # Create new metadata from the current value
-        new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
+        new_tensor_metadata = await async_utils.asyncify(
+            metadata.TensorMetadata.from_tensor, new_param
+        )
 
         # If the parameter tensor has not changed, just keep the metadata the same
         # TODO: Encapsulate this parameter check within an equality check.
