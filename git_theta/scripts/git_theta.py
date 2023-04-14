@@ -135,6 +135,7 @@ def install(args):
     config_writer.set_value('filter "theta"', "required", "true")
     config_writer.set_value('merge "theta"', "name", "Merge Models with Git-Theta")
     config_writer.set_value('merge "theta"', "driver", "git-theta-merge %O %A %B %P")
+    config_writer.set_value('diff "theta"', "command", "git-theta-diff")
     config_writer.release()
 
 

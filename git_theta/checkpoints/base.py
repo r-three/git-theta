@@ -65,6 +65,41 @@ class Checkpoint(dict, metaclass=ABCMeta):
     def unflatten(self):
         return utils.unflatten(self)
 
+    @classmethod
+    def diff(cls, m1: "Checkpoint", m2: "Checkpoint") -> "Checkpoint":
+        """Compute the diff between two checkpoints.
+
+        Parameters
+        ----------
+        m1 : Checkpoint
+            The new checkpoint
+        m2 : Checkpoint
+            The old checkpoint
+
+        Returns
+        -------
+        added : Checkpoint
+            Checkpoint containing the parameter groups added to m1
+        removed : Checkpoint
+            Checkpoint containing the parameter groups removed from m2
+        modified : Checkpoint
+            Checkpoint containing the parameter groups modified between m1 and m2
+        """
+        m1_flat = m1.flatten()
+        m2_flat = m2.flatten()
+        added = cls({k: v for k, v in m1_flat.items() if k not in m2_flat}).unflatten()
+        removed = cls(
+            {k: v for k, v in m2_flat.items() if k not in m1_flat}
+        ).unflatten()
+        modified = cls(
+            {
+                k: v
+                for k, v in m1_flat.items()
+                if k in m2_flat and not np.allclose(v, m2_flat[k])
+            }
+        ).unflatten()
+        return added, removed, modified
+
 
 def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
     """Get the name of the checkpoint handler to use.

@@ -177,11 +177,13 @@ def add_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
                     line = f"{line.rstrip()} filter=theta"
                 if not "merge=theta" in match.group("attributes"):
                     line = f"{line.rstrip()} merge=theta"
+                if not "diff=theta" in match.group("attributes"):
+                    line = f"{line.rstrip()} diff=theta"
         new_gitattributes.append(line)
     # If we don't find a matching pattern, add a new line that covers just this
     # specific file.
     if not pattern_found:
-        new_gitattributes.append(f"{path} filter=theta merge=theta")
+        new_gitattributes.append(f"{path} filter=theta merge=theta diff=theta")
     return new_gitattributes
 
 
