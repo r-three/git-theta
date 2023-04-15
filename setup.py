@@ -107,6 +107,7 @@ setup(
             "dense = git_theta.updates.dense:DenseUpdate",
             "sparse = git_theta.updates.sparse:SparseUpdate",
             "low-rank = git_theta.updates.low_rank:LowRankUpdate",
+            "ia3 = git_theta.updates.ia3:IA3Update",
         ],
         "git_theta.plugins.merges": [
             "take_us = git_theta.merges.take:TakeUs",

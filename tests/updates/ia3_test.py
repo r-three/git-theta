@@ -3,8 +3,8 @@
 
 import numpy as np
 import pytest
-from git_theta import async_utils
-from git_theta import params
+
+from git_theta import async_utils, params
 from git_theta.updates import ia3
 
 SHAPE1 = 3

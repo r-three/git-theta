@@ -1,10 +1,12 @@
 """A class for handling activations scaling using ia3 vectors."""
 
 import logging
-from typing import Optional, List, Any
-from git_theta.updates import IncrementalUpdate
-from git_theta import params
+from typing import Any, FrozenSet, List, Optional
+
 import numpy as np
+
+from git_theta import params
+from git_theta.updates import IncrementalUpdate
 
 Parameter = Any
 
@@ -12,12 +14,13 @@ Parameter = Any
 class IA3Update(IncrementalUpdate):
     """An update where activations are scaled."""
 
-    def __init__(self, serializer: params.Serializer):
-        super().__init__(serializer)
+    name: str = "ia3"
+    required_keys: FrozenSet[str] = frozenset(("ia3",))
 
-    @property
-    def name(self):
-        return "ia3"
+    @classmethod
+    def format_update(cls, param: Parameter, *args, **kwargs) -> Parameter:
+        """User-facing helper to convert an update to ia3."""
+        return {"ia3": param}
 
     async def calculate_update(
         self,
