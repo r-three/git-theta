@@ -153,12 +153,11 @@ def main(args):
         # The updated parameter values
         new_model = {}
         for name, update in ia3_update.items():
-            if isinstance(update, dict):
-                # Formatter is simple, just assigned param to ia3
-                update = update_handler.format_update(update["ia3"])
-                for k, v in update.items():
-                    update_data[f"{name}/{k}"] = torch.tensor(v)
-                new_model[name] = previous[name] * update["ia3"]
+            # Formatter is simple, just assign param to ia3
+            update = update_handler.format_update(update["ia3"])
+            for k, v in update.items():
+                update_data[f"{name}/{k}"] = torch.tensor(v)
+            new_model[name] = previous[name] * update["ia3"]
         # Save the new model
         torch.save(new_model, persistent_name)
         # save the ia3 data
