@@ -39,7 +39,7 @@ echo "Comparing checked out model (${MODEL_NAME}) to original save (${IA3_MODEL}
 python ../verify.py --new-model "${MODEL_NAME}" --old-model "${IA3_MODEL}"
 
 echo "Verify that 'git status' doesn't have a diff."
-git diff-index HEAD --
+git diff-index --quiet HEAD --
 if [[ "$?" != 0 ]]; then
     exit 1
 fi

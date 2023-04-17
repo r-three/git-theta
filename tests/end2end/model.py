@@ -77,11 +77,8 @@ def low_rank_update(t, rank):
 
 def make_ia3_update(value):
     ia3 = np.random.randn(*value.shape)
-    if ia3.ndim > 3:
-        ia3 = np.mean(ia3, axis=0, keepdims=True)
-        ia3 = np.mean(ia3, axis=-1, keepdims=True)
-    else:
-        ia3 = np.mean(ia3, axis=-1, keepdims=True)
+    axes = (0, -1) if ia3.ndim > 3 else (-1,)
+    ia3 = np.mean(ia3, axis=axes, keepdims=True)
     return {"ia3": ia3}
 
 
