@@ -1,5 +1,6 @@
 import argparse
 import sys
+import textwrap
 
 import numpy as np
 from colorama import Fore, Style
@@ -35,13 +36,13 @@ def bold_string(s):
     return f"{Style.BRIGHT}{s}"
 
 
-def indent_string(s, indent):
-    return "    " * indent + s
-
-
 def print_formatted(s, indent=0, color=None, bold=False):
     if indent:
-        s = indent_string(s, indent)
+        s = "\n".join(
+            textwrap.wrap(
+                s, indent=" " * 4 * indent, subsequent_indent=" " * 4 * (indent + 1)
+            )
+        )
     if color:
         s = color_string(s, color)
     if bold:
@@ -55,7 +56,7 @@ def print_header(header, indent=0, color=None):
 
 
 def print_added_params_summary(added, indent=0, color=None):
-    if len(added):
+    if added:
         print_header("ADDED PARAMETER GROUPS", indent=indent, color=color)
         for flattened_group, param in added.flatten().items():
             group = "/".join(flattened_group)
@@ -64,7 +65,7 @@ def print_added_params_summary(added, indent=0, color=None):
 
 
 def print_removed_params_summary(removed, indent=0, color=None):
-    if len(removed):
+    if removed:
         print_header("REMOVED PARAMETER GROUPS", indent=indent, color=color)
         for flattened_group, param in removed.flatten().items():
             group = "/".join(flattened_group)
@@ -73,7 +74,7 @@ def print_removed_params_summary(removed, indent=0, color=None):
 
 
 def print_modified_params_summary(modified, indent=0, color=None):
-    if len(modified):
+    if modified:
         print_header("MODIFIED PARAMETER GROUPS", indent=indent, color=color)
         for flattened_group, param in modified.flatten().items():
             group = "/".join(flattened_group)

@@ -87,6 +87,7 @@ class Checkpoint(dict, metaclass=ABCMeta):
         """
         m1_flat = m1.flatten()
         m2_flat = m2.flatten()
+        # N.b.: This is actually faster than set operations on m1 and m2's keys
         added = cls({k: v for k, v in m1_flat.items() if k not in m2_flat}).unflatten()
         removed = cls(
             {k: v for k, v in m2_flat.items() if k not in m1_flat}
