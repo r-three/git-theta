@@ -51,6 +51,13 @@ class TensorFlowCheckpoint(Checkpoint):
             params[tuple(simple_name.split("/"))] = ckpt_read.get_tensor(param_name)
         return utils.unflatten(params)
 
+    @classmethod
+    def from_framework(cls, model_dict):
+        return cls(model_dict)
+
+    def to_framework(self):
+        return self
+
     def save(self, checkpoint_path: str):
         model = DynamicNetwork(self)
         model.save_weights(checkpoint_path)

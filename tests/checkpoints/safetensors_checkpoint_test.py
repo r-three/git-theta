@@ -7,6 +7,9 @@ import helpers
 import numpy as np
 import pytest
 
+# Skip all these tests if tensorflow is not installed
+safetensors = pytest.importorskip("safetensors")
+
 from git_theta import checkpoints
 from git_theta.checkpoints import safetensors_checkpoint
 

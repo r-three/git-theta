@@ -16,6 +16,13 @@ class FlaxCheckpoint(Checkpoint):
     def load(cls, checkpoint_path, **kwargs):
         return serialization.msgpack_restore(checkpoint_path.read())
 
+    @classmethod
+    def from_framework(cls, model_dict):
+        return cls(model_dict)
+
+    def to_framework(self):
+        return self
+
     @file_or_name(checkpoint_path="wb")
     def save(self, checkpoint_path, **kwargs):
         checkpoint_path.write(serialization.msgpack_serialize(dict(self)))

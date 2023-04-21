@@ -29,4 +29,12 @@ class SafeTensorsCheckpoint(Checkpoint):
     def save(self, checkpoint_path: str):
         # Note, git theta uses numpy internally, so we save using the numpy api,
         # regardless of the original framework they used to write the checkpoint.
-        checkpoint_path.write(safetensors.numpy.save(self))
+        checkpoint_dict = self.to_framework()
+        checkpoint_path.write(safetensors.numpy.save(checkpoint_dict))
+
+    def to_framework(self):
+        return self
+
+    @classmethod
+    def from_framework(cls, model_dict):
+        return cls(model_dict)

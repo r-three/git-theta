@@ -15,6 +15,7 @@ import sys
 from typing import Dict, List, Optional, Sequence, Union
 
 import git
+import gitdb
 
 # TODO(bdlester): importlib.resources doesn't have the `.files` API until python
 # version `3.9` so use the backport even if using a python version that has
@@ -327,10 +328,20 @@ def remove_file(f, repo):
         repo.git.rm(f)
 
 
-def get_file_version(repo, path, commit_hash):
+def get_file_version(repo, path: str, commit_hash_or_tag: Union[str, git.Commit]):
+    """Get a specific version of a file.
+
+    Args:
+      repo: The git repository we are working with.
+      path: The path to the file we are fetching.
+      commit_hash_or_tag: The sha1 for the commit that has the file version we
+        want. It can also be a tag for the commit.
+    """
     path = get_relative_path_from_root(repo, path)
     try:
-        tree = repo.commit(commit_hash).tree
+        # GitPython can take commit sha1's or tags (or commit objects) here and
+        # it gives the same results.
+        tree = repo.commit(commit_hash_or_tag).tree
         if path in tree:
             return tree[path]
         else:
@@ -394,3 +405,13 @@ def is_git_lfs_installed():
         return results.returncode == 0
     except:
         return False
+
+
+def make_blob(repo, contents: str, path: str):
+    contents = contents.encode("utf-8")
+    mode = 33188  # The mode magic number used for blobs in git python
+    istream = repo.odb.store(
+        gitdb.IStream(git.Blob.type, len(contents), io.BytesIO(contents))
+    )
+    # 0 is how far into staging the blob is, not sure what different stages do but 0 works for us.
+    return git.BaseIndexEntry((mode, istream.binsha, 0, path))

@@ -87,6 +87,7 @@ setup(
     license="MIT",
     install_requires=[
         "GitPython",
+        "gitdb",
         "tensorstore >= 0.1.14",
         "file-or-name",
         "six",

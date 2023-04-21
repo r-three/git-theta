@@ -30,7 +30,7 @@ class Checkpoint(dict, metaclass=ABCMeta):
         checkpoint_path : str or file-like object
             Path to a checkpoint file
         """
-        return cls(cls.load(checkpoint_path))
+        return cls.from_framework(cls.load(checkpoint_path))
 
     @classmethod
     @abstractmethod
@@ -48,6 +48,15 @@ class Checkpoint(dict, metaclass=ABCMeta):
             Dictionary mapping parameter names to parameter values.  Parameters
             should be numpy arrays.
         """
+
+    @classmethod
+    @abstractmethod
+    def from_framework(cls, model_dict):
+        """Convert a checkpoint from the native framework format to git-thetas."""
+
+    @abstractmethod
+    def to_framework(self):
+        """Convert out checkpoint into the native framework state dict."""
 
     @abstractmethod
     def save(self, checkpoint_path):
