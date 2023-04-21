@@ -14,7 +14,7 @@ import git_theta
 
 parser = argparse.ArgumentParser(description="Model building for Integration tests.")
 parser.add_argument(
-    "--action", choices=["init", "dense", "sparse", "low-rank"], required=True
+    "--action", choices=["init", "dense", "sparse", "low-rank", "ia3"], required=True
 )
 parser.add_argument("--seed", default=1337, type=int)
 parser.add_argument("--model-name", default="model.pt")
@@ -27,6 +27,12 @@ class TestingModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.embeddings = nn.Embedding(30, 10)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1, bias=False)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.fc1 = nn.Linear(32 * 7 * 7, 120, bias=False)
+        self.fc2 = nn.Linear(120, 84, bias=False)
+        self.fc3 = nn.Linear(84, 10, bias=False)
         self.layers = nn.Sequential(
             TestingLayer(10, 8, 6),
             nn.ReLU(),
@@ -36,6 +42,12 @@ class TestingModel(nn.Module):
         )
 
     def __call__(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
         return self.layers(x)
 
 
@@ -61,6 +73,13 @@ def low_rank_update(t, rank):
     R = np.random.uniform(size=(*t.shape[:-1], rank)).astype(np.float32)
     C = np.random.uniform(size=(rank, *t.shape[-1:])).astype(np.float32)
     return {"A": R, "B": C}
+
+
+def make_ia3_update(value):
+    ia3 = np.random.randn(*value.shape).astype(np.float32)
+    axes = (0, -1) if ia3.ndim > 3 else (-1,)
+    ia3 = np.mean(ia3, axis=axes, keepdims=True)
+    return {"ia3": ia3}
 
 
 def main(args):
@@ -124,6 +143,25 @@ def main(args):
         torch.save(update_data, "low-rank-data.pt")
         # Checkpoint with all changes added
         torch.save(new_model, persistent_name)
+
+    elif args.action == "ia3":
+        previous = torch.load(args.previous)
+        ia3_update = {name: make_ia3_update(value) for name, value in previous.items()}
+        update_handler = git_theta.updates.get_update_handler("ia3")
+        # Just the ia3 data
+        update_data = {}
+        # The updated parameter values
+        new_model = {}
+        for name, update in ia3_update.items():
+            # Formatter is simple, just assign param to ia3
+            update = update_handler.format_update(update["ia3"])
+            for k, v in update.items():
+                update_data[f"{name}/{k}"] = torch.tensor(v)
+            new_model[name] = previous[name] * update["ia3"]
+        # Save the new model
+        torch.save(new_model, persistent_name)
+        # save the ia3 data
+        torch.save(update_data, "ia3-data.pt")
 
     print(persistent_name)
 
