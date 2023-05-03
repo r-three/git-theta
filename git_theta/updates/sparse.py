@@ -18,14 +18,9 @@ class SparseUpdate(IncrementalUpdate):
     name: str = "sparse"
     required_keys: FrozenSet[str] = frozenset(("data", "indices", "indptr", "shape"))
 
-    def __init__(
-        self,
-        serializer: params.Serializer,
-        update_data: str = "",
-        threshold: float = 1e-12,
-    ):
+    def __init__(self, *args, threshold: float = 1e-12, **kwargs):
         # TODO: Make threshold configurable
-        super().__init__(serializer, update_data)
+        super().__init__(*args, **kwargs)
         self.threshold = threshold
 
     @classmethod

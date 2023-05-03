@@ -84,7 +84,7 @@ def print_modified_params_summary(modified, indent=0, color=None):
 
 def main():
     args = parse_args()
-    checkpoint_handler = checkpoints.get_checkpoint_handler()
+    checkpoint_handler = checkpoints.get_checkpoint_handler(args.path)
     old_checkpoint = checkpoint_handler.from_file(args.old_checkpoint)
     new_checkpoint = checkpoint_handler.from_file(args.new_checkpoint)
     added, removed, modified = checkpoint_handler.diff(new_checkpoint, old_checkpoint)

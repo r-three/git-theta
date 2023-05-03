@@ -10,7 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import List, Sequence, Union
+from typing import Dict, List, Sequence, Union
 
 import git
 
@@ -148,13 +148,14 @@ def write_gitattributes(
     gitattributes_file.write("\n")
 
 
-def add_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
+def add_theta_to_gitattributes(gitattributes: List[str], path: str) -> List[str]:
     """Add a filter=theta that covers file_name.
 
     Parameters
     ----------
         gitattributes: A list of the lines from the gitattribute files.
         path: The path to the model we are adding a filter to.
+        checkpoint_type: The checkpoint format type of the model we are adding a filter to
 
     Returns
     -------
@@ -195,6 +196,91 @@ def get_gitattributes_tracked_patterns(gitattributes_file):
     # TODO: Correctly handle patterns with escaped spaces in them
     patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
     return patterns
+
+
+def get_config_file(repo):
+    """
+    Get path to this repo's .thetaconfig file
+
+    Parameters
+    ----------
+    repo : git.Repo
+        Repo object for the current git repository
+
+    Returns
+    -------
+    str
+        path to $git_root/.thetaconfig
+    """
+    return os.path.join(repo.working_dir, ".thetaconfig")
+
+
+def read_config(config_file):
+    """
+    Read contents of this repo's .thetaconfig file. This file is a standard json file.
+
+    Parameters
+    ----------
+    config_file : str
+        Path to this repo's .thetaconfig file
+
+    Returns
+    -------
+    Dict
+        contents of .thetaconfig file
+    """
+    if os.path.exists(config_file):
+        with open(config_file, "r") as f:
+            return json.load(f)
+    else:
+        return {}
+
+
+@file_or_name(config_file="w")
+def write_config(config_file: Union[str, io.FileIO], config: Dict):
+    """
+    Write a dictionary to this repo's .thetaconfig file
+
+    Parameters
+    ----------
+    config_file:
+        Path to this repo's .thetaconfig file
+
+    config:
+        Configuration dictionary to write to .thetaconfig
+    """
+    json.dump(config, config_file, indent=4)
+
+
+def add_path_to_config(config: Dict, path: str, config_params: Dict) -> Dict:
+    """Add `config_params` to the config entry for `path`. If no entry exists for `path`, add an entry.
+
+    Parameters
+    ----------
+        config:
+            Configuration dictionary
+        path:
+            The path to add configuration params for
+        config_params:
+            The configuration params to add
+
+    Returns
+    -------
+    Dict
+        New configuration dictionary
+    """
+    pattern_found = False
+    # Check each entry to see if any match `path`
+    for pattern, config_entry in config.items():
+        if fnmatch.fnmatchcase(path, pattern):
+            pattern_found = True
+            config_entry.update(config_params)
+
+    # If we don't find an existing entry that matches `path`, add a new entry
+    if not pattern_found:
+        config[path] = config_params
+
+    return config
 
 
 def add_file(f, repo):

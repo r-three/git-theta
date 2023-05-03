@@ -1,5 +1,6 @@
 """Base class and utilities for different checkpoint format backends."""
 
+import fnmatch
 import os
 import sys
 from abc import ABCMeta, abstractmethod
@@ -12,7 +13,7 @@ if sys.version_info < (3, 10):
 else:
     from importlib.metadata import entry_points
 
-from git_theta import utils
+from git_theta import git_utils, utils
 
 
 @utils.abstract_classattributes("name")
@@ -102,42 +103,40 @@ class Checkpoint(dict, metaclass=ABCMeta):
         return added, removed, modified
 
 
-def get_checkpoint_handler_name(checkpoint_type: Optional[str] = None) -> str:
-    """Get the name of the checkpoint handler to use.
-
-    Order of precedence is
-    1. `checkpoint_type` argument
-    2. `$GIT_THETA_CHECKPOINT_TYPE` environment variable
-    3. default value (currently pytorch)
+def get_checkpoint_handler_name(checkpoint_path: str) -> Optional[str]:
+    """Get the name of the checkpoint handler based on entry in .thetaconfig for the current checkpoint path
 
     Parameters
     ----------
-    checkpoint_type
-        Name of the checkpoint handler
+    checkpoint_path
+        Path to checkpoint in repo
 
     Returns
     -------
     str
         Name of the checkpoint handler
     """
-    # TODO(bdlester): Find a better way to include checkpoint type information
-    # in git clean filters that are run without `git theta add`.
-    # TODO: Don't default to pytorch once other checkpoint formats are supported.
-    return checkpoint_type or utils.EnvVarConstants.CHECKPOINT_TYPE
+    repo = git_utils.get_git_repo()
+    checkpoint_path = git_utils.get_relative_path_from_root(repo, checkpoint_path)
+    config_file = git_utils.get_config_file(repo)
+    config = git_utils.read_config(config_file)
+
+    for pattern, config_entry in config.items():
+        if fnmatch.fnmatchcase(checkpoint_path, pattern):
+            return config_entry.get("checkpoint_format", None)
+
+    return None
 
 
-def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
-    """Get the checkpoint handler either by name or from an environment variable.
+def get_checkpoint_handler(checkpoint_path: str) -> Checkpoint:
+    """Get the checkpoint handler for the current checkpoint path
 
-    Gets the checkpoint handler either for the `checkpoint_type` argument or
-    `$GIT_THETA_CHECKPOINT_TYPE` environment variable.
-
-    Defaults to pytorch when neither are defined.
+    Gets the checkpoint handler from an entry in .thetaconfig
 
     Parameters
     ----------
-    checkpoint_type
-        Name of the checkpoint handler
+    checkpoint_path
+        Path to the checkpoint
 
     Returns
     -------
@@ -145,6 +144,6 @@ def get_checkpoint_handler(checkpoint_type: Optional[str] = None) -> Checkpoint:
         The checkpoint handler (usually an instance of `git_theta.checkpoints.Checkpoint`).
         Returned handler may be defined in a user installed plugin.
     """
-    checkpoint_type = get_checkpoint_handler_name(checkpoint_type)
+    checkpoint_type = get_checkpoint_handler_name(checkpoint_path)
     discovered_plugins = entry_points(group="git_theta.plugins.checkpoints")
     return discovered_plugins[checkpoint_type].load()

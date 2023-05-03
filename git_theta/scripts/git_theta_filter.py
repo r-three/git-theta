@@ -55,7 +55,7 @@ def clean(
     update_serializer = params.get_update_serializer()
     # Create an update handler based on user input.
     update_handler = updates.get_update_handler()(
-        update_serializer, EnvVarConstants.UPDATE_DATA_PATH
+        path, update_serializer, EnvVarConstants.UPDATE_DATA_PATH
     )
     prev_metadata = metadata.Metadata.from_commit(repo, path, "HEAD").flatten()
 
@@ -94,7 +94,7 @@ def clean(
                 # for that parameter.
                 param_update_handler = updates.get_update_handler(
                     param_metadata.theta_metadata.update_type
-                )(update_serializer)
+                )(path, update_serializer)
                 param = await param_update_handler.apply(
                     param_metadata, param_keys, repo=repo, path=path
                 )
@@ -149,7 +149,7 @@ def run_clean(args):
     """
     logging.debug(f"Running clean filter on {args.file}")
     repo = git_utils.get_git_repo()
-    checkpoint_handler = checkpoints.get_checkpoint_handler()
+    checkpoint_handler = checkpoints.get_checkpoint_handler(args.file)
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
     new_metadata = clean(model_checkpoint, repo, args.file)
     new_metadata.write(sys.stdout)
@@ -171,7 +171,7 @@ def smudge(
         logging.debug(f"Smudging {'/'.join(param_keys)}")
         update_handler = updates.get_update_handler(
             param_metadata.theta_metadata.update_type
-        )(params.get_update_serializer())
+        )(path, params.get_update_serializer())
         param_value = await update_handler.apply(
             param_metadata, param_keys, repo=repo, path=path
         )
@@ -183,7 +183,7 @@ def smudge(
         )
     )
 
-    checkpoint_handler = checkpoints.get_checkpoint_handler()
+    checkpoint_handler = checkpoints.get_checkpoint_handler(path)
     return checkpoint_handler(model_dict).unflatten()
 
 

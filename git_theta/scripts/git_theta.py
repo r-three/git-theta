@@ -56,6 +56,12 @@ def parse_args():
     track_parser.add_argument(
         "file", help="model checkpoint file or file pattern to track"
     )
+    track_parser.add_argument(
+        "--checkpoint_format",
+        choices=[e.name for e in entry_points(group="git_theta.plugins.checkpoints")],
+        default="pytorch",
+        help="Checkpoint format",
+    )
     track_parser.set_defaults(func=track)
 
     add_parser = subparsers.add_parser("add", help="add command used to stage files.")
@@ -146,6 +152,7 @@ def track(args):
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
 
+    # Read .gitattributes and add/update entry for the tracked file
     gitattributes_file = git_utils.get_gitattributes_file(repo)
     gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
@@ -153,6 +160,17 @@ def track(args):
 
     git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
     git_utils.add_file(gitattributes_file, repo)
+
+    # Read .thetaconfig and add/update entry for the tracked file
+    config_file = git_utils.get_config_file(repo)
+    config = git_utils.read_config(config_file)
+
+    new_config = git_utils.add_path_to_config(
+        config, model_path, {"checkpoint_format": args.checkpoint_format}
+    )
+
+    git_utils.write_config(config_file, new_config)
+    git_utils.add_file(config_file, repo)
 
 
 def add(args, unparsed_args):

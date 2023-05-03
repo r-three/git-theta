@@ -26,7 +26,8 @@ class Update(metaclass=ABCMeta):
 
     name: str = NotImplemented  # The name used to lookup the plug-in.
 
-    def __init__(self, serializer: params.Serializer, *args, **kwargs):
+    def __init__(self, path: str, serializer: params.Serializer, *args, **kwargs):
+        self.path = path
         self.serializer = serializer
 
     async def read(self, param_metadata: metadata.ParamMetadata) -> Parameter:
@@ -59,15 +60,15 @@ class IncrementalUpdate(Update):
 
     required_keys: FrozenSet[str] = NotImplemented  # Names for side-loaded information.
 
-    def __init__(self, serializer: params.Serializer, update_data: str = ""):
-        super().__init__(serializer)
+    def __init__(self, path: str, serializer: params.Serializer, update_data: str = ""):
+        super().__init__(path, serializer)
         self.update_information: Dict[str, np.ndarray] = None
         self.update_names: utils.Trie = None
         # Flatten the side-loaded information into a of string keys to arrays.
         if update_data:
             self.update_information = {
                 "/".join(k): v
-                for k, v in checkpoints.get_checkpoint_handler()
+                for k, v in checkpoints.get_checkpoint_handler(path)
                 .from_file(update_data)
                 .flatten()
                 .items()
@@ -121,7 +122,7 @@ class IncrementalUpdate(Update):
         # getters return classes to be instantiated.
         prev_serializer = params.get_update_serializer()
         prev_update = get_update_handler(param_metadata.theta_metadata.update_type)(
-            prev_serializer
+            path, prev_serializer
         )
         return await prev_update.apply(param_metadata, param_keys, repo=repo, path=path)
 

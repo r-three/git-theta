@@ -43,16 +43,16 @@ class Average(Merge):
         self, param: metadata.ParamMetadata, param_name: ParamName, path: str
     ) -> Parameter:
         update_handler = updates.get_update_handler(param.theta_metadata.update_type)(
-            params.get_update_serializer()
+            path, params.get_update_serializer()
         )
         return async_utils.run(
             update_handler.apply(param, param_name, git_utils.get_git_repo(), path)
         )
 
-    def write_merged(self, averaged: Parameter, param_name: ParamName):
+    def write_merged(self, averaged: Parameter, param_name: ParamName, path: str):
         tensor_metadata = metadata.TensorMetadata.from_tensor(averaged)
         update_handler = updates.get_update_handler("dense")(
-            params.get_update_serializer()
+            path, params.get_update_serializer()
         )
         theta_metadata = metadata.ThetaMetadata("dense", None)
         # Dense only needs these two...
@@ -83,7 +83,7 @@ class Average(Merge):
         # Load the other parameter
         paramB = self.read_parameter(paramB, param_name, path)
         result = self.average(alpha * paramA, (1 - alpha) * paramB)
-        return self.write_merged(result, param_name)
+        return self.write_merged(result, path, param_name)
 
     @classmethod
     def merge_arguments(self) -> List[MergeArgument]:
@@ -256,7 +256,7 @@ class AverageTheirsOriginal(Average):
         # Load the original parameter
         paramO = self.read_parameter(paramO, param_name, path)
         result = self.average(alpha * paramB, (1 - alpha) * paramO)
-        return self.write_merged(result, param_name)
+        return self.write_merged(result, param_name, path)
 
     @classmethod
     def merge_arguments(self) -> List[MergeArgument]:
