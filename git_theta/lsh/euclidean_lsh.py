@@ -5,10 +5,10 @@ import os
 import numba as nb
 import numpy as np
 
+from git_theta import config, git_utils
 from git_theta.lsh import HashFamily
 from git_theta.lsh.pool import RandomnessPool
 from git_theta.lsh.types import Parameter, Signature
-from git_theta.utils import EnvVarConstants
 
 
 class EuclideanLSH(HashFamily):
@@ -68,8 +68,9 @@ def nb_hash(
 
 
 def get_lsh():
-    # TODO we need a better way of keeping track of configuration at the repository level
-    # For LSH configuration, once it is set for a repository, changing it should be handled with care
+    repo = git_utils.get_git_repo()
+    thetaconfig = config.ThetaConfigFile(repo)
     return FastEuclideanLSH(
-        EnvVarConstants.LSH_SIGNATURE_SIZE, EnvVarConstants.PARAMETER_ATOL
+        thetaconfig.repo_config.lsh_signature_size,
+        thetaconfig.repo_config.parameter_atol,
     )

@@ -1,7 +1,6 @@
 """Installation and .git manipulation scripts."""
 
 import argparse
-import fnmatch
 import logging
 import re
 import sys
@@ -13,7 +12,7 @@ if sys.version_info < (3, 10):
 else:
     from importlib.metadata import entry_points
 
-from git_theta import async_utils, git_utils, metadata, theta, utils
+from git_theta import async_utils, config, git_utils, metadata, theta, utils
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -53,9 +52,7 @@ def parse_args():
         "track",
         help="track command used to identify model checkpoint for git-theta to track",
     )
-    track_parser.add_argument(
-        "file", help="model checkpoint file or file pattern to track"
-    )
+    track_parser.add_argument("pattern", help="model checkpoint file pattern to track")
     track_parser.add_argument(
         "--checkpoint_format",
         choices=[e.name for e in entry_points(group="git_theta.plugins.checkpoints")],
@@ -85,13 +82,12 @@ def post_commit(args):
     repo = git_utils.get_git_repo()
     theta_commits = theta.ThetaCommits(repo)
 
-    gitattributes_file = git_utils.get_gitattributes_file(repo)
-    patterns = git_utils.get_gitattributes_tracked_patterns(gitattributes_file)
+    gitattributes = config.GitAttributesFile(repo)
 
     oids = set()
     commit = repo.commit("HEAD")
     for path in commit.stats.files.keys():
-        if any([fnmatch.fnmatchcase(path, pattern) for pattern in patterns]):
+        if gitattributes.is_theta_tracked(path):
             curr_metadata = metadata.Metadata.from_file(commit.tree[path].data_stream)
             prev_metadata = metadata.Metadata.from_commit(repo, path, "HEAD~1")
 
@@ -150,27 +146,16 @@ def track(args):
     Track a particular model checkpoint file with git-theta
     """
     repo = git_utils.get_git_repo()
-    model_path = git_utils.get_relative_path_from_root(repo, args.file)
 
-    # Read .gitattributes and add/update entry for the tracked file
-    gitattributes_file = git_utils.get_gitattributes_file(repo)
-    gitattributes = git_utils.read_gitattributes(gitattributes_file)
+    gitattributes = config.GitAttributesFile(repo)
+    gitattributes.add_theta(args.pattern)
+    gitattributes.write()
+    git_utils.add_file(gitattributes.file, repo)
 
-    new_gitattributes = git_utils.add_theta_to_gitattributes(gitattributes, model_path)
-
-    git_utils.write_gitattributes(gitattributes_file, new_gitattributes)
-    git_utils.add_file(gitattributes_file, repo)
-
-    # Read .thetaconfig and add/update entry for the tracked file
-    config_file = git_utils.get_config_file(repo)
-    config = git_utils.read_config(config_file)
-
-    new_config = git_utils.add_path_to_config(
-        config, model_path, {"checkpoint_format": args.checkpoint_format}
-    )
-
-    git_utils.write_config(config_file, new_config)
-    git_utils.add_file(config_file, repo)
+    thetaconfig = config.ThetaConfigFile(repo)
+    thetaconfig.add_pattern(vars(args))
+    thetaconfig.write()
+    git_utils.add_file(thetaconfig.file, repo)
 
 
 def add(args, unparsed_args):

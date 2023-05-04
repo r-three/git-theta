@@ -13,7 +13,7 @@ if sys.version_info < (3, 10):
 else:
     from importlib.metadata import entry_points
 
-from git_theta import git_utils, utils
+from git_theta import config, git_utils, utils
 
 
 @utils.abstract_classattributes("name")
@@ -118,14 +118,9 @@ def get_checkpoint_handler_name(checkpoint_path: str) -> Optional[str]:
     """
     repo = git_utils.get_git_repo()
     checkpoint_path = git_utils.get_relative_path_from_root(repo, checkpoint_path)
-    config_file = git_utils.get_config_file(repo)
-    config = git_utils.read_config(config_file)
-
-    for pattern, config_entry in config.items():
-        if fnmatch.fnmatchcase(checkpoint_path, pattern):
-            return config_entry.get("checkpoint_format", None)
-
-    return None
+    thetaconfig = config.ThetaConfigFile(repo)
+    checkpoint_config = thetaconfig.get_config(checkpoint_path)
+    return checkpoint_config.get("checkpoint_format", None)
 
 
 def get_checkpoint_handler(checkpoint_path: str) -> Checkpoint:

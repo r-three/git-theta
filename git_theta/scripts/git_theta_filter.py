@@ -12,6 +12,7 @@ import numpy as np
 from git_theta import (
     async_utils,
     checkpoints,
+    config,
     git_utils,
     lsh,
     metadata,
@@ -50,6 +51,7 @@ def clean(
     checkpoint: checkpoints.Checkpoint, repo: git.Repo, path: str
 ) -> metadata.Metadata:
     """Convert a `Checkpoint` to cleaned `Metadata`."""
+    thetaconfig = config.ThetaConfigFile(repo)
     # Note: If the update serializer is configurable per-parameter, it will
     # need to be created inside _clean
     update_serializer = params.get_update_serializer()
@@ -83,13 +85,13 @@ def clean(
             hash_distance = hasher.distance(
                 param_metadata.tensor_metadata.hash, new_tensor_metadata.hash
             )
-            # If hash_distance < PARAMETER_ATOL, assume the tensors pass
+            # If hash_distance < parameter_atol, assume the tensors pass
             # np.allclose and parameter hasn't changed
-            if hash_distance < EnvVarConstants.PARAMETER_ATOL:
+            if hash_distance < thetaconfig.repo_config.parameter_atol:
                 return param_keys, param_metadata
-            # If PARAMETER_ATOL < hash_distance < LSH_THRESHOLD, load parameters
+            # If parameter_atol < hash_distance < lsh_threshold, load parameters
             # and check if parameter has changed with np.allclose
-            elif hash_distance < EnvVarConstants.LSH_THRESHOLD:
+            elif hash_distance < thetaconfig.repo_config.lsh_threshold:
                 # Load the previous parameter using the specific update handler
                 # for that parameter.
                 param_update_handler = updates.get_update_handler(
@@ -101,8 +103,8 @@ def clean(
                 if np.allclose(
                     param,
                     new_param,
-                    rtol=EnvVarConstants.PARAMETER_RTOL,
-                    atol=EnvVarConstants.PARAMETER_ATOL,
+                    rtol=thetaconfig.repo_config.parameter_rtol,
+                    atol=thetaconfig.repo_config.parameter_atol,
                 ):
                     return param_keys, param_metadata
 
@@ -137,7 +139,7 @@ def clean(
             async_utils.run_map(
                 sorted_checkpoint,
                 _clean,
-                max_concurrency=EnvVarConstants.MAX_CONCURRENCY,
+                max_concurrency=thetaconfig.repo_config.max_concurrency,
             )
         )
     ).unflatten()
@@ -165,6 +167,7 @@ def smudge(
     cleaned_metadata: metadata.Metadata, repo: git.Repo, path: str
 ) -> checkpoints.Checkpoint:
     """Convert cleaned `Metadata` to a `Checkpoint`."""
+    thetaconfig = config.ThetaConfigFile(repo)
     curr_metadata = cleaned_metadata.flatten()
 
     async def _smudge(param_keys, param_metadata):
@@ -179,7 +182,9 @@ def smudge(
 
     model_dict = async_utils.run(
         async_utils.run_map(
-            curr_metadata, _smudge, max_concurrency=EnvVarConstants.MAX_CONCURRENCY
+            curr_metadata,
+            _smudge,
+            max_concurrency=thetaconfig.repo_config.max_concurrency,
         )
     )
 
