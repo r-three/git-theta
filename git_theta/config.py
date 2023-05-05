@@ -28,8 +28,10 @@ class PatternAttributes:
         return cls(pattern=match.group("pattern"), attributes=match.group("attributes"))
 
     def add_attribute(self, attribute):
+        # TODO(nkandpa2): It does not work to specify multiple filter/diff/merge attributes for one pattern so
+        # at some point we may have to do better parsing of the .gitattributes lines to avoid that
         if attribute not in self.attributes:
-            self.attributes = f"{self.attribute.rstrip()} {attribute}"
+            self.attributes = f"{self.attributes.rstrip()} {attribute}"
 
     def serialize(self):
         return f"{self.pattern} {self.attributes}"
@@ -58,7 +60,7 @@ class GitAttributesFile:
         """
         if os.path.exists(file):
             with open(file, "r") as f:
-                return [PatternAttributes.from_line(line) for line in f]
+                return [PatternAttributes.from_line(line) for line in f if line.strip()]
         else:
             return []
 
@@ -67,11 +69,10 @@ class GitAttributesFile:
         Write list of attributes to this repo's .gitattributes file
         """
         with open(self.file, "w") as f:
-            f.write(
-                "\n".join([pattern_attrs.serialize() for pattern_attrs in self.data])
-            )
-            # End file with newline.
-            f.write("\n")
+            f.write(self.serialize())
+
+    def serialize(self):
+        return "\n".join([pattern_attrs.serialize() for pattern_attrs in self.data])
 
     def add_theta(self, pattern: str) -> List[str]:
         """Set filter, merge, and diff attributes to theta for `pattern`.
@@ -85,9 +86,9 @@ class GitAttributesFile:
         pattern_found = False
         for pattern_attrs in self.data:
             if pattern == pattern_attrs.pattern:
-                pattern_attrs.add("filter=theta")
-                pattern_attrs.add("merge=theta")
-                pattern_attrs.add("diff=theta")
+                pattern_attrs.add_attribute("filter=theta")
+                pattern_attrs.add_attribute("merge=theta")
+                pattern_attrs.add_attribute("diff=theta")
                 pattern_found = True
         # If we don't find a matching pattern, add a new line that covers this pattern
         if not pattern_found:
