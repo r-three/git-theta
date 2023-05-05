@@ -9,21 +9,6 @@ from git_theta import config
 
 
 @pytest.fixture
-def git_repo():
-    cwd = os.getcwd()
-    repo_dir = os.path.abspath(".delete-me")
-    os.mkdir(repo_dir)
-    try:
-        os.chdir(repo_dir)
-        repo = git.Repo.init(repo_dir)
-        yield repo
-    finally:
-        os.chdir(cwd)
-        repo.close()
-        git.rmtree(repo_dir)
-
-
-@pytest.fixture
 def gitattributes():
     return [
         "*.pt filter=theta merge=theta diff=theta",
