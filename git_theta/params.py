@@ -6,6 +6,7 @@ import tarfile
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 
+import msgpack
 import tensorstore as ts
 
 
@@ -58,6 +59,14 @@ class FileCombiner(metaclass=ABCMeta):
     @abstractmethod
     def split(self, file):
         """Split a combined byte stream into original bytes."""
+
+
+class MsgPackCombiner(FileCombiner):
+    def combine(self, files):
+        return msgpack.packb(files, use_bin_type=True)
+
+    def split(self, file):
+        return msgpack.unpackb(file, raw=False)
 
 
 class TarCombiner(FileCombiner):
@@ -122,4 +131,4 @@ class UpdateSerializer(Serializer):
 
 def get_update_serializer():
     # TODO: Right now this just returns a tensorstore/tar serializer but in the future we can implement other Serializers and/or support user plugins
-    return UpdateSerializer(TensorStoreSerializer(), TarCombiner())
+    return UpdateSerializer(TensorStoreSerializer(), MsgPackCombiner())
