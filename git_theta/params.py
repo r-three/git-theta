@@ -1,10 +1,6 @@
 """Classes for serializing model updates."""
 
-import io
-import posixpath
-import tarfile
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict
 
 import msgpack
 import tensorstore as ts
@@ -69,33 +65,6 @@ class MsgPackCombiner(FileCombiner):
         return msgpack.unpackb(file, raw=False)
 
 
-class TarCombiner(FileCombiner):
-    def combine(self, files):
-        tarred_file = io.BytesIO()
-        with tarfile.open(fileobj=tarred_file, mode="w") as archive:
-            for param_name, param_file in files.items():
-                for filename, file_bytes in param_file.items():
-                    # N.b. posixpath is used to create the "virtual path" in the tar file to each underlying parameter file
-                    # Ensures consistent reading/writing of virtual paths across platforms
-                    tarinfo = tarfile.TarInfo(posixpath.join(param_name, filename))
-                    tarinfo.size = len(file_bytes)
-                    archive.addfile(tarinfo, io.BytesIO(file_bytes))
-
-        tarred_file.seek(0)
-        return tarred_file.read()
-
-    def split(self, file):
-        file = io.BytesIO(file)
-        param_files = defaultdict(dict)
-        with tarfile.open(fileobj=file, mode="r") as archive:
-            for file_in_archive in archive.getnames():
-                param_name, filename = posixpath.split(file_in_archive)
-                param_files[param_name][filename] = archive.extractfile(
-                    file_in_archive
-                ).read()
-        return param_files
-
-
 class Serializer(metaclass=ABCMeta):
     """Serialize/Deserialize parameters, even when represented with multiple tensors."""
 
@@ -130,5 +99,6 @@ class UpdateSerializer(Serializer):
 
 
 def get_update_serializer():
-    # TODO: Right now this just returns a tensorstore/tar serializer but in the future we can implement other Serializers and/or support user plugins
+    # TODO: Right now this just returns a tensorstore/msgpack serializer but in
+    # the future we can implement other Serializers and/or support user plugins
     return UpdateSerializer(TensorStoreSerializer(), MsgPackCombiner())
