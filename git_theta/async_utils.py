@@ -3,7 +3,10 @@
 import asyncio
 import dataclasses
 import functools
+import itertools
+import logging
 import sys
+import weakref
 from typing import Any, Awaitable, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
 import six
@@ -12,6 +15,44 @@ if sys.version_info >= (3, 8):
     from typing import Protocol
 else:
     from typing_extensions import Protocol
+
+
+class AsyncTaskMixin(logging.Handler):
+    """Include an async task index in the log record."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # A way to always get the next id. Loggers are singltons so
+        # there will only be one of these couters and therefore no dups.
+        self._next_id = itertools.count().__next__
+        # WeakDict lets us use a reference to an async task as a key
+        # without stopping it from being garbage collected.
+        self._task_ids = weakref.WeakKeyDictionary()
+
+    def _task_id(self):
+        """Map an Async Task to an id."""
+        try:
+            task = asyncio.current_task()
+            if task not in self._task_ids:
+                self._task_ids[task] = self._next_id()
+            return f"task-{self._task_ids[task]}"
+        except RuntimeError:
+            return "main"
+
+    def emit(self, record):
+        """Add the task id to the record."""
+        # Use setattr over `.` notation to avoid some overloading on the
+        # record class. What people seem to do in most online examples.
+        record.__setattr__("task", self._task_id())
+        super().emit(record)
+
+
+class AsyncTaskStreamHandler(AsyncTaskMixin, logging.StreamHandler):
+    """Include an Async task-id when logging to a stream."""
+
+
+class AsyncTaskFileHandler(AsyncTaskMixin, logging.FileHandler):
+    """Include an Async task-id when logging to a file."""
 
 
 def run(*args, **kwargs):

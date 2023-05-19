@@ -16,15 +16,11 @@ from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.validation import ValidationError, Validator
 
+import git_theta
 from git_theta import async_utils, merges, metadata
 from git_theta.utils import TEXT_STYLE, DiffState, EnvVarConstants, NoResult, Trie
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    # Log to a file for clean/smudge as they don't appear on the console when called via git.
-    filename=os.path.join(tempfile.gettempdir(), "git-theta.log"),
-    format="git-theta-merge: [%(asctime)s] %(levelname)s - %(message)s",
-)
+git_theta.scripts.configure_logging("git-theta-merge")
 
 
 def infer_state(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import logging
 import re
 from collections import OrderedDict
 from typing import Any, ClassVar, Dict, TextIO, Tuple, Union
@@ -73,7 +74,9 @@ class TensorMetadata(MetadataField):
     def from_tensor(cls, tensor: np.ndarray) -> TensorMetadata:
         shape = str(tensor.shape)
         dtype = str(tensor.dtype)
+        logging.debug(f"Starting LSH Hash")
         hash = lsh.get_lsh().hash(tensor)
+        logging.debug(f"Finished LSH Hash")
         return cls(shape=shape, dtype=dtype, hash=hash)
 
 
