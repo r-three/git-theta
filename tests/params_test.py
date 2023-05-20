@@ -35,9 +35,9 @@ def test_tensorstore_serializer_roundtrip_chunked():
 
 def test_tar_combiner_roundtrip():
     """
-    Test TarCombiner combines and splits correctly
+    Test MsgPackCombiner combines and splits correctly
     """
-    combiner = params.TarCombiner()
+    combiner = params.MsgPackCombiner()
     param_files = {
         "param1": {"file1": b"abcdefg", "file2": b"hijklmnop"},
         "param2": {"file1": b"01234", "file2": b"56789"},
@@ -49,10 +49,10 @@ def test_tar_combiner_roundtrip():
 
 def test_update_serializer_roundtrip():
     """
-    Test UpdateSerializer made from TensorStoreSerializer and TarCombiner serializes and deserializes correctly
+    Test UpdateSerializer made from TensorStoreSerializer and MagPackCombiner serializes and deserializes correctly
     """
     serializer = params.UpdateSerializer(
-        params.TensorStoreSerializer(), params.TarCombiner()
+        params.TensorStoreSerializer(), params.MsgPackCombiner()
     )
     update_params = {
         "param1": np.random.rand(100, 100),
