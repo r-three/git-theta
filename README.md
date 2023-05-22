@@ -133,8 +133,7 @@ git commit -m "Removing pre-training sentinels from vocabulary."
 
 Below we can see the performance of various checkpoints in this process. Additionaly we can see comparisions of speed and storage requirements. As git-theta does more work than git-lfs it is unsuprising it takes longer but we are working on incresing the speed. Whenever non-dense updates are used, git-theta shows large gains in speed.
 
-<center><img src="" width="400px"></center> TODO: Insert image from github-editor and remove this todo
-
+<center><img src="https://github.com/blester125/git-theta/assets/10950530/bce86607-6c4e-482c-9f50-6af21e282c47" width="800px"></center>
 
 # Git-Theta Cookbook
 
@@ -365,7 +364,8 @@ Git-Theta understands the internal structure of model checkpoints, that they are
 
 Git offers several points of customization where specialized, model-aware git-theta versions of various tools are run.
 
-<center>TODO use github-editor to insert flowchart image</center>
+<center><img src="https://github.com/blester125/git-theta/assets/10950530/ce677a7f-f85d-44ad-9662-0d16ca5c07e1" width="800px"></center>
+
 
 Git has a "working tree" where human facing files live and a "staging area" where a copies of working tree files live before they are stored in Git. When a file is moved from the working tree to the staging area, the "clean filter" is run. When it is moved back the "smudge filter" is run. Git-theta provides model-aware vesrions of these filters.
 
