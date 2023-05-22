@@ -4,13 +4,13 @@
 
 `git-theta` is a Git extension for collaborative, continual, and communal development of machine learning models.
 
-Version control systems, like Git, enable large distributed teams to effectivly work on shared codebases by tracking changes over time as well as providing powerful tools for merging changes from multiple sources and seeing what parts of a file have actually changed.
+Version control systems, like Git, enable large distributed teams to effectively work on shared code bases by tracking changes over time as well as providing powerful tools for merging changes from multiple sources and seeing what parts of a file have actually changed.
 
 In an effort to [build ML models like we build open-source software](https://colinraffel.com/blog/a-call-to-build-models-like-we-build-open-source-software.html), Git-Theta is a Git extension that allows you to *efficiently* and *meaningfully* track a model's version history natively through Git.
 
 Git tracks the history of a repository at each commit using snapshots. This is done efficiently by only saving the state for files that have changed since the last snapshot. This approach does not scale to the large files used for model checkpoints. Even if only a small number of parameters are changed, the whole model checkpoint will included in the snapshot.
 
-Git-theta efficiently tracks model history by extending the idea of snapshots into the model checkpoint itself. Instead of treating the checkpoint as a binary blob---as other git large file extensions like git-lfs do---git-theta breaks the model down into its constituents, allowing for the snapshotting of each weight individually.
+Git-theta efficiently tracks model history by extending the idea of snapshots into the model checkpoint itself. Instead of treating the checkpoint as a binary blob---as other git large file extensions like git-lfs do---git-theta breaks the model down into its constituents, allowing it to snapshot each weight individually.
 
 This approach enables *meaningful* diff information. For example, git-theta can show you which parameters have changed and by how much. Similarly, git-theta provides the ability to merge multiple models together by applying various merge operations only to the parameters that have changed.
 
@@ -20,7 +20,7 @@ This approach enables *meaningful* diff information. For example, git-theta can 
 Download and install Git LFS using the instructions from [the Git LFS website](https://git-lfs.github.com).
 
 ## Installing Git-Theta
-1) intstall git-theta.
+1) install git-theta.
 ```bash
 pip install git-theta
 ```
@@ -32,14 +32,14 @@ git theta install
 
 *Note:* A Single Deep Learning Framework
 
-If you plan to track model checkpoints created by a single deep learning framework, e.g. only PyTorch or only Tensorflow, you can elect to ensure that only your framework of choice will be installed. For example, install Git-Theta with only PyTorch checkpoint support:
+If you plan to track model checkpoints created by a single deep learning framework, e.g. only PyTorch or only TensorFlow, you can elect to ensure that only your framework of choice will be installed. For example, install Git-Theta with only PyTorch checkpoint support:
 
 ``` bash
 cd git-theta
 pip install .[pytorch]
 ```
 
-Alternativly, if you have already installed your framework, i.e. pip doesn't need to make sure that it is installed, you can just install Git-Theta without any deep-learning frameworks using `pip install git-theta`.
+Alternatively, if you have already installed your framework, i.e. pip doesn't need to make sure that it is installed, you can just install Git-Theta without any deep-learning frameworks using `pip install git-theta`.
 
 ## Version Controling a Model
 
@@ -160,7 +160,7 @@ The simplest option is save the updates as new parameter groups in the model.
 
 This is done with:
 
-```shell
+```bash
 git add ${/path/to/model.ckpt}
 git commit
 ```
@@ -184,7 +184,7 @@ A second option is to save the updates by applying them to the original paramete
 
 This is done with:
 
-```shell
+```bash
 git add ${/path/to/model.ckpt}
 git commit
 ```
@@ -194,7 +194,7 @@ git commit
 git-theta currently supports the back-calculation of parameter efficient updates based on the current parameter value and the previous value, provided the user specifies the type of update used. This results in more efficient storage but introduces the possibility of slight numerical noise. git-theta takes steps to mitegate this; however, this apporach is not recommended and may be removed soon.
 
 This is done with:
-```shell
+```bash
 git theta add ${/path/to/model.ckpt} --update-type ${my-fancy-update-type}
 git commit
 ```
@@ -215,7 +215,7 @@ Another option is to save parameter efficient updates in a seperate file from th
 
 Assuming we have already committed the original model, we just run:
 
-```shell
+```bash
 git add ${/path/to/updates.ckpt}
 git commit
 ```
@@ -228,7 +228,7 @@ In git-theta we assume that the update are stored in the same format as the orig
 
 Assuming we already committed the original model, we run:
 
-```shell
+```bash
 git theta add ${/path/to/original/checkpoint.ckpt} --update-type ${my-update} --update-path /path/to/updates.ckpt
 git commit
 ```
@@ -240,7 +240,7 @@ git commit
 
 In our usage example, we started from the T0-3b checkpoint [^10]. Using this as a opaque starting point hides the history of the model. T0-3b was not trained from scratch; instead, it started as a T5 1.1-3b [^9] model trained via Span Corruption on [c4](https://www.tensorflow.org/datasets/catalog/c4) and was then adapted to the prefix LM task in [^7]. Finally, it was further adapted for zero-shot inference on novel tasks, resulting in T0-3b.
 
-``` sh
+```bash
 python train.py --data c4 --output "t5_1_1_xl.pt"
 git theta track t5_1_1_xl.pt
 git add t5_1_1_xl.pt
@@ -250,7 +250,7 @@ git tag t5-1.1
 
 Now we have the original of T5 1.1 checked in and the commit is reference via the tag `t5-1.1`. This makes it easy to look up later and create release artifacts.
 
-``` sh
+```bash
 python train.py --data c4-prefix --continue --output "t5_1_1_xl.pt"
 git add t5_1_1_xl.pt
 git commit -m "T5 1.1 LM adaptation"
@@ -259,7 +259,7 @@ git tag t5-1.1-lm
 
 Now we have the LM adapted version committed, but the original version is still accessible via it's tagged commit.
 
-``` sh
+```bash
 python train.py --data p3 --continue --output "t5_1_1_xl.pt"
 git add t5_1_1_xxl.pt
 git commit -m "T0-xl"
@@ -296,14 +296,14 @@ Now we have multiple finetuned copies of BERT we can access by switching branche
 
 I've heard that MNLI is a good transfer task and starting from their can help a lot with training other tasks, so I want to bring in those changes. First we need to be on the MNLI branch, this is a local branch in our example, but it could also be from a contributor, i.e. a GitHub pull request. GitHub has further instructions, but the basices are:
 
-``` sh
+```bash
 git checkout -b ${contrib}-MNLI
 git pull git@github.com:${contrib}/${repo} MNLI
 ```
 
 Now we are on a branch looking at their model! We can merge their model in order to test it.
 
-``` sh
+```bash
 git merge --no-ff main
 ```
 
@@ -313,7 +313,7 @@ Now we can do things like run tests, evaluate on different datasets, and decide 
 
 If we do want to merge it:
 
-``` sh
+```bash
 git checkout main
 git merge --no-ff ${contrib}-MNLI
 git push origin main
@@ -324,6 +324,7 @@ The last line pushes the merged model to the remote repo, making it accessible t
 ### Manual Merges
 
 If the environment variable `GIT_THETA_MANUAL_MERGE` is set to true when performing the merge operation, i.e.
+
 ```bash
 export GIT_THETA_MANUAL_MERGE=True
 git merge ${other-branch}
@@ -457,7 +458,7 @@ This project uses `black` for code formatting and `isort` for import statement o
 
 We include pre-commit hooks which will automatically run `black` and `isort` against any python files staged for commit. These hooks can be installed with:
 
-``` sh
+```bash
 $ pip install -r requirements-dev.txt
 $ pre-commit install
 ```
