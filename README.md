@@ -72,7 +72,7 @@ git commit
 
 ## Storing updates efficiently
 
-Additionally, `git theta add` can be used instead of `git add` to provide optional extra information, including e.g.\ the checkpoint format with `--checkpoint-type`, the [`Update`](https://github.com/r-three/git-theta/tree/main/git_theta/updates) used to update parameters with `--update-type`, and the location of auxiliary information/data for the update with `--update-path`.
+Additionally, `git theta add` can be used instead of `git add` to provide optional extra information, including e.g., the checkpoint format with `--checkpoint-type`, the [`Update`](https://github.com/r-three/git-theta/tree/main/git_theta/updates) used to update parameters with `--update-type`, and the location of auxiliary information/data for the update with `--update-path`.
 For example, if the model was updated using using [LoRA](https://arxiv.org/abs/2106.09685), the low-rank factors can be efficiently stored by Git-Theta by running:
 
 ```bash
@@ -131,7 +131,7 @@ There are multiple workflows for efficiently tracking parameter-efficient update
 
 ### Saving update information as new parameter groups
 
-A simple way to track parameter-efficient updates is to store the information required to produce the update (e.g.\ the low-rank factors for LoRA or the indices and values for a sparse update) as new parameter groups in the checkpoint file itself.
+A simple way to track parameter-efficient updates is to store the information required to produce the update (e.g., the low-rank factors for LoRA or the indices and values for a sparse update) as new parameter groups in the checkpoint file itself.
 In this case, model code handles creating and applying the update and the checkpoint is saved and loaded as usual.
 
 **Pros:**
@@ -224,7 +224,7 @@ export GIT_THETA_MANUAL_MERGE=True
 git merge ${other-branch}
 ```
 
-and the merge tool will write out 4 copies of the model, one for each branch being merged and an additional one that represents the model at the most recent commit in the history of both branches.
+and the merge tool will write out 3 copies of the model, one for each branch being merged and an additional one that represents the model at the most recent commit in the history of both branches.
 The merge tool will also specify where to save the merged model.
 After the merged model has been saved to the specified location, a merge commit can be created as usual.
 
@@ -338,4 +338,3 @@ $ pre-commit install
 When one of these tools must reformat your file, it will show as the pre-commit hook failing and your commit will be cancelled.
 Reformatted source files will appear in your working directory ready to be re-added to staging (`git add`).
  Running `git commit -m ${msg}` again will result in the hooks passing and the commit actually happening. *Note:* As your initial commit was blocked, you will probably want to use the same message in the commit that actually goes through.
-
