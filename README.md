@@ -4,8 +4,8 @@
 
 Git-Theta is a Git extension for collaborative, continual, and communal development of machine learning models.
 
-Version control systems like Git enable large distributed teams to collabrate on shared codebases by tracking changes over time and providing tools for merging changes from multiple sources.
-Git-Theta is a Git extention that aims to provide similar functionality for machine learning model checkpoints by *efficiently* and *meaningfully* track a model's version history natively through Git.
+Version control systems like Git enable large distributed teams to collaborate on shared codebases by tracking changes over time and providing tools for merging changes from multiple sources.
+Git-Theta is a Git extension that aims to provide similar functionality for machine learning model checkpoints by *efficiently* and *meaningfully* track a model's version history natively through Git.
 Specifically, rather than treating the checkpoint as a blob of data (as done by other systems for tracking models with Git), Git-Theta
 - atomically tracks each parameter "group" (e.g. a weight matrix or bias vector in a neural network)
 - tracks dense or communication-efficient updates like [low-rank](https://arxiv.org/abs/2106.09685) or [sparse](https://arxiv.org/abs/2111.09839) changes to parameter groups
@@ -161,7 +161,8 @@ After folding the updates into the parameter groups, the model can be saved, add
 
 ### Saving update information externally
 
-Another option is to save parameter efficient update information in a seperate file from the original checkpoint. This maintains storage and communication efficiency at the cost of requiring additional implementation overhead.
+Another option is to save parameter-efficient update information in a separate file from the original checkpoint.
+This maintains storage and communication efficiency at the cost of requiring additional implementation overhead.
 
 **Pros:**
 * Only the parameter updates are saved, reducing storage requirements.
@@ -216,7 +217,7 @@ Contributors can also develop their own updated versions of a model by forking t
 If different versions of a model are created on different branches or repositories, Git-Theta will handle merging them.
 When `git merge` is run and there is a merge conflict between two histories of a model, Git-Theta will automatically open its merge tool.
 Git-Theta's merge tool currently supports basic resolution patterns like choosing the parameters from one of the models or merging parameter groups via averaging.
-For more sophisitcated merges, the environment variable `GIT_THETA_MANUAL_MERGE` can be set to true when performing the merge operation, i.e.
+For more sophisticated merges, the environment variable `GIT_THETA_MANUAL_MERGE` can be set to true when performing the merge operation, i.e.
 
 ```bash
 export GIT_THETA_MANUAL_MERGE=True
@@ -225,7 +226,7 @@ git merge ${other-branch}
 
 and the merge tool will write out 4 copies of the model, one for each branch being merged and an additional one that represents the model at the most recent commit in the history of both branches.
 The merge tool will also specify where to save the merged model.
-After the merged model has been saved to the specificied location, a merge commit can be created as usual.
+After the merged model has been saved to the specified location, a merge commit can be created as usual.
 
 # Sharp Edges
 
@@ -235,12 +236,12 @@ However, there are currently some situations that Git-Theta does not currently s
 ## Git Rebase
 
 Currently, `git rebase` is not supported when special update types are used.
-Additionaly, repeated merge-conflict resolution---often encountered in a rebase---can be onerous for large models.
+Additionally, repeated merge-conflict resolution---often encountered in a rebase---can be onerous for large models.
 
 ## Octopus Merges
 
 Currently, git-theta's merge utilities are optimized for (and only tested for) 3-way merges where two branches with a shared ancestor commit are merged together.
-We are working on support for Octopus merges where multiple branchs are all combined at once.
+We are working on support for Octopus merges where multiple branches are all combined at once.
 
 # Under the hood
 
@@ -252,7 +253,7 @@ Git offers several points of customization where specialized, model-aware Git-Th
 Git has a "working tree" where human-facing files live and a "staging area" where a copies of working tree files live before they are stored in Git.
 When a file is moved from the working tree to the staging area, the "clean filter" is run.
 When it is moved back the "smudge filter" is run.
-Git-theta provides model-aware vesrions of these filters.
+Git-theta provides model-aware versions of these filters.
 
 When a model checkpoint is **cleaned** (`git add`):
 
@@ -262,7 +263,7 @@ When a model checkpoint is **cleaned** (`git add`):
 4. Git-Theta compares the metadata for the current parameter group with its previous value.  If the metadata doesn't match, the parameter is serialized and then saved using Git LFS. The Git LFS metadata is recorded in the metadata file.
 5. The metadata is written to the staging area.
 
-Thus, Git itself only tracks the model metadata; actual values are stored efficiently Git LFS. Additionaly, by checking for matching metadata, only changed parameters are stored.
+Thus, Git itself only tracks the model metadata; actual values are stored efficiently Git LFS. Additionally, by checking for matching metadata, only changed parameters are stored.
 
 When a model checkpoint is **smudged** (`git checkout`):
 
@@ -321,11 +322,11 @@ Git-theta makes heavy use of [python plug-ins](https://packaging.python.org/en/l
 Specifically, Git-Theta currently support plug-ins for the [`Checkpoint`](https://github.com/r-three/git-theta/blob/main/git_theta/checkpoints/base.py), [`Update`](https://github.com/r-three/git-theta/blob/main/git_theta/updates/base.py), and [`Merge`](https://github.com/r-three/git-theta/blob/main/git_theta/merges/base.py) classes.
 Third-party users can register a plug-in by creating a small installable package that defines the plugin and registers it as an entry point under the name scope `git_theta.plugins.(checkpoints|updates|merges)`.
 An example plugin for JSON formatted checkpoints can be found [here](https://github.com/r-three/git-theta/tree/main/plugins#git-theta-plug-ins).
-Alternatively, plug-ins can be added directly to the `git-theta` package by adding new subclasses to the approperiate modules, then declaring it in the the `entry_points` dict in `setup.py`.
+Alternatively, plug-ins can be added directly to the `git-theta` package by adding new subclasses to the appropriate modules, then declaring it in the `entry_points` dict in `setup.py`.
 
 # Development Setup
 
-This project uses `black` for code formatting and `isort` for import statement ordering. Additionaly, it includes CI that checks for compliance.
+This project uses `black` for code formatting and `isort` for import statement ordering. Additionally, it includes CI that checks for compliance.
 We include pre-commit hooks that will automatically run `black` and `isort` against any python files staged for commit.
  These hooks can be installed with:
 
