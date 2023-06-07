@@ -49,7 +49,7 @@ frameworks_require = {
 }
 
 
-with open(Path(__file__).parent / "README.md") as f:
+with open(Path(__file__).parent / "README.md", encoding="utf-8") as f:
     LONG_DESCRIPTION = f.read()
 
 
