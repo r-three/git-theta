@@ -338,3 +338,18 @@ $ pre-commit install
 When one of these tools must reformat your file, it will show as the pre-commit hook failing and your commit will be cancelled.
 Reformatted source files will appear in your working directory ready to be re-added to staging (`git add`).
  Running `git commit -m ${msg}` again will result in the hooks passing and the commit actually happening. *Note:* As your initial commit was blocked, you will probably want to use the same message in the commit that actually goes through.
+
+# Citation
+
+If you use git-theta in your work, please cite:
+
+```bibtex
+@InProceedings{kandpal-etal-2023-git-theta
+    title={Git-Theta: A Git Extension for Collaborative Development of Machine Learning Models},
+    author={Kandpal, Nikhil and Lester, Brian and Muqeeth, Mohammed and Mascarenhas, Anisha and Evans, Monty and Baskaran, Vishal and Huang, Tenghao and Liu, Haokun and Raffel, Colin},
+    journal={International Conference on Machine Learning, {ICML}},
+    year={2023},
+    month={july},
+    url={},
+}
+```
