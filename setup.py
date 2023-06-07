@@ -2,6 +2,7 @@
 
 import ast
 import itertools
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
@@ -48,23 +49,38 @@ frameworks_require = {
 }
 
 
+with open(Path(__file__).parent / "README.md") as f:
+    LONG_DESCRIPTION = f.read()
+
+
 setup(
     name="git_theta",
     version=get_version("git_theta/__init__.py"),
-    description="Version control system for model checkpoints.",
+    description="Version control system for machine learning model checkpoints.",
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type="text/markdown",
     author="Colin Raffel",
     author_email="craffel@gmail.com",
-    url="https://github.com/r-three/checkpoint-vcs",
+    url="https://github.com/r-three/git-theta",
     packages=find_packages(),
+    include_package_data=True,
     package_data={"git_theta": ["hooks/post-commit", "hooks/pre-push"]},
-    long_description="Version control system for model checkpoints.",
     python_requires=">=3.8",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Version Control",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Programming Language :: Python :: 3 :: Only",
+        "Natural Language :: English",
+        "Operating System :: MacOS :: MaxOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
     ],
     keywords="git vcs machine-learning",
     license="MIT",
@@ -87,7 +103,6 @@ setup(
         "all": list(set(itertools.chain(*frameworks_require.values()))),
         "docs": ["sphinx", "numpydoc"],
     },
-    # TODO: Can we auto register these?
     entry_points={
         "console_scripts": [
             "git-theta = git_theta.scripts.git_theta:main",
