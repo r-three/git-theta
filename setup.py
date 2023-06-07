@@ -78,7 +78,7 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Programming Language :: Python :: 3 :: Only",
         "Natural Language :: English",
-        "Operating System :: MacOS :: MaxOS X",
+        "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX :: Linux",
     ],
