@@ -46,6 +46,7 @@ frameworks_require = {
     "pytorch": ["torch"],
     "tensorflow": ["tensorflow"],
     "flax": ["flax"],
+    "safetensors": ["safetensors"],
 }
 
 
@@ -119,6 +120,9 @@ setup(
             "tf-savedmodel = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowSavedModel",
             "tensorflow-savedmodel = git_theta.checkpoints.tensorflow_checkpoint:TensorFlowSavedModel",
             "flax = git_theta.checkpoints.flax_checkpoint:FlaxCheckpoint",
+            "flax-checkpoint = git_theta.checkpoints.flax_checkpoint:FlaxCheckpoint",
+            "safetensors = git_theta.checkpoints.safetensors_checkpoint:SafeTensorsCheckpoint",
+            "safetensors-checkpoint = git_theta.checkpoints.safetensors_checkpoint:SafeTensorsCheckpoint",
         ],
         "git_theta.plugins.updates": [
             "dense = git_theta.updates.dense:DenseUpdate",
