@@ -1,6 +1,7 @@
 """safetensors checkpoint tests."""
 
 import operator as op
+import os
 import tempfile
 
 import numpy as np
@@ -21,10 +22,13 @@ def fake_model():
 
 
 def test_round_trip(fake_model):
-    with tempfile.NamedTemporaryFile() as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
         ckpt = safetensors_checkpoint.SafeTensorsCheckpoint(fake_model)
         ckpt.save(f.name)
+        f.flush()
+        f.close()
         ckpt2 = safetensors_checkpoint.SafeTensorsCheckpoint.from_file(f.name)
+        os.unlink(f.name)
     for (_, og), (_, new) in zip(
         sorted(ckpt.items(), key=op.itemgetter(0)),
         sorted(ckpt2.items(), key=op.itemgetter(0)),
