@@ -5,8 +5,8 @@ and read "safetensors" -> any "dl-native" framework, not just the one that was
 used to write it. Therefore, we read/write with their numpy API.
 """
 
+import safetensors.numpy
 from file_or_name import file_or_name
-from safetensors.numpy import load, save
 
 from git_theta.checkpoints import Checkpoint
 
@@ -23,10 +23,10 @@ class SafeTensorsCheckpoint(Checkpoint):
         # Note that we use the numpy as the framework because we don't care what
         # their downstream dl framework is, we only want the results back as
         # numpy arrays.
-        return load(checkpoint_path.read())
+        return safetensors.numpy.load(checkpoint_path.read())
 
     @file_or_name(checkpoint_path="wb")
     def save(self, checkpoint_path: str):
         # Note, git theta uses numpy internally, so we save using the numpy api,
         # regardless of the original framework they used to write the checkpoint.
-        checkpoint_path.write(save(self))
+        checkpoint_path.write(safetensors.numpy.save(self))
