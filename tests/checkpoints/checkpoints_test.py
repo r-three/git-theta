@@ -8,7 +8,7 @@ from git_theta import checkpoints
 
 ENV_CHECKPOINT_TYPE = "GIT_THETA_CHECKPOINT_TYPE"
 
-pytest.importorskip("pytorch")
+torch = pytest.importorskip("torch")
 
 
 @pytest.fixture
