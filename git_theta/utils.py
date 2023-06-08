@@ -1,5 +1,6 @@
 """Utilities for git theta."""
 
+import contextlib
 import dataclasses
 import datetime
 import functools
@@ -7,6 +8,7 @@ import inspect
 import os
 import re
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from enum import Enum
 from types import MethodType
@@ -302,3 +304,24 @@ def touch(path: str):
     """Update the access and modify time of `path`."""
     dt_epoch = datetime.datetime.now().timestamp()
     os.utime(path, (dt_epoch, dt_epoch))
+
+
+@contextlib.contextmanager
+def named_temporary_file(*args, **kwargs):
+    """A named temp file that is safe to use on windows."""
+    # We force these so remove them.
+    m = kwargs.pop("mode", None)
+    if m is not None:
+        raise RuntimeError(
+            f"'mode' argument should not be provided to 'named_temporary_file', got {m}."
+        )
+    d = kwargs.pop("delete", None)
+    if d is not None:
+        raise RuntimeError(
+            f"'delete' argument should not be provided to 'named_temporary_file', got {d}."
+        )
+    with tempfile.NamedTemporaryFile(*args, mode="w", delete=False, **kwargs) as f:
+        try:
+            yield f
+        finally:
+            os.unlink(f.name)
