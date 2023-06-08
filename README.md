@@ -16,7 +16,7 @@ Specifically, rather than treating the checkpoint as a blob of data (as done by 
 
 Git-Theta is currently under active development and should be used with caution.
 For feature discussions and debugging help, please join the #git-theta stream in the [CCCML Zulip community](https://bit.ly/cccml-community).
-If you use Git-Theta as part of a published research project, please cite [our paper](https://arxiv.org/TODO).
+If you use Git-Theta as part of a published research project, please cite [our paper](https://arxiv.org/abs/2306.04529).
 
 # Quick Start
 
