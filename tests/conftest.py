@@ -4,7 +4,6 @@ import os
 import random
 import shutil
 import string
-import tempfile
 
 import git
 import numpy as np
