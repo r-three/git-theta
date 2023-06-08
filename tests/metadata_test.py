@@ -2,10 +2,11 @@
 
 import os
 
+import helpers
 import numpy as np
 import pytest
 
-from git_theta import metadata, utils
+from git_theta import metadata
 
 
 def metadata_equal(m1, m2):
@@ -71,7 +72,7 @@ def test_metadata_file_roundtrip(data_generator):
     Test that Metadata serializes to file and can be generated from file correctly
     """
     metadata_obj = data_generator.random_metadata()
-    with utils.named_temporary_file() as tmp:
+    with helpers.utils.named_temporary_file() as tmp:
         metadata_obj.write(tmp)
         tmp.flush()
         tmp.close()

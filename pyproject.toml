@@ -7,3 +7,9 @@ profile = "black"
 [build-system]
 # Minimum requirements for the build system to execute.
 requires = ["setuptools", "wheel"]  # PEP 508 specifications.
+
+[tool.pytest.ini_options]
+norecursedirs = "tests/helpers tests/end2end"
+testpaths = [
+  "tests"
+]

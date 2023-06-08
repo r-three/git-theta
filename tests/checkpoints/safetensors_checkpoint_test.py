@@ -3,10 +3,11 @@
 import operator as op
 import os
 
+import helpers
 import numpy as np
 import pytest
 
-from git_theta import checkpoints, utils
+from git_theta import checkpoints
 from git_theta.checkpoints import safetensors_checkpoint
 
 
@@ -21,7 +22,7 @@ def fake_model():
 
 
 def test_round_trip(fake_model):
-    with utils.named_temporary_file() as f:
+    with helpers.utils.named_temporary_file() as f:
         ckpt = safetensors_checkpoint.SafeTensorsCheckpoint(fake_model)
         ckpt.save(f.name)
         f.flush()
