@@ -10,7 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import List, Sequence, Union
+from typing import Dict, List, Sequence, Union
 
 import git
 
@@ -88,113 +88,6 @@ def get_absolute_path(repo: git.Repo, relative_path: str) -> str:
         The absolute path to the file.
     """
     return os.path.abspath(os.path.join(repo.working_dir, relative_path))
-
-
-def get_gitattributes_file(repo):
-    """
-    Get path to this repo's .gitattributes file
-
-    Parameters
-    ----------
-    repo : git.Repo
-        Repo object for the current git repository
-
-    Returns
-    -------
-    str
-        path to $git_root/.gitattributes
-    """
-    return os.path.join(repo.working_dir, ".gitattributes")
-
-
-def read_gitattributes(gitattributes_file):
-    """
-    Read contents of this repo's .gitattributes file
-
-    Parameters
-    ----------
-    gitattributes_file : str
-        Path to this repo's .gitattributes file
-
-    Returns
-    -------
-    List[str]
-        lines in .gitattributes file
-    """
-    if os.path.exists(gitattributes_file):
-        with open(gitattributes_file, "r") as f:
-            return [line.rstrip("\n") for line in f]
-    else:
-        return []
-
-
-@file_or_name(gitattributes_file="w")
-def write_gitattributes(
-    gitattributes_file: Union[str, io.FileIO], attributes: List[str]
-):
-    """
-    Write list of attributes to this repo's .gitattributes file
-
-    Parameters
-    ----------
-    gitattributes_file:
-        Path to this repo's .gitattributes file
-
-    attributes:
-        Attributes to write to .gitattributes
-    """
-    gitattributes_file.write("\n".join(attributes))
-    # End file with newline.
-    gitattributes_file.write("\n")
-
-
-def add_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
-    """Add a filter=theta that covers file_name.
-
-    Parameters
-    ----------
-        gitattributes: A list of the lines from the gitattribute files.
-        path: The path to the model we are adding a filter to.
-
-    Returns
-    -------
-    List[str]
-        The lines to write to the new gitattribute file with a (possibly) new
-        filter=theta added that covers the given file.
-    """
-    pattern_found = False
-    new_gitattributes = []
-    for line in gitattributes:
-        # TODO(bdlester): Revisit this regex to see if it when the pattern
-        # is escaped due to having spaces in it.
-        match = re.match(r"^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
-        if match:
-            # If there is already a pattern that covers the file, add the filter
-            # to that.
-            if fnmatch.fnmatchcase(path, match.group("pattern")):
-                pattern_found = True
-                if not "filter=theta" in match.group("attributes"):
-                    line = f"{line.rstrip()} filter=theta"
-                if not "merge=theta" in match.group("attributes"):
-                    line = f"{line.rstrip()} merge=theta"
-                if not "diff=theta" in match.group("attributes"):
-                    line = f"{line.rstrip()} diff=theta"
-        new_gitattributes.append(line)
-    # If we don't find a matching pattern, add a new line that covers just this
-    # specific file.
-    if not pattern_found:
-        new_gitattributes.append(f"{path} filter=theta merge=theta diff=theta")
-    return new_gitattributes
-
-
-def get_gitattributes_tracked_patterns(gitattributes_file):
-    gitattributes = read_gitattributes(gitattributes_file)
-    theta_attributes = [
-        attribute for attribute in gitattributes if "filter=theta" in attribute
-    ]
-    # TODO: Correctly handle patterns with escaped spaces in them
-    patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
-    return patterns
 
 
 def add_file(f, repo):

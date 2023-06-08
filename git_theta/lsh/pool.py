@@ -6,7 +6,7 @@ import numba as nb
 import numpy as np
 from numpy.random import MT19937, Generator
 
-from git_theta.utils import EnvVarConstants
+from git_theta import config, git_utils
 
 spec = [("pool", nb.float64[:]), ("signature_offsets", nb.int64[:])]
 
@@ -15,9 +15,11 @@ spec = [("pool", nb.float64[:]), ("signature_offsets", nb.int64[:])]
 class RandomnessPool:
     def __init__(self, signature_size):
         with nb.objmode(pool="float64[:]", signature_offsets="int64[:]"):
+            repo = git_utils.get_git_repo()
+            thetaconfig = config.ThetaConfigFile(repo)
             # N.b. we use a fixed seed so that every instance of RandomPool has the same set of random numbers
             rng = Generator(MT19937(seed=42))
-            pool = rng.normal(size=EnvVarConstants.LSH_POOL_SIZE)
+            pool = rng.normal(size=thetaconfig.repo_config.lsh_pool_size)
             int64_range = np.iinfo(np.int64)
             signature_offsets = rng.integers(
                 int64_range.min, int64_range.max, size=signature_size, dtype=np.int64

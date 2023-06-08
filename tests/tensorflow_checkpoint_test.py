@@ -1,6 +1,7 @@
 """Tensorflow checkpoint tests."""
 
 import os
+import subprocess
 import tempfile
 from unittest import mock
 
@@ -93,6 +94,10 @@ def test_round_trip_with_modifications(fake_model):
             np.testing.assert_allclose(og.numpy(), new.numpy())
 
 
-def test_get_checkpoint_handler_tensorflow():
-    out = checkpoints.get_checkpoint_handler("tensorflow-checkpoint")
+def test_get_checkpoint_handler_tensorflow(git_repo, fake_model):
+    fake_model.save_weights("model.bin")
+    subprocess.run(
+        "git theta track model.bin --checkpoint_format tensorflow".split(" ")
+    )
+    out = checkpoints.get_checkpoint_handler("model.bin")
     assert out == tensorflow_checkpoint.TensorFlowCheckpoint
