@@ -1,6 +1,6 @@
 # Git-Theta
 
-<center><img src="https://user-images.githubusercontent.com/417568/229904559-d61d710c-7986-4a07-a405-d86b196f5046.png" width="50"></center>
+<img src="https://user-images.githubusercontent.com/417568/229904559-d61d710c-7986-4a07-a405-d86b196f5046.png" width="50">
 
 Git-Theta is a Git extension for collaborative, continual, and communal development of machine learning models.
 
@@ -350,6 +350,6 @@ If you use git-theta in your work, please cite:
     journal={International Conference on Machine Learning, {ICML}},
     year={2023},
     month={july},
-    url={},
+    url={https://arxiv.org/abs/2306.04529},
 }
 ```
