@@ -2,7 +2,8 @@
 
 import os
 import random
-import tempfile
+
+import helpers
 
 from git_theta import theta
 
@@ -12,12 +13,11 @@ def test_commit_info_serialization(data_generator):
     Test that CommitInfo objects serialize/deserialize to/from files correctly
     """
     commit_info = data_generator.random_commit_info()
-    with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmpfile:
+    with helpers.utils.named_temporary_file() as tmpfile:
         commit_info.write(tmpfile)
         tmpfile.flush()
         tmpfile.close()
         commit_info_read = theta.CommitInfo.from_file(tmpfile.name)
-        os.unlink(tmpfile.name)
     assert commit_info == commit_info_read
 
 
