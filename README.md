@@ -171,7 +171,7 @@ This maintains storage and communication efficiency at the cost of requiring add
 
 **Cons:**
 * Implementation overhead. Training code needs to be able to segment out and save only the parameters that have changed. Inference code needs to know how to load both the original checkpoint and the update from the new checkpoint as well as how to merge them.
-* The original checkpoint and parameter udpates are decoupled, running the risk that one could be changed without appropriately modifying the other.
+* The original checkpoint and parameter updates are decoupled, running the risk that one could be changed without appropriately modifying the other.
 
 Assuming we have already committed the original model, the auxiliary information checkpoint needs to be separately added and committed as normal.
 
