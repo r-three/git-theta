@@ -14,7 +14,7 @@ from typing import Dict, FrozenSet, Optional, Tuple
 
 import numpy as np
 
-from git_theta import checkpoints, git_utils, lsh, metadata, params, utils
+from git_theta import async_utils, checkpoints, git_utils, lsh, metadata, params, utils
 from git_theta.lsh.types import Signature
 
 Parameter = np.ndarray
@@ -100,6 +100,7 @@ class IncrementalUpdate(Update):
         logging.debug(
             f"Getting metadata for {'/'.join(param_keys)} from commit {last_commit}"
         )
+        # Note: I tried to asyncify this and it seems to cause deadlock.
         last_metadata_obj = git_utils.get_file_version(repo, path, last_commit)
         last_metadata = metadata.Metadata.from_file(last_metadata_obj.data_stream)
         last_param_metadata = last_metadata.flatten()[param_keys]
@@ -179,7 +180,7 @@ class IncrementalUpdate(Update):
             # Calculate and hash the *new* value so that we can update the
             # metadata when using side-loaded information.
             new_value = await self.apply_update(update_value, previous_value)
-            new_hash = lsh.get_lsh().hash(new_value)
+            new_hash = await async_utils.asyncify(lsh.get_lsh().hash, new_value)
             return await self.write_update(update_value), new_hash
         else:
             update_value = await self.calculate_update(param, previous_value)

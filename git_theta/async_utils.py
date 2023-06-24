@@ -4,14 +4,53 @@ import asyncio
 import dataclasses
 import functools
 import sys
+from concurrent.futures import thread
 from typing import Any, Awaitable, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
+import numba
+import numba.misc.numba_sysinfo
 import six
 
 if sys.version_info >= (3, 8):
     from typing import Protocol
 else:
     from typing_extensions import Protocol
+
+
+class Asyncify:
+    """Wrap sync functions for use in async."""
+
+    def __init__(self, *args, **kwargs):
+        self.executor = thread.ThreadPoolExecutor(*args, **kwargs)
+        # Adapted from https://github.com/numba/numba/blob/d44573b43dec9a7b66e9a0d24ef8db94c3dc346c/numba/misc/numba_sysinfo.py#L459
+        try:
+            # check import is ok, this means the DSO linkage is working
+            from numba.np.ufunc import tbbpool  # NOQA
+
+            # check that the version is compatible, this is a check performed at
+            # runtime (well, compile time), it will also ImportError if there's
+            # a problem.
+            from numba.np.ufunc.parallel import _check_tbb_version_compatible
+
+            numba.misc.numba_sysifo._check_tbb_version_compatible()
+            self.threadsafe = True
+        except ImportError as e:
+            try:
+                from numba.np.ufunc import omppool
+
+                self.threadsafe = True
+            except ImportError as e:
+                self.threadsafe = False
+        numba.config.THREADING_LAYER = "threadsafe" if self.threadsafe else "default"
+
+    async def __call__(self, fn, *args, **kwargs):
+        # If numba is thread safe then do it async!
+        if self.threadsafe:
+            return await asyncio.wrap_future(self.executor.submit(fn, *args, **kwargs))
+        return fn(*args, **kwargs)
+
+
+asyncify = Asyncify()
 
 
 def run(*args, **kwargs):

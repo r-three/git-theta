@@ -2,6 +2,7 @@
 
 import filecmp
 import fnmatch
+import functools
 import io
 import json
 import logging
@@ -230,6 +231,7 @@ def remove_file(f, repo):
         repo.git.rm(f)
 
 
+@functools.lru_cache(32)
 def get_file_version(repo, path, commit_hash):
     path = get_relative_path_from_root(repo, path)
     try:
