@@ -1,5 +1,7 @@
 """Utilities for manipulating git."""
 
+import copy
+import dataclasses
 import filecmp
 import fnmatch
 import io
@@ -10,7 +12,7 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import List, Sequence, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 import git
 
@@ -25,6 +27,11 @@ else:
 from file_or_name import file_or_name
 
 from git_theta import async_utils
+
+# These are the git attributes that git-theta currently uses to manage checked-in
+# files. Defined as a variable in case extra functionality ever requires more
+# attributes.
+THETA_ATTRIBUTES = ("filter", "merge", "diff")
 
 
 def get_git_repo():
@@ -107,7 +114,26 @@ def get_gitattributes_file(repo):
     return os.path.join(repo.working_dir, ".gitattributes")
 
 
-def read_gitattributes(gitattributes_file):
+@dataclasses.dataclass
+class GitAttributes:
+    """Git attributes for a file that matches pattern."""
+
+    pattern: str
+    attributes: Dict[str, str]
+    raw: Optional[str] = None
+
+    def __str__(self):
+        if self.raw:
+            return self.raw
+        attrs = " ".join(f"{k}={v}" if v else k for k, v in self.attributes.items())
+        return f"{self.pattern} {attrs}"
+
+    def __eq__(self, o):
+        raw_eq = self.raw == o.raw if self.raw and o.raw else True
+        return self.pattern == o.pattern and self.attributes == o.attributes and raw_eq
+
+
+def read_gitattributes(gitattributes_file) -> List[GitAttributes]:
     """
     Read contents of this repo's .gitattributes file
 
@@ -123,14 +149,33 @@ def read_gitattributes(gitattributes_file):
     """
     if os.path.exists(gitattributes_file):
         with open(gitattributes_file, "r") as f:
-            return [line.rstrip("\n") for line in f]
+            return [parse_gitattributes(line.rstrip("\n")) for line in f]
     else:
         return []
 
 
+def parse_gitattributes(gitattributes: str) -> GitAttributes:
+    # TODO: Fix for escaped patterns
+    pattern, *attributes = gitattributes.split(" ")
+    attrs = {}
+    # Overwrite as we go to get the LAST attribute behavior
+    for attribute in attributes:
+        if "=" in attribute:
+            key, value = attribute.split("=")
+        # TODO: Update to handle unsetting attributes like "-diff". Currently we
+        # just copy then as keys for printing but don't check their semantics,
+        # for example a file with an unset diff does currently throw an error
+        # when adding git-theta tracking.
+        else:
+            key = attribute
+            value = None
+        attrs[key] = value
+    return GitAttributes(pattern, attrs, gitattributes)
+
+
 @file_or_name(gitattributes_file="w")
 def write_gitattributes(
-    gitattributes_file: Union[str, io.FileIO], attributes: List[str]
+    gitattributes_file: Union[str, io.FileIO], attributes: List[GitAttributes]
 ):
     """
     Write list of attributes to this repo's .gitattributes file
@@ -143,58 +188,110 @@ def write_gitattributes(
     attributes:
         Attributes to write to .gitattributes
     """
-    gitattributes_file.write("\n".join(attributes))
+    gitattributes_file.write("\n".join(map(str, attributes)))
     # End file with newline.
     gitattributes_file.write("\n")
 
 
-def add_theta_to_gitattributes(gitattributes: List[str], path: str) -> str:
-    """Add a filter=theta that covers file_name.
+def add_theta_to_gitattributes(
+    gitattributes: List[GitAttributes],
+    path: str,
+    theta_attributes: Sequence[str] = THETA_ATTRIBUTES,
+) -> List[GitAttributes]:
+    """Add git attributes required by git-theta for path.
+
+    If there is a pattern that covers the current file that applies the git-theta
+    attributes, no new pattern is added. If there is a pattern that covers the
+    current file and sets attributes used by git-theta an error is raised. If
+    there is a pattern that sets non-overlapping attributes they are copied into
+    a new path-specific pattern. If there is no match, a new path-specific
+    pattern is always created.
 
     Parameters
     ----------
-        gitattributes: A list of the lines from the gitattribute files.
+        gitattributes: A list of parsed git attribute entries.
         path: The path to the model we are adding a filter to.
+
+    Raises
+    ------
+    ValueError
+        `path` is covered by an active git attributes entry that sets merge,
+        filter, or diff to a value other than "theta".
 
     Returns
     -------
-    List[str]
-        The lines to write to the new gitattribute file with a (possibly) new
-        filter=theta added that covers the given file.
+    List[GitAttributes]
+        The git attributes write to the new gitattribute file with a (possibly)
+        new (filter|merge|diff)=theta added that covers `path`.
     """
-    pattern_found = False
-    new_gitattributes = []
-    for line in gitattributes:
-        # TODO(bdlester): Revisit this regex to see if it when the pattern
-        # is escaped due to having spaces in it.
-        match = re.match(r"^\s*(?P<pattern>[^\s]+)\s+(?P<attributes>.*)$", line)
-        if match:
-            # If there is already a pattern that covers the file, add the filter
-            # to that.
-            if fnmatch.fnmatchcase(path, match.group("pattern")):
-                pattern_found = True
-                if not "filter=theta" in match.group("attributes"):
-                    line = f"{line.rstrip()} filter=theta"
-                if not "merge=theta" in match.group("attributes"):
-                    line = f"{line.rstrip()} merge=theta"
-                if not "diff=theta" in match.group("attributes"):
-                    line = f"{line.rstrip()} diff=theta"
-        new_gitattributes.append(line)
-    # If we don't find a matching pattern, add a new line that covers just this
-    # specific file.
-    if not pattern_found:
-        new_gitattributes.append(f"{path} filter=theta merge=theta diff=theta")
-    return new_gitattributes
+    previous_attribute = None
+    # Find if an active gitattribute entry applies to path
+    for gitattribute in gitattributes[::-1]:
+        if fnmatch.fnmatchcase(path, gitattribute.pattern):
+            previous_attribute = gitattribute
+            break
+    # If path is already managed by a git attributes entry.
+    if previous_attribute:
+        # If all of the theta attributes are set, we don't do anything.
+        if all(
+            previous_attribute.attributes.get(attr) == "theta"
+            for attr in theta_attributes
+        ):
+            return gitattributes
+        # If any of the attributes theta uses is set to something else, error out.
+        if any(
+            attr in previous_attribute.attributes
+            and previous_attribute.attributes[attr] != "theta"
+            for attr in theta_attributes
+        ):
+            raise ValueError(
+                f"Git Attributes used by git-theta are already set for {path}. "
+                f"Found filter={previous_attribute.attributes.get('filter')}, "
+                f"diff={previous_attribute.attributes.get('diff')}, "
+                f"merge={previous_attribute.attributes.get('merge')}."
+            )
+    # If the old entry set other attributes, make sure they are preserved.
+    attributes = (
+        copy.deepcopy(previous_attribute.attributes) if previous_attribute else {}
+    )
+    for attr in theta_attributes:
+        attributes[attr] = "theta"
+    new_attribute = GitAttributes(path, attributes)
+    gitattributes.append(new_attribute)
+    return gitattributes
 
 
-def get_gitattributes_tracked_patterns(gitattributes_file):
+def get_gitattributes_tracked_patterns(
+    gitattributes_file, theta_attributes: Sequence[str] = THETA_ATTRIBUTES
+):
     gitattributes = read_gitattributes(gitattributes_file)
     theta_attributes = [
-        attribute for attribute in gitattributes if "filter=theta" in attribute
+        attr
+        for attr in gitattributes
+        if attr.attributes.get(a) == "theta"
+        for a in theta_attributes
     ]
+    return [attr.pattern for attr in theta_attributes]
     # TODO: Correctly handle patterns with escaped spaces in them
     patterns = [attribute.split(" ")[0] for attribute in theta_attributes]
     return patterns
+
+
+def is_theta_tracked(
+    path: str,
+    gitattributes: List[GitAttributes],
+    theta_attributes: Sequence[str] = THETA_ATTRIBUTES,
+) -> bool:
+    """Check if `path` is tracked by git-theta based on `.gitattributes`.
+
+    Note: The last line that matches in .gitattributes is the active one so
+      start from the end. If the first match (really last) does not have the
+      theta filter active then the file is not tracked by Git-Theta.
+    """
+    for attr in gitattributes[::-1]:
+        if fnmatch.fnmatchcase(path, attr.pattern):
+            return all(attr.attributes.get(a) == "theta" for a in theta_attributes)
+    return False
 
 
 def add_file(f, repo):

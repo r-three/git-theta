@@ -80,12 +80,12 @@ def post_commit(args):
     theta_commits = theta.ThetaCommits(repo)
 
     gitattributes_file = git_utils.get_gitattributes_file(repo)
-    patterns = git_utils.get_gitattributes_tracked_patterns(gitattributes_file)
+    gitattributes = git_utils.read_gitattributes(gitattributes_file)
 
     oids = set()
     commit = repo.commit("HEAD")
     for path in commit.stats.files.keys():
-        if any([fnmatch.fnmatchcase(path, pattern) for pattern in patterns]):
+        if git_utils.is_theta_tracked(path, gitattributes):
             curr_metadata = metadata.Metadata.from_file(commit.tree[path].data_stream)
             prev_metadata = metadata.Metadata.from_commit(repo, path, "HEAD~1")
 
