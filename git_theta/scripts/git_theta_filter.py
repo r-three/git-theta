@@ -9,6 +9,7 @@ import tempfile
 import git
 import numpy as np
 
+import git_theta
 from git_theta import (
     async_utils,
     checkpoints,
@@ -20,12 +21,7 @@ from git_theta import (
 )
 from git_theta.utils import EnvVarConstants
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    # Log to a file for clean/smudge as they don't appear on the console when called via git.
-    filename=os.path.join(tempfile.gettempdir(), "git-theta.log"),
-    format="git-theta-filter: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s",
-)
+git_theta.scripts.configure_logging("git-theta-filter")
 
 
 def parse_args():
@@ -64,7 +60,9 @@ def clean(
         # Get the metadata from the previous version of the parameter
         param_metadata = prev_metadata.get(param_keys)
         # Create new metadata from the current value
+        logging.debug(f"Making new Metadata for {'/'.join(param_keys)}")
         new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
+        logging.debug(f"Finished new Metadata for {'/'.join(param_keys)}")
 
         # If the parameter tensor has not changed, just keep the metadata the same
         # TODO: Encapsulate this parameter check within an equality check.
@@ -80,6 +78,7 @@ def clean(
             # Compare the parameters using the LSH
             hasher = lsh.get_lsh()
             # TODO: Is is possible to make this comparison async?
+            logging.debug(f"Comparing Hashes for: {'/'.join(param_keys)}")
             hash_distance = hasher.distance(
                 param_metadata.tensor_metadata.hash, new_tensor_metadata.hash
             )
@@ -128,6 +127,7 @@ def clean(
             tensor_metadata=new_tensor_metadata,
             theta_metadata=new_theta_metadata,
         )
+        logging.debug(f"Finished Cleaning {'/'.join(param_keys)}")
         return param_keys, new_param_metadata
 
     # Sort the keys so we don't get changing diffs based on serialization order.

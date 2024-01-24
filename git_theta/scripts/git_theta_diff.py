@@ -5,7 +5,10 @@ import textwrap
 import numpy as np
 from colorama import Fore, Style
 
+import git_theta
 from git_theta import checkpoints, metadata
+
+git_theta.scripts.configure_logging("git-theta-diff")
 
 
 def parse_args():

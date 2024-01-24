@@ -18,11 +18,19 @@ class DenseUpdate(Update):
         super().__init__(*args, **kwargs)
 
     async def apply(self, param_metadata, param_keys, *args, **kwargs) -> Parameter:
-        logging.debug(f"Reading Dense update for {'/'.join(param_keys)}")
-        return await self.read(param_metadata)
+        param_name = "/".join(param_keys)
+        logging.debug(f"Reading Dense update for {param_name}")
+        tensor = await self.read(param_metadata)
+        logging.debug(f"Finished Read Dense update for {param_name}")
+        return tensor
 
     async def write(self, param, param_keys, *args, **kwargs) -> metadata.LfsMetadata:
-        logging.debug(f"Writing Dense update for {'/'.join(param_keys)}")
+        param_name = "/".join(param_keys)
+        logging.debug(f"Writing Dense update for {param_name}")
+        logging.debug(f"Starting Serializing {param_name}")
         serialized = await self.serializer.serialize({"parameter": param})
+        logging.debug(f"Finished Serializing {param_name}")
+        logging.debug(f"Starting git-lfs clean for {param_name}")
         lfs_pointer = await git_utils.git_lfs_clean(serialized)
+        logging.debug(f"Finished git-lfs clean for {param_name}")
         return metadata.LfsMetadata.from_pointer(lfs_pointer), None

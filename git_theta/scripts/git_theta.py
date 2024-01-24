@@ -13,12 +13,10 @@ if sys.version_info < (3, 10):
 else:
     from importlib.metadata import entry_points
 
+import git_theta
 from git_theta import async_utils, git_utils, metadata, theta, utils
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="git-theta: [%(asctime)s] [%(funcName)s] %(levelname)s - %(message)s",
-)
+git_theta.scripts.configure_logging("git-theta")
 
 
 def parse_args():
