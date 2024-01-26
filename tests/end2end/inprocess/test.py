@@ -16,10 +16,12 @@ updated_model["layers.0.hidden.weight"] = torch.rand(
 )
 
 print("committing the same model to different paths")
-model_1_sha = git_theta.save(model, "model_1.pt")
-model_2_sha = git_theta.save(model, "model_2.pt")
+model_1_sha = git_theta.save(model, "model_1.pt", "commit first model")
+model_2_sha = git_theta.save(model, "model_2.pt", "commit second model")
 print("committing the changed model to the same path.")
-model_1_1_sha = git_theta.save(updated_model, "model_1.pt")
+model_1_1_sha = git_theta.save(
+    updated_model, "model_1.pt", "committing changed model to the same path."
+)
 
 print("Making sure the models we not saved to disk.")
 assert not os.path.exists("model_1.pt")

@@ -10,16 +10,14 @@ import git_theta
 from git_theta import checkpoints, filters, git_utils, metadata, utils
 
 
-# TODO: Should we have a `materialize` flag that writes the model to disk so you
-# don't have git status showing a diff?
 def save(
     state_dict,
     path: str,
-    commit_msg: Optional[str] = None,
+    commit_msg: str,
     checkpoint_type: str = "pytorch",
+    materialize: bool = False,
 ) -> git.Commit:
     """Save a model using git-theta without writing it to disk."""
-    commit_msg = commit_msg if commit_msg else f"Committing {path}"
     repo = git_utils.get_git_repo()
     # Convert the deep learning framework native state dict into our checkpoint format.
     checkpoint_handler = checkpoints.get_checkpoint_handler(checkpoint_type)
@@ -47,15 +45,16 @@ def save(
     else:
         # Commit directly from python
         sha = repo.index.commit(commit_msg)
+    if materialize:
+        ckpt.save(path)
     return sha
 
 
-# TODO: Should we add something like a `checkout` parameter that actually checks
-# the model out so we are at the right commit after using this model?
 def load(
     sha_or_tag: Union[str, git.Commit],
     path: str,
     checkpoint_type: str = "pytorch",
+    checkout: bool = False,
 ):
     """Load a model from git-theta without having it checked out."""
     repo = git_utils.get_git_repo()
@@ -67,5 +66,9 @@ def load(
     metadata_obj = metadata.Metadata.from_file(metadata_blob.data_stream)
     # Convert the metadata into a checkpoint with weights.
     ckpt = filters.smudge(metadata_obj, repo, path)
+    # Checkout the commit we are loading from so the state on disk matches the
+    # state in memory
+    if checkout:
+        repo.git.checkout(sha_or_tag)
     # Convert the checkpoint to the native state dict.
     return ckpt.to_framework()
