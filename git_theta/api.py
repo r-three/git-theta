@@ -14,10 +14,26 @@ def save(
     state_dict,
     path: str,
     commit_msg: str,
+    tag: Optional[str] = None,
     checkpoint_type: str = "pytorch",
-    materialize: bool = False,
+    checkout: bool = False,
 ) -> git.Commit:
-    """Save a model using git-theta without writing it to disk."""
+    """Save a model using git-theta without needing to write it to the working tree.
+
+    Args:
+      state_dict: The model weights in the framework-native format.
+      path: The path where the model will be saved.
+      commit_msg: The message to include in the new commit.
+      tag: If provided, a tag to add to the new commit.
+      checkpoint_type: The checkpoint format name, used to get the checkpoint plugin.
+      checkout: If true, the new commit will be checked out (This incurs extra
+        compute and I/O cost as the model will be moved from git-storage to the
+        working tree).
+
+    Returns:
+      The GitPython object representing the commit made with this save. Includes
+      information like the sha.
+    """
     repo = git_utils.get_git_repo()
     # Convert the deep learning framework native state dict into our checkpoint format.
     checkpoint_handler = checkpoints.get_checkpoint_handler(checkpoint_type)
@@ -45,8 +61,10 @@ def save(
     else:
         # Commit directly from python
         sha = repo.index.commit(commit_msg)
-    if materialize:
-        ckpt.save(path)
+    if checkout:
+        repo.git.checkout(sha)
+    if tag is not None:
+        repo.create_tag(tag, ref=sha)
     return sha
 
 
@@ -56,7 +74,20 @@ def load(
     checkpoint_type: str = "pytorch",
     checkout: bool = False,
 ):
-    """Load a model from git-theta without having it checked out."""
+    """Load a model from git-theta without having it checked out.
+
+    Args:
+      sha_or_tag: A reference to the commit to load the model from. It can be the
+        sha1 or a tag.
+      path: The path to where the model was saved in the working tree.
+      checkpoint_type: The checkpoint format name, used to get the checkpoint plugin.
+      checkout: If true, the commit is also checked out, keeping the on disk model
+        in sync with the in-memory model (This incurs extra compute and I/O cost
+        as the model will be moved from git-storage to the working tree).
+
+    Returns:
+      The loaded model in the checkpoint native format.
+    """
     repo = git_utils.get_git_repo()
     # Set the checkpoint type env variable so that it respects the user input.
     utils.EnvVarConstants.CHECKPOINT_TYPE = checkpoint_type

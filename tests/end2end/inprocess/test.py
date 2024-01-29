@@ -19,8 +19,12 @@ print("committing the same model to different paths")
 model_1_sha = git_theta.save(model, "model_1.pt", "commit first model")
 model_2_sha = git_theta.save(model, "model_2.pt", "commit second model")
 print("committing the changed model to the same path.")
+model_tag = "updated-model"
 model_1_1_sha = git_theta.save(
-    updated_model, "model_1.pt", "committing changed model to the same path."
+    updated_model,
+    "model_1.pt",
+    "committing changed model to the same path.",
+    tag=model_tag,
 )
 
 print("Making sure the models we not saved to disk.")
@@ -29,7 +33,8 @@ assert not os.path.exists("model_2.pt")
 
 print("loading the model from git-theta directly.")
 m1 = git_theta.load(model_1_sha, "model_1.pt")
-m11 = git_theta.load(model_1_1_sha, "model_1.pt")
+print("loading model from a tag")
+m11 = git_theta.load(model_tag, "model_1.pt")
 m2 = git_theta.load(model_2_sha, "model_2.pt")
 
 print("saving the models to disk to inspect them later.")
