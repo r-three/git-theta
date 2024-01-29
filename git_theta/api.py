@@ -10,7 +10,7 @@ import git_theta
 from git_theta import checkpoints, filters, git_utils, metadata, utils
 
 
-def save(
+def save_to_git(
     state_dict,
     path: str,
     commit_msg: str,
@@ -68,7 +68,7 @@ def save(
     return sha
 
 
-def load(
+def load_from_git(
     sha_or_tag: Union[str, git.Commit],
     path: str,
     checkpoint_type: str = "pytorch",

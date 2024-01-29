@@ -11,4 +11,4 @@ from git_theta import (
     updates,
     utils,
 )
-from git_theta.api import load, save
+from git_theta.api import load_from_git, save_to_git
