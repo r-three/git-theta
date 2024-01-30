@@ -12,6 +12,11 @@ do
     yellow_echo "Running Test: ${testname}"
     echo "============================================================"
     pushd ${testname}
+    if [[ -f ./clean.sh ]]; then
+        ./clean.sh
+    else
+        ../clean.sh
+    fi
     ./test.sh
     TESTS[${testname}]=${?}
     if [[ -f ./clean.sh ]]; then
