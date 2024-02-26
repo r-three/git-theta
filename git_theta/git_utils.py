@@ -33,6 +33,13 @@ from git_theta import async_utils
 # files. Defined as a variable in case extra functionality ever requires more
 # attributes.
 THETA_ATTRIBUTES = ("filter", "merge", "diff")
+THETA_CONFIG_KEYS = (
+    "filter.theta.clean=",
+    "filter.theta.smudge=",
+    "merge.theta.name=",
+    "merge.theta.driver=",
+    "diff.theta.command=",
+)
 
 
 def get_git_repo():
@@ -407,6 +414,26 @@ def is_git_lfs_installed():
         return results.returncode == 0
     except:
         return False
+
+
+def is_git_theta_installed(
+    repo: Optional = None, git_theta_config_keys: Sequence[str] = THETA_CONFIG_KEYS
+) -> bool:
+    """Check if git-theta is installed.
+
+    By checking `git config --list` we see all configuration options reguardless
+    of if they setup git-theta up in ~/.gitconfig, ${repo}/.git/config, etc.
+
+    Note:
+      This check requires you to be in the repo, but this is fine for our use
+      cases.
+    """
+    repo = get_git_repo() if repo is None else repo
+    config = repo.git.config("--list")
+    for config_key in git_theta_config_keys:
+        if config_key not in config:
+            return False
+    return True
 
 
 def make_blob(repo, contents: str, path: str):
