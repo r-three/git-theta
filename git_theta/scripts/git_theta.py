@@ -170,6 +170,8 @@ def add(args, unparsed_args):
         "GIT_THETA_UPDATE_TYPE": args.update_type,
         "GIT_THETA_UPDATE_DATA_PATH": args.update_data,
     }
+    # See reasons for this in the comment of the `track` function.
+    install(args)
     # The most common use for `git theta add` is when you have side-loaded
     # information and thus the main checkpoint file has not been modified. This
     # results in git not running the add command as the modification time has
