@@ -141,6 +141,17 @@ def track(args):
     """
     Track a particular model checkpoint file with git-theta
     """
+    # git-theta install is idempotent, so we can always call it to make sure that
+    # git-theta is installed without needing to check if it was already installed.
+    # Doing this everytime is a bit more work, but given that git theta track just
+    # updates the .gitattributes files, it shouldn't be an issue.
+    # TODO(blester): git theta install does a global install, so if a user wanted
+    # a repo only install of git theta (where they manually setup the filters and
+    # the like) this would set their global settings everytime. GitPython doesn't
+    # do a great job of exposing the local configs so we haven't spent time coding
+    # around this specific use-case. If people end up wanting a repo only install
+    # we should revisit, but it isn't worth it now.
+    install(args)
     repo = git_utils.get_git_repo()
     model_path = git_utils.get_relative_path_from_root(repo, args.file)
 
@@ -159,6 +170,8 @@ def add(args, unparsed_args):
         "GIT_THETA_UPDATE_TYPE": args.update_type,
         "GIT_THETA_UPDATE_DATA_PATH": args.update_data,
     }
+    # See reasons for this in the comment of the `track` function.
+    install(args)
     # The most common use for `git theta add` is when you have side-loaded
     # information and thus the main checkpoint file has not been modified. This
     # results in git not running the add command as the modification time has
