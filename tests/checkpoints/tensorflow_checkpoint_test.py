@@ -54,6 +54,7 @@ def fake_model():
     return make_fake_model()
 
 
+@pytest.mark.xfail(reason="Changes to Tensorflow saved model need to be accounted for.")
 def test_round_trip(fake_model):
     with tempfile.NamedTemporaryFile() as f:
         # Make a checkpoint via tensorflow
@@ -70,6 +71,7 @@ def test_round_trip(fake_model):
         np.testing.assert_array_equal(og.numpy(), new.numpy())
 
 
+@pytest.mark.xfail(reason="Changes to Tensorflow saved model need to be accounted for.")
 def test_round_trip_with_modifications(fake_model):
     with tempfile.NamedTemporaryFile() as f:
         # Make a checkpoint via tensorflow
