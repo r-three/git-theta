@@ -82,6 +82,7 @@ class EnvVarConstants:
     MAX_CONCURRENCY = EnvVar(name="GIT_THETA_MAX_CONCURRENCY", default=-1)
     MANUAL_MERGE = EnvVar(name="GIT_THETA_MANUAL_MERGE", default=False)
     LOG_LEVEL = EnvVar(name="GIT_THETA_LOG_LEVEL", default="DEBUG")
+    LOW_MEMORY = EnvVar(name="GIT_THETA_LOW_MEMORY", default=False)
 
 
 def flatten(

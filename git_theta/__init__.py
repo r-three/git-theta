@@ -7,6 +7,7 @@ from git_theta import (
     lsh,
     metadata,
     params,
+    scripts,
     theta,
     updates,
     utils,
