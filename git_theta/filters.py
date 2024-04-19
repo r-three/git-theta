@@ -31,13 +31,14 @@ def clean(
     prev_metadata = metadata.Metadata.from_commit(repo, path, "HEAD").flatten()
 
     async def _clean(param_keys, new_param):
-        logging.debug(f"Cleaning {'/'.join(param_keys)}")
+        logger = logging.getLogger("git_theta")
+        logger.debug(f"Cleaning {'/'.join(param_keys)}")
         # Get the metadata from the previous version of the parameter
         param_metadata = prev_metadata.get(param_keys)
         # Create new metadata from the current value
-        logging.debug(f"Making new Metadata for {'/'.join(param_keys)}")
+        logger.debug(f"Making new Metadata for {'/'.join(param_keys)}")
         new_tensor_metadata = metadata.TensorMetadata.from_tensor(new_param)
-        logging.debug(f"Finished new Metadata for {'/'.join(param_keys)}")
+        logger.debug(f"Finished new Metadata for {'/'.join(param_keys)}")
 
         # If the parameter tensor has not changed, just keep the metadata the same
         # TODO: Encapsulate this parameter check within an equality check.
@@ -53,7 +54,7 @@ def clean(
             # Compare the parameters using the LSH
             hasher = lsh.get_lsh()
             # TODO: Is is possible to make this comparison async?
-            logging.debug(f"Comparing Hashes for: {'/'.join(param_keys)}")
+            logger.debug(f"Comparing Hashes for: {'/'.join(param_keys)}")
             hash_distance = hasher.distance(
                 param_metadata.tensor_metadata.hash, new_tensor_metadata.hash
             )
@@ -102,7 +103,7 @@ def clean(
             tensor_metadata=new_tensor_metadata,
             theta_metadata=new_theta_metadata,
         )
-        logging.debug(f"Finished Cleaning {'/'.join(param_keys)}")
+        logger.debug(f"Finished Cleaning {'/'.join(param_keys)}")
         return param_keys, new_param_metadata
 
     # Sort the keys so we don't get changing diffs based on serialization order.
@@ -127,7 +128,8 @@ def smudge(
     curr_metadata = cleaned_metadata.flatten()
 
     async def _smudge(param_keys, param_metadata):
-        logging.debug(f"Smudging {'/'.join(param_keys)}")
+        logger = logging.getLogger("git_theta")
+        logger.debug(f"Smudging {'/'.join(param_keys)}")
         update_handler = updates.get_update_handler(
             param_metadata.theta_metadata.update_type
         )(params.get_update_serializer())

@@ -73,6 +73,7 @@ class IncrementalUpdate(Update):
                 .items()
             }
             self.update_names = utils.Trie.from_iterable(self.update_information.keys())
+        self.logger = logging.getLogger("git_theta")
 
     def will_update(self, param_keys: Tuple[str]) -> bool:
         if self.update_information is not None:
@@ -88,8 +89,10 @@ class IncrementalUpdate(Update):
         path: str,
     ) -> metadata.ParamMetadata:
         """Get the metadata from the last time this parameter was updated via git."""
-        logging.debug(f"Getting previous metadata for {'/'.join(param_keys)}")
-        logging.debug(f"Current Metadata for {'/'.join(param_keys)}: {param_metadata}")
+        self.logger.debug(f"Getting previous metadata for {'/'.join(param_keys)}")
+        self.logger.debug(
+            f"Current Metadata for {'/'.join(param_keys)}: {param_metadata}"
+        )
         last_commit = param_metadata.theta_metadata.last_commit
         # TODO: Currently, if the model checkpoint is added during the first commit
         # then we can't do a sparse update until a second dense update is commited.
@@ -97,13 +100,13 @@ class IncrementalUpdate(Update):
             raise ValueError(
                 f"Cannot find previous version for parameter {'/'.join(param_keys)}"
             )
-        logging.debug(
+        self.logger.debug(
             f"Getting metadata for {'/'.join(param_keys)} from commit {last_commit}"
         )
         last_metadata_obj = git_utils.get_file_version(repo, path, last_commit)
         last_metadata = metadata.Metadata.from_file(last_metadata_obj.data_stream)
         last_param_metadata = last_metadata.flatten()[param_keys]
-        logging.debug(
+        self.logger.debug(
             f"Previous Metadata for {'/'.join(param_keys)}: {last_param_metadata}"
         )
         return last_param_metadata
@@ -116,7 +119,7 @@ class IncrementalUpdate(Update):
         path: str,
     ) -> Parameter:
         """Get the last value for this parameter via git."""
-        logging.debug(f"Getting previous value for {'/'.join(param_keys)}")
+        self.logger.debug(f"Getting previous value for {'/'.join(param_keys)}")
         # TODO: get_update_serializer returns instantiated objects while the other
         # getters return classes to be instantiated.
         prev_serializer = params.get_update_serializer()
@@ -170,7 +173,7 @@ class IncrementalUpdate(Update):
         **kwargs,
     ) -> metadata.LfsMetadata:
         """Serialize and save a parameter with git-lfs as a delta from the previous value."""
-        logging.debug(f"Writing {self.name} update for {'/'.join(param_keys)}")
+        self.logger.debug(f"Writing {self.name} update for {'/'.join(param_keys)}")
         previous_value = await self.get_previous_value(
             prev_metadata, param_keys, repo=repo, path=path
         )
@@ -195,7 +198,7 @@ class IncrementalUpdate(Update):
         **kwargs,
     ) -> Parameter:
         """Get the final parameter value, including fetching previous values."""
-        logging.debug(f"Applying {self.name} update for {'/'.join(param_keys)}")
+        self.logger.debug(f"Applying {self.name} update for {'/'.join(param_keys)}")
         update_value = await self.read(param_metadata)
         # param_metadata is the metadata for the parameter as it is *at this
         # commit*.

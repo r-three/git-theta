@@ -126,7 +126,8 @@ def make_short_cuts(
         # B = short_cut is free
         if handler.SHORT_CUT in reserved:
             # Triggers for [A ∧ B, A ∧ ¬B]
-            logging.warning(
+            logger = logging.getLogger("git_theta")
+            logger.warning(
                 f"Merge Plug-in {handler.NAME} requested short-cut"
                 f" {handler.SHORT_CUT} which is reserved."
             )
@@ -170,7 +171,8 @@ def build_menu(
 
 
 def manual_merge(args):
-    logging.info(f"Writing model weights from {args.path} for manual merging.")
+    logger = logging.getLogger("git_theta")
+    logger.info(f"Writing model weights from {args.path} for manual merging.")
 
     # TODO: Update smudge API to make it easier to call programatically.
     async def load(name, path):
@@ -193,9 +195,9 @@ def manual_merge(args):
     checkpoints = async_utils.run(async_utils.run_map(checkpoints, load))
     for name, raw_weights in checkpoints.items():
         with open(f"{name}.ckpt", "wb") as wf:
-            logging.info(f"Saving {name} model to {name}.ckpt")
+            logger.info(f"Saving {name} model to {name}.ckpt")
             wf.write(raw_weights)
-    logging.info(
+    logger.info(
         "Manual Merging: Combine checkpoints as you wish, save the "
         f"result to {args.path} and continue the merge."
     )
@@ -204,10 +206,11 @@ def manual_merge(args):
 
 def merge(args):
     """git-theta checkpoint aware merging."""
+    logger = logging.getLogger("git_theta")
     print_formatted_text(
         HTML(f"<b>Fixing Merge Conflicts in {TEXT_STYLE.format_model(args.path)}</b>")
     )
-    logging.debug(f"Running merge driver on {args.path}")
+    logger.debug(f"Running merge driver on {args.path}")
     # Load the `cleaned` metadata file for the ancestor commit.
     ancestor = metadata.Metadata.from_file(args.ancestor)
     ancestor = ancestor.flatten()
@@ -255,14 +258,14 @@ def merge(args):
         # Changes that don't need human action to be resolved.
         # If the parameter is unchanged between all models just use it.
         if state is DiffState.EQUAL:
-            logging.debug(
+            logger.debug(
                 f"Parameter {name} was unchanged by either branch. "
                 "Keeping the value the same going forward."
             )
             merged_model[param_name] = ancestor_param
             continue
         if state is DiffState.DELETED_BOTH:
-            logging.debug(
+            logger.debug(
                 f"Parameter {name} was deleted on both branches. "
                 "Removing from the merged result."
             )
@@ -315,9 +318,9 @@ def merge(args):
                 complete_while_typing=True,
             )
             action = action.strip()
-            logging.debug(f"User Input: {action}")
+            logger.debug(f"User Input: {action}")
             if action == "q":
-                logging.debug(
+                logger.debug(
                     "User quit the merge tool. Leaving merge files as they are."
                 )
                 sys.exit(1)
