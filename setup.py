@@ -108,7 +108,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "git-theta = git_theta.scripts.git_theta:main",
+            "git-theta = git_theta.scripts.git_theta_cli:main",
             "git-theta-filter = git_theta.scripts.git_theta_filter:main",
             "git-theta-merge = git_theta.scripts.git_theta_merge:main",
             "git-theta-diff = git_theta.scripts.git_theta_diff:main",

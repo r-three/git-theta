@@ -4,7 +4,6 @@ import argparse
 import logging
 import os
 import sys
-import tempfile
 
 import git_theta
 from git_theta import checkpoints, git_utils, metadata
@@ -39,7 +38,28 @@ def run_clean(args):
     logger.debug(f"Running clean filter on {args.file}")
     repo = git_utils.get_git_repo()
     checkpoint_handler = checkpoints.get_checkpoint_handler()
-    model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
+    if EnvVarConstants.LOW_MEMORY:
+        logger.warning(
+            "Running Git-Theta in low memory mode. No concurrency is supported and the original checkout value will be transiently stored in a temporary file."
+        )
+        temp_file = f".{args.file}-temp-checkpoint"
+        try:
+            # In some places we don't have enough space when you write to the
+            # tempfile location.
+            logger.debug(f"Writing checkpoint to {temp_file}")
+            with open(temp_file, "w+b") as tmp:
+                tmp.write(sys.stdin.buffer.read())
+                logger.debug(f"Reading checkpoint from {temp_file}")
+                # We write and then seek instead of write,close,open because this was
+                # originally written to use the tempfile lib, but there were space
+                # issues. We keep that paradigm as we may switch back eventually,
+                tmp.seek(0)
+                model_checkpoint = checkpoint_handler.from_file(tmp)
+        finally:
+            # Make sure we always remove the temp checkpoint file.
+            os.remove(temp_file)
+    else:
+        model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
     new_metadata = clean(model_checkpoint, repo, args.file)
     new_metadata.write(sys.stdout)
     # If we had side-loaded information, write it out so we don't get false

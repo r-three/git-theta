@@ -29,9 +29,9 @@ def clean(
         update_serializer, EnvVarConstants.UPDATE_DATA_PATH
     )
     prev_metadata = metadata.Metadata.from_commit(repo, path, "HEAD").flatten()
+    logger = logging.getLogger("git_theta")
 
     async def _clean(param_keys, new_param):
-        logger = logging.getLogger("git_theta")
         logger.debug(f"Cleaning {'/'.join(param_keys)}")
         # Get the metadata from the previous version of the parameter
         param_metadata = prev_metadata.get(param_keys)
@@ -104,10 +104,29 @@ def clean(
             theta_metadata=new_theta_metadata,
         )
         logger.debug(f"Finished Cleaning {'/'.join(param_keys)}")
+        del new_param
         return param_keys, new_param_metadata
 
     # Sort the keys so we don't get changing diffs based on serialization order.
     sorted_checkpoint = dict(sorted(checkpoint.flatten().items()))
+    if EnvVarConstants.LOW_MEMORY:
+        # Run one at a time and delete the old values as you go
+        # TODO: Is is possible/better to process the keys based on the size
+        # of the tensor and resort later? Then you could do things like delete
+        # all the small ones before you have to process the large one.
+        logger.warning(
+            "Runing Git-Theta in Low Memory Mode, no concurrency will be used, and references to parameter weights will be freed after use."
+        )
+        meta = {}
+        for k in list(sorted_checkpoint.keys()):
+            # Get the param while removing it from the dict, removing the
+            # reference in the dict will allow the tensor to be gc'd
+            v = sorted_checkpoint.pop(k)
+            param_name, param_meta = async_utils.run(_clean(k, v))
+            meta[param_name] = param_meta
+            # Drop the reference to the value to allow it to be gc'd.
+            del v
+        return metadata.Metadata(meta).unflatten()
     return metadata.Metadata(
         **async_utils.run(
             async_utils.run_map(

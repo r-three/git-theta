@@ -351,11 +351,8 @@ def get_file_version(repo, path: str, commit_hash_or_tag: Union[str, git.Commit]
         # GitPython can take commit sha1's or tags (or commit objects) here and
         # it gives the same results.
         tree = repo.commit(commit_hash_or_tag).tree
-        if path in tree:
-            return tree[path]
-        else:
-            return None
-    except git.BadName:
+        return tree[path]
+    except (git.BadName, KeyError):
         return None
 
 
