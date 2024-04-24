@@ -77,7 +77,8 @@ class Merge(metaclass=PrintableABCMeta):
     ] = frozenset()  # States where this action will not appear in the menu.
 
     def __call__(self, param_name, *args, **kwargs):
-        logging.info(f"Running {self.NAME} merge on parameter {'/'.join(param_name,)}")
+        logger = logging.getLogger("git_theta")
+        logger.info(f"Running {self.NAME} merge on parameter {'/'.join(param_name,)}")
         return self.merge(param_name, *args, **kwargs)
 
     @abstractmethod

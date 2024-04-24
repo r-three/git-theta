@@ -74,9 +74,10 @@ class TensorMetadata(MetadataField):
     def from_tensor(cls, tensor: np.ndarray) -> TensorMetadata:
         shape = str(tensor.shape)
         dtype = str(tensor.dtype)
-        logging.debug(f"Starting LSH Hash")
+        logger = logging.getLogger("git_theta")
+        logger.debug(f"Starting LSH Hash")
         hash = lsh.get_lsh().hash(tensor)
-        logging.debug(f"Finished LSH Hash")
+        logger.debug(f"Finished LSH Hash")
         return cls(shape=shape, dtype=dtype, hash=hash)
 
 

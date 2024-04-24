@@ -40,14 +40,15 @@ class LowRankUpdate(IncrementalUpdate):
         update = parameter - previous_parameter
         if update.ndim < 2:
             return update
-        logging.info("Inferring low-rank update based on SVD")
+        logger = logging.getLogger("git_theta")
+        logger.info("Inferring low-rank update based on SVD")
         u, s, vh = np.linalg.svd(update, full_matrices=False)
         if self.K is not None:
             k = self.K
-            logging.info(f"Low Rank Update configured to have a rank of {k}")
+            logger.info(f"Low Rank Update configured to have a rank of {k}")
         else:
             k = np.sum(s > self.threshold)
-            logging.info(f"Low Rank Update inferred to have a rank of {k}")
+            logger.info(f"Low Rank Update inferred to have a rank of {k}")
         return {"R": u[:, :k], "C": (np.diag(s[:k]) @ vh[:k, :])}
 
     async def apply_update(self, update: Parameter, previous: Parameter) -> Parameter:

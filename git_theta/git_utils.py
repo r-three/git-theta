@@ -306,7 +306,8 @@ def add_file(f, repo):
     repo : git.Repo
         Repo object for current git repository
     """
-    logging.debug(f"Adding {f} to staging area")
+    logger = logging.getLogger("git_theta")
+    logger.debug(f"Adding {f} to staging area")
     repo.git.add(f)
 
 
@@ -321,7 +322,8 @@ def remove_file(f, repo):
     repo : git.Repo
         Repo object for current git repository
     """
-    logging.debug(f"Removing {f}")
+    logger = logging.getLogger("git_theta")
+    logger.debug(f"Removing {f}")
     if os.path.isdir(f):
         repo.git.rm("-r", f)
     else:

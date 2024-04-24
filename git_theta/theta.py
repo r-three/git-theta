@@ -38,6 +38,7 @@ class ThetaCommits:
         self.repo = repo
         self.path = os.path.abspath(os.path.join(repo.git_dir, "theta", "commits"))
         os.makedirs(self.path, exist_ok=True)
+        self.logger = logging.getLogger("git_theta")
 
     @staticmethod
     def combine_oid_sets(oid_sets):
@@ -56,7 +57,7 @@ class ThetaCommits:
         return commit
 
     def get_commit_info_range(self, start_hash, end_hash):
-        logging.debug(f"Getting commits from {start_hash}..{end_hash}")
+        self.logger.debug(f"Getting commits from {start_hash}..{end_hash}")
         # N.b. the all-zero hash is used by git to indicate a non-existent start hash
         # For example, a git pre-push hook will receive the all-zero hash if the remote ref does not have any commit history
         if re.match("^0{40}$", start_hash):
@@ -64,24 +65,24 @@ class ThetaCommits:
         else:
             commits = list(self.repo.iter_commits(f"{start_hash}..{end_hash}"))
 
-        logging.debug(f"Found commits {commits}")
+        self.logger.debug(f"Found commits {commits}")
         commit_infos = [self.get_commit_info(commit.hexsha) for commit in commits]
         return commit_infos
 
     def get_commit_oids(self, commit_hash):
-        logging.debug(f"Getting oids from commit {commit_hash}")
+        self.logger.debug(f"Getting oids from commit {commit_hash}")
         commit_info = self.get_commit_info(commit_hash)
         oids = commit_info.oids
-        logging.debug(f"Found oids {oids}")
+        self.logger.debug(f"Found oids {oids}")
         return oids
 
     def get_commit_oids_range(self, start_hash, end_hash):
-        logging.debug(f"Getting oids from commit range {start_hash}..{end_hash}")
+        self.logger.debug(f"Getting oids from commit range {start_hash}..{end_hash}")
         commit_infos = self.get_commit_info_range(start_hash, end_hash)
         oids = ThetaCommits.combine_oid_sets(
             [commit_info.oids for commit_info in commit_infos]
         )
-        logging.debug(f"Found oids {oids}")
+        self.logger.debug(f"Found oids {oids}")
         return oids
 
     def get_commit_oids_ranges(self, *ranges):
@@ -92,7 +93,7 @@ class ThetaCommits:
         return ThetaCommits.combine_oid_sets(oids)
 
     def write_commit_info(self, commit_hash, commit_info):
-        logging.debug(f"Writing commit_info to commit {commit_hash}")
+        self.logger.debug(f"Writing commit_info to commit {commit_hash}")
         if not utils.is_valid_commit_hash(commit_hash):
             raise ValueError(f"Cannot write commit info for invalid hash {commit_hash}")
         path = self.get_commit_path(commit_hash)

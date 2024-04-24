@@ -35,7 +35,8 @@ def run_clean(args):
     """
     Implements clean filter for model files
     """
-    logging.debug(f"Running clean filter on {args.file}")
+    logger = logging.getLogger("git_theta")
+    logger.debug(f"Running clean filter on {args.file}")
     repo = git_utils.get_git_repo()
     checkpoint_handler = checkpoints.get_checkpoint_handler()
     model_checkpoint = checkpoint_handler.from_file(sys.stdin.buffer)
@@ -51,7 +52,8 @@ def run_smudge(args):
     """
     Implements smudge filter for model files
     """
-    logging.debug(f"Running smudge filter on {args.file}")
+    logger = logging.getLogger("git_theta")
+    logger.debug(f"Running smudge filter on {args.file}")
 
     repo = git_utils.get_git_repo()
     curr_metadata = metadata.Metadata.from_file(sys.stdin)
