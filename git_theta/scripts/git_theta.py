@@ -120,8 +120,8 @@ def install(args):
     """
     # check if git-lfs is installed and abort if not
     if not git_utils.is_git_lfs_installed():
-        # TODO(bdlester): Move to a logger that writes to stderror?
-        print(
+        logger = logging.getLogger("git_theta")
+        logger.error(
             "git-theta depends on git-lfs and it does not appear to be installed. See installation directions at https://github.com/r-three/git-theta/blob/main/README.md#git-lfs-installation"
         )
         sys.exit(1)
@@ -144,8 +144,8 @@ def track(args):
     """
     repo = git_utils.get_git_repo()
     if not git_utils.is_git_theta_installed():
-        # TODO(bdlester): Move to a logger that writes to stderror?
-        print(
+        logger = logging.getLogger("git_theta")
+        logger.error(
             "You are trying to track a file with git-theta, but git-theta is not installed, please run `git theta install`."
         )
         sys.exit(1)
@@ -163,9 +163,9 @@ def track(args):
 def add(args, unparsed_args):
     repo = git_utils.get_git_repo()
     if not git_utils.is_git_theta_installed():
-        # TODO(bdlester): Move to a logger that writes to stderror?
-        print(
-            "You are trying to track a file with git-theta, but git-theta is not installed, please run `git theta install`."
+        logger = logging.getLogger("git_theta")
+        logger.error(
+            "You are trying to add a file using git-theta, but git-theta is not installed, please run `git theta install`."
         )
         sys.exit(1)
     env_vars = {
