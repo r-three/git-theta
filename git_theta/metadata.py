@@ -169,9 +169,11 @@ class Metadata(OrderedDict):
             flattened[param_keys] = param_metadata.serialize()
         return flattened.unflatten()
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         metadata_dict = self.serialize()
         return json.dumps(metadata_dict, indent=4, cls=MetadataEncoder)
+
+
 class MetadataEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
