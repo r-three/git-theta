@@ -41,9 +41,7 @@ def save_to_git(
     # Convert the checkpoint into the cleaned metadata file.
     metadata = filters.clean(ckpt, repo, path)
     # Capture metadata writing into a string.
-    with io.StringIO() as f:
-        metadata.write(f)
-        metadata = f.getvalue()
+    metadata = str(metadata)
     # Convert the metadata file into a git blob without having it on disk.
     blob = git_theta.git_utils.make_blob(repo, metadata, path)
     # Add the metadata to staging.
