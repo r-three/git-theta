@@ -127,8 +127,7 @@ class Metadata(OrderedDict):
 
     @file_or_name(file="w")
     def write(self, file: TextIO):
-        metadata_dict = self.serialize()
-        json.dump(metadata_dict, file, indent=4, cls=MetadataEncoder)
+        json.dump(str(self), file, indent=4, cls=MetadataEncoder)
 
     def flatten(self) -> Metadata:
         return utils.flatten(self, is_leaf=lambda v: isinstance(v, ParamMetadata))
@@ -170,7 +169,9 @@ class Metadata(OrderedDict):
             flattened[param_keys] = param_metadata.serialize()
         return flattened.unflatten()
 
-
+    def __str__(self)->str:
+        metadata_dict = self.serialize()
+        return json.dump(metadata_dict,indent=4, cls=MetadataEncoder)
 class MetadataEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
