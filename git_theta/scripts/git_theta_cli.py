@@ -43,7 +43,13 @@ def parse_args():
     pre_push_parser.set_defaults(func=pre_push)
 
     install_parser = subparsers.add_parser(
-        "install", help="install command used to setup global .gitconfig"
+        "install", help="Install command used to setup git-theta via git configs."
+    )
+    install_parser.add_argument(
+        "--scope",
+        choices=["global", "repository", "user", "system"],
+        default="global",
+        help="Which git config location to use.",
     )
     install_parser.set_defaults(func=install)
 
@@ -119,16 +125,31 @@ def install(args):
     Install git-lfs and initialize the git-theta filter driver
     """
     # check if git-lfs is installed and abort if not
+    logger = logging.getLogger("git_theta")
     if not git_utils.is_git_lfs_installed():
-        logger = logging.getLogger("git_theta")
         logger.error(
             "git-theta depends on git-lfs and it does not appear to be installed. See installation directions at https://github.com/r-three/git-theta/blob/main/README.md#git-lfs-installation"
         )
         sys.exit(1)
 
-    config_writer = git.GitConfigParser(
-        git.config.get_config_path("global"), config_level="global", read_only=False
-    )
+    if args.scope == "repository":
+        # To install at the repository level, you need to be in repo.
+        try:
+            repo = git_utils.get_git_repo()
+        except git.exc.InvalidGitRepositoryError as e:
+            logger.error(
+                "Tried to install git-theta at the repository level, but you are not in a git repository. Please navigate to the repository you want to use git-theta in."
+            )
+            sys.exit(1)
+        # We are using a private method, but the error message from trying to get
+        # a repository level config file from `git.config.get_config_path` said to
+        # use this method.
+        path = repo._get_config_path(args.scope)
+    else:
+        path = git.config.get_config_path(args.scope)
+
+    logger.debug(f"Installing git-theta via git configuration file at {path}")
+    config_writer = git.GitConfigParser(path, config_level=args.scope, read_only=False)
     config_writer.set_value('filter "theta"', "clean", "git-theta-filter clean %f")
     config_writer.set_value('filter "theta"', "smudge", "git-theta-filter smudge %f")
     config_writer.set_value('filter "theta"', "required", "true")
