@@ -42,6 +42,14 @@ def parse_args():
     )
     pre_push_parser.set_defaults(func=pre_push)
 
+    ls_files_parser = subparsers.add_parser(
+        "ls-files", help="List files that are tracked by git-theta."
+    )
+    ls_files_parser.add_argument(
+        "args", nargs="*", default=None, help="The raw args to pass to git ls-files"
+    )
+    ls_files_parser.set_defaults(func=ls_files)
+
     install_parser = subparsers.add_parser(
         "install", help="Install command used to setup git-theta via git configs."
     )
@@ -118,6 +126,26 @@ def pre_push(args):
     ]
     oids = theta_commits.get_commit_oids_ranges(*commit_ranges)
     async_utils.run(git_utils.git_lfs_push_oids(args.remote_name, oids))
+
+
+def ls_files(args):
+    repo = git_utils.get_git_repo()
+    # TODO: git ls-files can take a bunch of extra args that we pass in here,
+    # it is unclear if that is working/if the format of the output changes, but
+    # this implementation covers the common usages.
+    # Note: We use repo.git.ls_files instead of traversing the tree ourself as
+    #       git ls-files leverages the index better than we can from GitPython.
+    if args.args:
+        files = repo.git.ls_files(args.args).split("\n")
+    else:
+        files = repo.git.ls_files().split("\n")
+
+    gitattributes_file = git_utils.get_gitattributes_file(repo)
+    gitattributes = git_utils.read_gitattributes(gitattributes_file)
+
+    for path in files:
+        if git_utils.is_theta_tracked(path, gitattributes):
+            print(path)
 
 
 def install(args):
