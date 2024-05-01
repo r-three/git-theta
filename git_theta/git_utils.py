@@ -16,6 +16,7 @@ from typing import Dict, List, Optional, Sequence, Union
 
 import git
 import gitdb
+import six
 
 # TODO(bdlester): importlib.resources doesn't have the `.files` API until python
 # version `3.9` so use the backport even if using a python version that has
@@ -377,6 +378,8 @@ async def git_lfs_smudge(pointer_file: str) -> bytes:
         input=pointer_file.encode("utf-8"),
         capture_output=True,
     )
+    if out.returncode != 0:
+        raise ValueError(f"git lfs smudge failed with: {six.ensure_text(out.stderr)}")
     return out.stdout
 
 
