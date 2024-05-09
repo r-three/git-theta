@@ -9,27 +9,37 @@ NORMAL="\033[0m"
 function color_echo {
     local text="${1}"
     local color="${2}"
-    echo -e "${color}${text}${NORMAL}"
+    local newline="${3}"
+    # If we provide a 3rd argument, don't include the newline, this lets us
+    # do two colors on one line easily.
+    if [[ -z "${newline}" ]]; then
+      echo -e "${color}${text}${NORMAL}"
+    else
+      echo -en "${color}${text}${NORMAL}"
+    fi
 }
 
 function green_echo {
     local text="${1}"
-    color_echo "${text}" "${GREEN}"
+    local newline="${2}"
+    color_echo "${text}" "${GREEN}" "${newline}"
 }
 
 function red_echo {
     local text="${1}"
-    color_echo "${text}" "${RED}"
+    local newline="${2}"
+    color_echo "${text}" "${RED}" "${newline}"
 }
 
 function yellow_echo {
     local text="${1}"
-    color_echo "${text}" "${YELLOW}"
+    local newline="${2}"
+    color_echo "${text}" "${YELLOW}" "${newline}"
 }
 
 function make_repo {
     echo "Making Git Repo."
-    git init
+    git init 2> /dev/null
     git branch -m main
     # Set the git user/email for the generated test repo
     git config --local user.email "git-theta-tester@example.com"
