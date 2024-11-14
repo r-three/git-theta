@@ -98,6 +98,7 @@ setup(
         'importlib_metadata; python_version < "3.10.0"',
         'typing_extensions; python_version < "3.8.0"',
         "prompt_toolkit",
+        "colorama",
     ],
     extras_require={
         **frameworks_require,
